@@ -1,9 +1,9 @@
-import attrs as _attrs
+import attrs
 
 class UserError(Exception):
     pass
 
-@_attrs.define(frozen=True)
+@attrs.define(frozen=True)
 class DuplicateVariable(UserError):
     # the name of the variable that is duplicated
     var : str
