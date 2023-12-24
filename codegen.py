@@ -5,9 +5,8 @@ import visitor
 
 def codegen(func):
     class CGVisitor(visitor.IRVisitor):
-        def __init__(self):
-            self.code = ''
-            self.tab_count = 0
+        code = ''
+        tab_count = 0
 
         def emit_tabs(self):
             self.code += '\t' * self.tab_count
@@ -28,15 +27,13 @@ def codegen(func):
             for stmt in node.s:
                 self.visit_stmt(stmt)
 
-        def visit_stmt(self, stmt):
-            if isinstance(stmt, loma_ir.Return):
-                self.emit_tabs()
-                self.code += f'return {self.visit_expr(stmt.val)};\n'
-            elif isinstance(stmt, loma_ir.Declare):
-                self.emit_tabs()
-                self.code += f'float {stmt.target} = {self.visit_expr(stmt.val)};\n'
-            else:
-                assert False, f'Codegen error: unhandled statement {stmt}'
+        def visit_return(self, ret):
+            self.emit_tabs()
+            self.code += f'return {self.visit_expr(ret.val)};\n'
+
+        def visit_declare(self, dec):
+            self.emit_tabs()
+            self.code += f'float {dec.target} = {self.visit_expr(dec.val)};\n'
 
         def visit_expr(self, expr):
             if isinstance(expr, loma_ir.Var):
@@ -52,7 +49,7 @@ def codegen(func):
             elif isinstance(expr, loma_ir.Div):
                 return f'({self.get_expr_str(expr.left)}) / ({self.get_expr_str(expr.right)})'
             else:
-                assert False, f'Codegen error: unhandled expression {expr}'
+                assert False, f'Visitor error: unhandled expression {expr}'
 
     cg = CGVisitor()
     cg.visit_function(func)

@@ -1,10 +1,14 @@
+import ir
+ir.generate_asdl_file()
+import _asdl.loma as loma_ir
+
 class IRVisitor:
     def visit_function(self, node):
         self.visit_block(node)
 
     def visit_block(self, node):
         for stmt in node.s:
-            self.emit_stmt(stmt)
+            self.visit_stmt(stmt)
 
     def visit_stmt(self, stmt):
         if isinstance(stmt, loma_ir.Return):
@@ -43,13 +47,17 @@ class IRVisitor:
         pass
 
     def visit_add(self, add):
-        pass
+        visit_expr(add.left)
+        visit_expr(add.right)
 
     def visit_sub(self, sub):
-        pass
+        visit_expr(add.left)
+        visit_expr(add.right)
 
     def visit_mul(self, mul):
-        pass
+        visit_expr(add.left)
+        visit_expr(add.right)
 
     def visit_div(self, div):
-        pass
+        visit_expr(add.left)
+        visit_expr(add.right)
