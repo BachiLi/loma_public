@@ -1,9 +1,12 @@
+import attrs
 import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 import visitor
 
 def codegen(func):
+
+    @attrs.define()
     class CGVisitor(visitor.IRVisitor):
         code = ''
         tab_count = 0
