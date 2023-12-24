@@ -20,8 +20,7 @@ def compile(func, filename = ''):
         except FileExistsError:
             pass
         filename = os.path.join(caller_dir, '_code',
-                                f"code.so")
-
+                                f"{ir.name}.so")
     print(code)
 
     log = run(['g++', '-shared', '-fPIC', '-o', filename, '-O2', '-x', 'c++', '-'],

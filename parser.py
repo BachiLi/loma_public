@@ -28,6 +28,12 @@ def visit_expr(node):
     elif isinstance(node, ast.BinOp):
       if isinstance(node.op, ast.Add):
         return loma_ir.Add(visit_expr(node.left), visit_expr(node.right))
+      elif isinstance(node.op, ast.Sub):
+        return loma_ir.Sub(visit_expr(node.left), visit_expr(node.right))
+      elif isinstance(node.op, ast.Mult):
+        return loma_ir.Mul(visit_expr(node.left), visit_expr(node.right))
+      elif isinstance(node.op, ast.Div):
+        return loma_ir.Div(visit_expr(node.left), visit_expr(node.right))
       else:
         assert False, f'Unknown BinOp {type(node.op).__name__}'
     else:

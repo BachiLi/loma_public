@@ -44,6 +44,12 @@ def codegen(func):
                 return expr.val
             elif isinstance(expr, loma_ir.Add):
                 return f'({self.get_expr_str(expr.left)}) + ({self.get_expr_str(expr.right)})'
+            elif isinstance(expr, loma_ir.Sub):
+                return f'({self.get_expr_str(expr.left)}) - ({self.get_expr_str(expr.right)})'
+            elif isinstance(expr, loma_ir.Mul):
+                return f'({self.get_expr_str(expr.left)}) * ({self.get_expr_str(expr.right)})'
+            elif isinstance(expr, loma_ir.Div):
+                return f'({self.get_expr_str(expr.left)}) / ({self.get_expr_str(expr.right)})'
             else:
                 assert False, f'Codegen error: unhandled expression {expr}'
 

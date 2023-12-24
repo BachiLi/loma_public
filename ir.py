@@ -14,6 +14,9 @@ def generate_asdl_file():
       expr = Var        ( string id )
            | Const      ( float val )
            | Add        ( expr left, expr right )
+           | Sub        ( expr left, expr right )
+           | Mul        ( expr left, expr right )
+           | Div        ( expr left, expr right )
            | Equal      ( expr left, expr right )
 
       block    = Block ( stmt* s )
