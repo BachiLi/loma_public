@@ -29,7 +29,6 @@ def test_binary_ops():
     # d = c / a = 36 / 11
     assert(abs(lib.binaryops(float(5.0), float(6.0)) - 36.0 / 11.0) < 1e-6)
 
-
 def mutation():
     a : float = 5.0
     a = 6.0

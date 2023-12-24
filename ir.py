@@ -5,12 +5,6 @@ def generate_asdl_file():
     module loma {
       stmt = Assign     ( string target, expr val )
            | Declare    ( string target, expr val )
-           | AddAssign  ( string target, expr val )
-           | Declare    ( string target, expr val )
-           | For        ( string target, expr start, expr stop, expr step, stmt* body )
-           | If         ( expr cond, stmt* body )
-           | Break      (  )
-           | Return     ( expr val )
            attributes   ( int? lineno, string? attr )
 
       expr = Var        ( string id )
