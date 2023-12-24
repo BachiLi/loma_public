@@ -27,6 +27,8 @@ def compile(func, filename = ''):
         input = code,
         encoding='utf-8',
         capture_output=True)
+    if (log.returncode != 0):
+        print(log.stderr)
 
     lib = CDLL(filename)
     c_func = getattr(lib, ir.name)
