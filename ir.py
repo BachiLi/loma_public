@@ -4,6 +4,7 @@ def generate_asdl_file():
     ADT("""
     module loma {
       stmt = Assign     ( string target, expr val )
+           | Declare    ( string target, expr val )
            | AddAssign  ( string target, expr val )
            | Declare    ( string target, expr val )
            | For        ( string target, expr start, expr stop, expr step, block body )

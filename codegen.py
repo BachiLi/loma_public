@@ -31,16 +31,21 @@ def codegen(func):
             if isinstance(stmt, loma_ir.Return):
                 self.emit_tabs()
                 self.code += f'return {self.get_expr_str(stmt.val)};\n'
+            elif isinstance(stmt, loma_ir.Declare):
+                self.emit_tabs()
+                self.code += f'float {stmt.target} = {self.get_expr_str(stmt.val)};\n'
             else:
-                assert False
+                assert False, f'Codegen error: unhandled statement {stmt}'
 
         def get_expr_str(self, expr):
             if isinstance(expr, loma_ir.Var):
                 return expr.id
+            elif isinstance(expr, loma_ir.Const):
+                return expr.val
             elif isinstance(expr, loma_ir.Add):
                 return f'({self.get_expr_str(expr.left)}) + ({self.get_expr_str(expr.right)})'
             else:
-                assert False
+                assert False, f'Codegen error: unhandled expression {expr}'
 
     cg = Codegen()
     cg.emit_function(func)

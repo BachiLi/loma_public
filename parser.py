@@ -15,12 +15,16 @@ def visit_FunctionDef(node):
 def visit_stmt(node):
     if isinstance(node, ast.Return):
       return loma_ir.Return(visit_expr(node.value))
+    elif isinstance(node, ast.AnnAssign):
+      return loma_ir.Declare(node.target.id, visit_expr(node.value))
     else:
       assert False, f'Unknown statement {type(node).__name__}'
 
 def visit_expr(node):
     if isinstance(node, ast.Name):
       return loma_ir.Var(node.id)
+    elif isinstance(node, ast.Constant):
+      return loma_ir.Const(float(node.value))
     elif isinstance(node, ast.BinOp):
       if isinstance(node.op, ast.Add):
         return loma_ir.Add(visit_expr(node.left), visit_expr(node.right))
