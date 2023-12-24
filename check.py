@@ -16,5 +16,19 @@ def check_duplicate_declare(node):
 
     DuplicateChecker().visit_function(node)
 
+def check_undeclared_vars(node):
+    class UndeclaredChecker(visitor.IRVisitor):
+        ids = set()
+
+        def visit_declare(self, node):
+            self.ids.add(node.target)
+
+        def visit_assign(self, node):
+            if node.target not in self.ids:
+                raise error.UndeclaredVariable(node.target, node.lineno)
+
+    UndeclaredChecker().visit_function(node)
+
 def check_ir(node):
     check_duplicate_declare(node)
+    check_undeclared_vars(node)

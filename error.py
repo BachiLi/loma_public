@@ -11,3 +11,11 @@ class DuplicateVariable(UserError):
     first_lineno : int
     # the line number where the variable is duplicatedly declared
     duplicate_lineno : int
+
+@attrs.define(frozen=True)
+class UndeclaredVariable(UserError):
+    # the name of the variable that is undeclared
+    var : str
+    # line number where the variable is assigned
+    lineno : int
+

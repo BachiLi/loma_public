@@ -29,6 +29,17 @@ def test_binary_ops():
     # d = c / a = 36 / 11
     assert(abs(lib.binaryops(float(5.0), float(6.0)) - 36.0 / 11.0) < 1e-6)
 
+
+def mutation():
+    a : float = 5.0
+    a = 6.0
+    return a
+
+def test_mutation():
+    lib = compiler.compile(mutation)
+    assert(abs(lib.mutation() - 6) < 1e-6)
+
+
 def duplicate_declare():
     x : float = 5
     x : float = 6
@@ -42,18 +53,24 @@ def test_duplicate_declare():
         assert(e.first_lineno == 2)
         assert(e.duplicate_lineno == 3)
 
-def mutation():
+def undeclared_var():
     a : float = 5.0
-    a = 6.0
+    b = 6.0
     return a
 
-def test_mutation():
-    lib = compiler.compile(mutation)
-    assert(abs(lib.mutation() - 6) < 1e-6)
+def test_undeclared_var():
+    try:
+        lib = compiler.compile(undeclared_var)
+    except error.UndeclaredVariable as e:
+        assert(e.var == 'b')
+        assert(e.lineno == 3)
 
 if __name__ == '__main__':
     test_declaration()
     test_binary_ops()
-    test_duplicate_declare()
     test_mutation()
+
+    # test compile errors
+    test_duplicate_declare()
+    test_undeclared_var()
 
