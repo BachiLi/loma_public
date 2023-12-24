@@ -42,7 +42,18 @@ def test_duplicate_declare():
         assert(e.first_lineno == 2)
         assert(e.duplicate_lineno == 3)
 
+def mutation():
+    a : float = 5.0
+    a = 6.0
+    return a
+
+def test_mutation():
+    lib = compiler.compile(mutation)
+    assert(abs(lib.mutation() - 6) < 1e-6)
+
 if __name__ == '__main__':
     test_declaration()
     test_binary_ops()
     test_duplicate_declare()
+    test_mutation()
+

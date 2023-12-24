@@ -17,6 +17,9 @@ def visit_stmt(node):
       return loma_ir.Return(visit_expr(node.value), lineno = node.lineno)
     elif isinstance(node, ast.AnnAssign):
       return loma_ir.Declare(node.target.id, visit_expr(node.value), lineno = node.lineno)
+    elif isinstance(node, ast.Assign):
+      assert len(node.targets) == 1
+      return loma_ir.Assign(node.targets[0].id, visit_expr(node.value), lineno = node.lineno)
     else:
       assert False, f'Unknown statement {type(node).__name__}'
 

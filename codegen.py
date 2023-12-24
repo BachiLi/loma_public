@@ -35,6 +35,10 @@ def codegen(func):
             self.emit_tabs()
             self.code += f'float {dec.target} = {self.visit_expr(dec.val)};\n'
 
+        def visit_assign(self, ass):
+            self.emit_tabs()
+            self.code += f'{ass.target} = {self.visit_expr(ass.val)};\n'
+
         def visit_expr(self, expr):
             if isinstance(expr, loma_ir.Var):
                 return expr.id
