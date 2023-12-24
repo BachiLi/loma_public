@@ -266,12 +266,22 @@ class _BuildClasses:
             seq = ""
             if f.seq:
                 seq = " = _attrs.field(converter=_list_to_tuple)"
-            lines.append(f"    {f.name} : {self.field_type(f)}{seq}")
+            l = f"    {f.name} : {self.field_type(f)}{seq}"
+            if f.opt:
+                l += f" = None"
+            lines.append(l)
         return lines
 
     def build_new_fn(self, fields : List[asdl.Field], clsname):
-        fnames = [ f.name for f in fields ]
-        argstr = ', '.join(['cls']+fnames)
+        fnames = []
+        fnames_init = []
+        for f in fields:
+            n = f.name
+            fnames.append(n)
+            if f.opt:
+                n += ' = None'
+            fnames_init.append(n)
+        argstr = ', '.join(['cls']+fnames_init)
         fargs  = ', '.join(fnames)
 
         lines = [f"    def __new__({argstr}):"]
@@ -292,12 +302,10 @@ class _BuildClasses:
                       f"        return result"]
         else:
             lines += [f"        return super().__new__(cls)"]
+
         return lines
 
     def build_init_fn(self, fields : List[asdl.Field], clsname):
-        fnames = [ f.name for f in fields ]
-        argstr = ', '.join(['self']+fnames)
-
         if self._do_checks:
             lines = [f"    def __attrs_post_init__(self):"]
             for k,f in enumerate(fields):
