@@ -9,7 +9,7 @@ def visit_FunctionDef(node):
     assert(args.vararg is None)
     assert(args.kwarg is None)
     args = [arg.arg for arg in args.args]
-    body = loma_ir.Block([visit_stmt(b) for b in node.body])
+    body = [visit_stmt(b) for b in node.body]
     return loma_ir.Function(node.name, args, body, lineno = node.lineno)
 
 def visit_stmt(node):

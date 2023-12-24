@@ -4,10 +4,7 @@ import _asdl.loma as loma_ir
 
 class IRVisitor:
     def visit_function(self, node):
-        self.visit_block(node.body)
-
-    def visit_block(self, node):
-        for stmt in node.s:
+        for stmt in node.body:
             self.visit_stmt(stmt)
 
     def visit_stmt(self, stmt):

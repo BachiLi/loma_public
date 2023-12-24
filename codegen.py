@@ -19,13 +19,10 @@ def codegen(func):
                 self.code += f'float {arg}'
             self.code += ') {\n'
             self.tab_count += 1
-            self.visit_block(node.body)
+            for stmt in node.body:
+                self.visit_stmt(stmt)
             self.tab_count -= 1
             self.code += '}\n'        
-
-        def visit_block(self, node):
-            for stmt in node.s:
-                self.visit_stmt(stmt)
 
         def visit_return(self, ret):
             self.emit_tabs()
