@@ -4,6 +4,7 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 import compiler
+import error
 
 def declaration():
     x : float = 5
@@ -28,6 +29,20 @@ def test_binary_ops():
     # d = c / a = 36 / 11
     assert(abs(lib.binaryops(float(5.0), float(6.0)) - 36.0 / 11.0) < 1e-6)
 
+def duplicate_declare():
+    x : float = 5
+    x : float = 6
+    return 0
+
+def test_duplicate_declare():
+    try:
+        lib = compiler.compile(duplicate_declare)
+    except error.DuplicateVariable as e:
+        assert(e.var == 'x')
+        assert(e.first_lineno == 2)
+        assert(e.duplicate_lineno == 3)
+
 if __name__ == '__main__':
     test_declaration()
     test_binary_ops()
+    test_duplicate_declare()

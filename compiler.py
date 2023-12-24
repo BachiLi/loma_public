@@ -1,5 +1,6 @@
 import ctypes
 from ctypes import CDLL
+import check
 import codegen
 import inspect
 import os
@@ -9,6 +10,7 @@ from subprocess import run
 
 def compile(func, filename = ''):
     ir = parser.parse(func)
+    check.check_ir(ir)
     code = codegen.codegen(ir)
 
     # determine the filename to dump to

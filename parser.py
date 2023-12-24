@@ -10,30 +10,30 @@ def visit_FunctionDef(node):
     assert(args.kwarg is None)
     args = [arg.arg for arg in args.args]
     body = loma_ir.Block([visit_stmt(b) for b in node.body])
-    return loma_ir.Function(node.name, args, body)
+    return loma_ir.Function(node.name, args, body, lineno = node.lineno)
 
 def visit_stmt(node):
     if isinstance(node, ast.Return):
-      return loma_ir.Return(visit_expr(node.value))
+      return loma_ir.Return(visit_expr(node.value), lineno = node.lineno)
     elif isinstance(node, ast.AnnAssign):
-      return loma_ir.Declare(node.target.id, visit_expr(node.value))
+      return loma_ir.Declare(node.target.id, visit_expr(node.value), lineno = node.lineno)
     else:
       assert False, f'Unknown statement {type(node).__name__}'
 
 def visit_expr(node):
     if isinstance(node, ast.Name):
-      return loma_ir.Var(node.id)
+      return loma_ir.Var(node.id, lineno = node.lineno)
     elif isinstance(node, ast.Constant):
-      return loma_ir.Const(float(node.value))
+      return loma_ir.Const(float(node.value), lineno = node.lineno)
     elif isinstance(node, ast.BinOp):
       if isinstance(node.op, ast.Add):
-        return loma_ir.Add(visit_expr(node.left), visit_expr(node.right))
+        return loma_ir.Add(visit_expr(node.left), visit_expr(node.right), lineno = node.lineno)
       elif isinstance(node.op, ast.Sub):
-        return loma_ir.Sub(visit_expr(node.left), visit_expr(node.right))
+        return loma_ir.Sub(visit_expr(node.left), visit_expr(node.right), lineno = node.lineno)
       elif isinstance(node.op, ast.Mult):
-        return loma_ir.Mul(visit_expr(node.left), visit_expr(node.right))
+        return loma_ir.Mul(visit_expr(node.left), visit_expr(node.right), lineno = node.lineno)
       elif isinstance(node.op, ast.Div):
-        return loma_ir.Div(visit_expr(node.left), visit_expr(node.right))
+        return loma_ir.Div(visit_expr(node.left), visit_expr(node.right), lineno = node.lineno)
       else:
         assert False, f'Unknown BinOp {type(node.op).__name__}'
     else:

@@ -4,7 +4,7 @@ import _asdl.loma as loma_ir
 
 class IRVisitor:
     def visit_function(self, node):
-        self.visit_block(node)
+        self.visit_block(node.body)
 
     def visit_block(self, node):
         for stmt in node.s:
@@ -19,24 +19,24 @@ class IRVisitor:
             assert False, f'Visitor error: unhandled statement {stmt}'
 
     def visit_return(self, ret):
-        self.visit(ret.val)
+        self.visit_expr(ret.val)
 
     def visit_declare(self, dec):
-        self.visit(dec.val)
+        self.visit_expr(dec.val)
 
     def visit_expr(self, expr):
         if isinstance(expr, loma_ir.Var):
-            self.visit_var()
+            self.visit_var(expr)
         elif isinstance(expr, loma_ir.Const):
-            self.visit_const()
+            self.visit_const(expr)
         elif isinstance(expr, loma_ir.Add):
-            self.visit_add()
+            self.visit_add(expr)
         elif isinstance(expr, loma_ir.Sub):
-            self.visit_sub()
+            self.visit_sub(expr)
         elif isinstance(expr, loma_ir.Mul):
-            self.visit_mul()
+            self.visit_mul(expr)
         elif isinstance(expr, loma_ir.Div):
-            self.visit_div()
+            self.visit_div(expr)
         else:
             assert False, f'Visitor error: unhandled expression {expr}'
 

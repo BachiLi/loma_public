@@ -11,7 +11,7 @@ def generate_asdl_file():
            | If         ( expr cond, block body )
            | Break      (  )
            | Return     ( expr val )
-           attributes   ( string? attr )
+           attributes   ( int? lineno, string? attr )
 
       expr = Var        ( string id )
            | Const      ( float val )
@@ -20,13 +20,13 @@ def generate_asdl_file():
            | Mul        ( expr left, expr right )
            | Div        ( expr left, expr right )
            | Equal      ( expr left, expr right )
-           attributes( string? attr )
+           attributes( int lineno, string? attr )
 
       block    = Block ( stmt* s )
-                 attributes( string? attr )
+                 attributes( int? lineno, string? attr )
 
       function = Function ( string name, string* args, block body )
-                 attributes( string? attr )
+                 attributes( int? lineno, string? attr )
     }
     """,
     header= '',

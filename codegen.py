@@ -41,13 +41,13 @@ def codegen(func):
             elif isinstance(expr, loma_ir.Const):
                 return expr.val
             elif isinstance(expr, loma_ir.Add):
-                return f'({self.get_expr_str(expr.left)}) + ({self.get_expr_str(expr.right)})'
+                return f'({self.visit_expr(expr.left)}) + ({self.visit_expr(expr.right)})'
             elif isinstance(expr, loma_ir.Sub):
-                return f'({self.get_expr_str(expr.left)}) - ({self.get_expr_str(expr.right)})'
+                return f'({self.visit_expr(expr.left)}) - ({self.visit_expr(expr.right)})'
             elif isinstance(expr, loma_ir.Mul):
-                return f'({self.get_expr_str(expr.left)}) * ({self.get_expr_str(expr.right)})'
+                return f'({self.visit_expr(expr.left)}) * ({self.visit_expr(expr.right)})'
             elif isinstance(expr, loma_ir.Div):
-                return f'({self.get_expr_str(expr.left)}) / ({self.get_expr_str(expr.right)})'
+                return f'({self.visit_expr(expr.left)}) / ({self.visit_expr(expr.right)})'
             else:
                 assert False, f'Visitor error: unhandled expression {expr}'
 
