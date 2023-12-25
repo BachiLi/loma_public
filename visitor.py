@@ -29,7 +29,7 @@ class IRVisitor:
     def visit_expr(self, expr):
         if isinstance(expr, loma_ir.Var):
             self.visit_var(expr)
-        elif isinstance(expr, loma_ir.Const):
+        elif isinstance(expr, loma_ir.ConstFloat):
             self.visit_const(expr)
         elif isinstance(expr, loma_ir.Add):
             self.visit_add(expr)

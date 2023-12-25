@@ -27,7 +27,7 @@ def visit_expr(node):
     if isinstance(node, ast.Name):
       return loma_ir.Var(node.id, lineno = node.lineno)
     elif isinstance(node, ast.Constant):
-      return loma_ir.Const(float(node.value), lineno = node.lineno)
+      return loma_ir.ConstFloat(float(node.value), lineno = node.lineno)
     elif isinstance(node, ast.BinOp):
       if isinstance(node.op, ast.Add):
         return loma_ir.Add(visit_expr(node.left), visit_expr(node.right), lineno = node.lineno)

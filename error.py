@@ -18,4 +18,3 @@ class UndeclaredVariable(UserError):
     var : str
     # line number where the variable is assigned
     lineno : int
-

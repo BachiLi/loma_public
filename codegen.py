@@ -42,7 +42,7 @@ def codegen(func):
         def visit_expr(self, expr):
             if isinstance(expr, loma_ir.Var):
                 return expr.id
-            elif isinstance(expr, loma_ir.Const):
+            elif isinstance(expr, loma_ir.ConstFloat):
                 return expr.val
             elif isinstance(expr, loma_ir.Add):
                 return f'({self.visit_expr(expr.left)}) + ({self.visit_expr(expr.right)})'
