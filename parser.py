@@ -53,23 +53,33 @@ def visit_FunctionDef(node):
 
 def visit_stmt(node):
     if isinstance(node, ast.Return):
-      return loma_ir.Return(visit_expr(node.value), lineno = node.lineno)
+        return loma_ir.Return(visit_expr(node.value), lineno = node.lineno)
     elif isinstance(node, ast.AnnAssign):
-      assert(type(node.annotation) == ast.Name)
-      if node.annotation.id == 'int':
-          t = loma_ir.Int()
-      elif node.annotation.id == 'float':
-          t = loma_ir.Float()
-      else:
-          # TODO: error message
-          assert False
-      return loma_ir.Declare(node.target.id,
-                             t,
-                             visit_expr(node.value),
-                             lineno = node.lineno)
+        assert(type(node.annotation) == ast.Name)
+        if node.annotation.id == 'int':
+            t = loma_ir.Int()
+        elif node.annotation.id == 'float':
+            t = loma_ir.Float()
+        else:
+            # TODO: error message
+            assert False
+        return loma_ir.Declare(node.target.id,
+                               t,
+                               visit_expr(node.value),
+                               lineno = node.lineno)
     elif isinstance(node, ast.Assign):
-      assert len(node.targets) == 1
-      return loma_ir.Assign(node.targets[0].id, visit_expr(node.value), lineno = node.lineno)
+        assert len(node.targets) == 1
+        target = node.targets[0]
+        if type(target) == ast.Name:
+            return loma_ir.Assign(target.id,
+                                  visit_expr(node.value),
+                                  lineno = node.lineno)
+        elif type(target) == ast.Subscript:
+            assert type(target.value) == ast.Name
+            return loma_ir.Assign(target.value.id,
+                                  visit_expr(node.value),
+                                  index = visit_expr(target.slice),
+                                  lineno = node.lineno)
     else:
       assert False, f'Unknown statement {type(node).__name__}'
 

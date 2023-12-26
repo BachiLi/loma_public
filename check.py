@@ -7,6 +7,12 @@ def check_duplicate_declare(node):
     class DuplicateChecker(visitor.IRVisitor):
         ids_lineno_map = {}
 
+        def visit_function(self, node):
+            for arg in node.args:
+                self.ids_lineno_map[arg.id] = node.lineno
+            for stmt in node.body:
+                self.visit_stmt(stmt)
+
         def visit_declare(self, node):
             if node.target in self.ids_lineno_map:
                 raise error.DuplicateVariable(node.target,
@@ -19,6 +25,12 @@ def check_duplicate_declare(node):
 def check_undeclared_vars(node):
     class UndeclaredChecker(visitor.IRVisitor):
         ids = set()
+
+        def visit_function(self, node):
+            for arg in node.args:
+                self.ids.add(arg.id)
+            for stmt in node.body:
+                self.visit_stmt(stmt)
 
         def visit_declare(self, node):
             self.ids.add(node.target)

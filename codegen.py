@@ -49,7 +49,10 @@ def codegen(func):
 
         def visit_assign(self, ass):
             self.emit_tabs()
-            self.code += f'{ass.target} = {self.visit_expr(ass.val)};\n'
+            if ass.index is None:
+                self.code += f'{ass.target} = {self.visit_expr(ass.val)};\n'
+            else:
+                self.code += f'{ass.target}[{self.visit_expr(ass.index)}] = {self.visit_expr(ass.val)};\n'
 
         def visit_expr(self, expr):
             if isinstance(expr, loma_ir.Var):
@@ -57,9 +60,9 @@ def codegen(func):
             elif isinstance(expr, loma_ir.ArrayAccess):
                 return f'{expr.id}[{self.visit_expr(expr.index)}]'
             elif isinstance(expr, loma_ir.ConstFloat):
-                return expr.val
+                return f'(float)({expr.val})'
             elif isinstance(expr, loma_ir.ConstInt):
-                return expr.val
+                return f'(int)({expr.val})'
             elif isinstance(expr, loma_ir.Add):
                 return f'({self.visit_expr(expr.left)}) + ({self.visit_expr(expr.right)})'
             elif isinstance(expr, loma_ir.Sub):

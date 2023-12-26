@@ -6,7 +6,7 @@ sys.path.append(parent)
 import compiler
 import ctypes
 import error
-from loma import Array, In
+from loma import Array, In, Out
 
 def declaration_float() -> float:
     x : float = 5
@@ -65,6 +65,16 @@ def test_array_read():
     arr = (ctypes.c_float * len(py_arr))(*py_arr)
     assert lib.array_read(arr) == 1.0
 
+def array_write(x : Out[Array[float]]):
+    x[0] = 2.0
+
+def test_array_write():
+    lib = compiler.compile(array_write)
+    py_arr = [0.0, 0.0]
+    arr = (ctypes.c_float * len(py_arr))(*py_arr)
+    lib.array_write(arr)
+    assert arr[0] == 2.0
+
 def duplicate_declare() -> float:
     x : float = 5
     x : float = 6
@@ -96,6 +106,7 @@ if __name__ == '__main__':
     test_args()
     test_mutation()
     test_array_read()
+    test_array_write()
 
     # test compile errors
     test_duplicate_declare()

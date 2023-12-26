@@ -3,7 +3,7 @@ from asdl_gen import ADT
 def generate_asdl_file():
     ADT("""
     module loma {
-      stmt = Assign     ( string target, expr val )
+      stmt = Assign     ( string target, expr val, expr? index )
            | Declare    ( string target, type t, expr val )
            | Return     ( expr val )
            attributes   ( int? lineno, string? attr )
