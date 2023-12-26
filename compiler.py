@@ -7,6 +7,9 @@ import os
 import parser
 import shutil
 from subprocess import run
+import ir
+ir.generate_asdl_file()
+import _asdl.loma as loma_ir
 
 def compile(func, filename = ''):
     ir = parser.parse(func)
@@ -38,7 +41,14 @@ def compile(func, filename = ''):
     for arg in ir.args:
         argtypes.append(ctypes.c_float)
     c_func.argtypes = argtypes
-    c_func.restype = ctypes.c_float
+    if ir.ret_type == loma_ir.Int():
+        c_func.restype = ctypes.c_int
+    elif ir.ret_type == loma_ir.Float():
+        c_func.restype = ctypes.c_float
+    elif ir.ret_type == None:
+        c_func.restype = None
+    else:
+        assert False
 
     return lib
 

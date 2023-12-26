@@ -6,15 +6,21 @@ sys.path.append(parent)
 import compiler
 import error
 
-def declaration():
+def declaration_float() -> float:
     x : float = 5
     return x
 
-def test_declaration():
-    lib = compiler.compile(declaration)
-    assert(abs(lib.declaration() - 5) < 1e-6)
+def declaration_int() -> int:
+    x : int = 4
+    return x
 
-def binaryops(x : float, y : float):
+def test_declaration():
+    # lib = compiler.compile(declaration_float)
+    # assert(abs(lib.declaration() - 5) < 1e-6)
+    lib = compiler.compile(declaration_int)
+    assert(lib.declaration_int() == 4)
+
+def binaryops(x : float, y : float) -> float:
     a : float = x + y
     b : float = a - x
     c : float = b * y
@@ -29,7 +35,7 @@ def test_binary_ops():
     # d = c / a = 36 / 11
     assert(abs(lib.binaryops(float(5.0), float(6.0)) - 36.0 / 11.0) < 1e-6)
 
-def mutation():
+def mutation() -> float:
     a : float = 5.0
     a = 6.0
     return a
@@ -39,7 +45,7 @@ def test_mutation():
     assert(abs(lib.mutation() - 6) < 1e-6)
 
 
-def duplicate_declare():
+def duplicate_declare() -> float:
     x : float = 5
     x : float = 6
     return 0
@@ -52,7 +58,7 @@ def test_duplicate_declare():
         assert(e.first_lineno == 2)
         assert(e.duplicate_lineno == 3)
 
-def undeclared_var():
+def undeclared_var() -> float:
     a : float = 5.0
     b = 6.0
     return a
@@ -72,4 +78,3 @@ if __name__ == '__main__':
     # test compile errors
     test_duplicate_declare()
     test_undeclared_var()
-

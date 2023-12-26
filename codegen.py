@@ -14,8 +14,18 @@ def codegen(func):
         def emit_tabs(self):
             self.code += '\t' * self.tab_count
 
+        def type_to_string(self, node):
+            if node == loma_ir.Int():
+                return 'int'
+            elif node == loma_ir.Float():
+                return 'float'
+            elif node == None:
+                return 'void'
+            else:
+                assert False
+
         def visit_function(self, node):
-            self.code += f'extern \"C\" float {node.name}('
+            self.code += f'extern \"C\" {self.type_to_string(node.ret_type)} {node.name}('
             for i, arg in enumerate(node.args):
                 if i > 0:
                     self.code += ', '
@@ -33,7 +43,7 @@ def codegen(func):
 
         def visit_declare(self, dec):
             self.emit_tabs()
-            self.code += f'float {dec.target} = {self.visit_expr(dec.val)};\n'
+            self.code += f'{self.type_to_string(dec.t)} {dec.target} = {self.visit_expr(dec.val)};\n'
 
         def visit_assign(self, ass):
             self.emit_tabs()
@@ -43,6 +53,8 @@ def codegen(func):
             if isinstance(expr, loma_ir.Var):
                 return expr.id
             elif isinstance(expr, loma_ir.ConstFloat):
+                return expr.val
+            elif isinstance(expr, loma_ir.ConstInt):
                 return expr.val
             elif isinstance(expr, loma_ir.Add):
                 return f'({self.visit_expr(expr.left)}) + ({self.visit_expr(expr.right)})'
