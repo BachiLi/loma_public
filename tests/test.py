@@ -6,7 +6,7 @@ sys.path.append(parent)
 import compiler
 import ctypes
 import error
-from loma import Array
+from loma import Array, In
 
 def declaration_float() -> float:
     x : float = 5
@@ -39,7 +39,7 @@ def test_binary_ops():
     # d = c / a = 36 / 11
     assert abs(lib.binaryops() - 36.0 / 11.0) < 1e-6
 
-def args(x : float, y : int) -> int:
+def args(x : In[float], y : In[int]) -> int:
     z : int = x
     return z + y
 
@@ -56,14 +56,14 @@ def test_mutation():
     lib = compiler.compile(mutation)
     assert abs(lib.mutation() - 6) < 1e-6
 
-def array(x : Array[float]) -> float:
+def array_read(x : In[Array[float]]) -> float:
     return x[0]
 
-def test_array():
-    lib = compiler.compile(array)
+def test_array_read():
+    lib = compiler.compile(array_read)
     py_arr = [1.0, 2.0]
     arr = (ctypes.c_float * len(py_arr))(*py_arr)
-    assert lib.array(arr) == 1.0
+    assert lib.array_read(arr) == 1.0
 
 def duplicate_declare() -> float:
     x : float = 5
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     test_binary_ops()
     test_args()
     test_mutation()
-    test_array()
+    test_array_read()
 
     # test compile errors
     test_duplicate_declare()

@@ -6,6 +6,6 @@ class Subscriptable(type):
             self.caches[(self, arg)] = type(self.__name__, (), {'subscript': arg})
         return self.caches[(self, arg)]
 
-class Input(metaclass = Subscriptable): pass
-class Output(metaclass = Subscriptable): pass
+class In(metaclass = Subscriptable): pass
+class Out(metaclass = Subscriptable): pass
 class Array(metaclass = Subscriptable): pass

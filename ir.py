@@ -22,11 +22,13 @@ def generate_asdl_file():
       function = Function ( string name, arg* args, stmt* body, type? ret_type)
                  attributes( int? lineno, string? attr )
 
-      arg  = Arg ( string id, type t )
+      arg  = Arg ( string id, type t, inout i )
 
       type = Int()
            | Float()
            | Array( type t )
+
+      inout = In() | Out()
     }
     """,
     header= '',

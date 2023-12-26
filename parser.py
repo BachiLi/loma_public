@@ -15,8 +15,21 @@ def annotation_to_type(node):
             assert False
     elif type(node) == ast.Subscript:
         assert type(node.value) == ast.Name
+        if node.value.id == 'In' or node.value.id == 'Out':
+            # Ignore input/output qualifiers
+            return annotation_to_type(node.slice)
         assert node.value.id == 'Array'
         return loma_ir.Array(annotation_to_type(node.slice))
+    else:
+        assert False
+
+def annotation_to_inout(node):
+    assert type(node) == ast.Subscript
+    assert type(node.value) == ast.Name
+    if node.value.id == 'In':
+        return loma_ir.In()
+    elif node.value.id == 'Out':
+        return loma_ir.Out()
     else:
         assert False
 
@@ -25,7 +38,8 @@ def visit_FunctionDef(node):
     assert node_args.vararg is None
     assert node_args.kwarg is None
     args = [loma_ir.Arg(arg.arg,
-                        annotation_to_type(arg.annotation)) for arg in node_args.args]
+                        annotation_to_type(arg.annotation),
+                        annotation_to_inout(arg.annotation)) for arg in node_args.args]
     body = [visit_stmt(b) for b in node.body]
     ret_type = None
     if node.returns:
