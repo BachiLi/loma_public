@@ -29,8 +29,12 @@ class IRVisitor:
     def visit_expr(self, expr):
         if isinstance(expr, loma_ir.Var):
             self.visit_var(expr)
+        elif isinstance(expr, loma_ir.ArrayAccess):
+            self.visit_array_access(expr)
         elif isinstance(expr, loma_ir.ConstFloat):
-            self.visit_const(expr)
+            self.visit_const_float(expr)
+        elif isinstance(expr, loma_ir.ConstInt):
+            self.visit_const_int(expr)
         elif isinstance(expr, loma_ir.Add):
             self.visit_add(expr)
         elif isinstance(expr, loma_ir.Sub):
@@ -45,7 +49,13 @@ class IRVisitor:
     def visit_var(self, var):
         pass
 
-    def visit_const(self, con):
+    def visit_array_access(self, acc):
+        self.visit_expr(acc.index)
+
+    def visit_const_float(self, con):
+        pass
+
+    def visit_const_int(self, con):
         pass
 
     def visit_add(self, add):

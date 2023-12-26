@@ -4,29 +4,32 @@ import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 
-def str_to_type(s):
-    if s == 'int':
-        return loma_ir.Int()
-    elif s == 'float':
-        return loma_ir.Float()
+def annotation_to_type(node):
+    if type(node) == ast.Name:
+        if node.id == 'int':
+            return loma_ir.Int()
+        elif node.id == 'float':
+            return loma_ir.Float()
+        else:
+            # TODO: error message
+            assert False
+    elif type(node) == ast.Subscript:
+        assert type(node.value) == ast.Name
+        assert node.value.id == 'Array'
+        return loma_ir.Array(annotation_to_type(node.slice))
     else:
-        # TODO: error message
         assert False
 
 def visit_FunctionDef(node):
     node_args = node.args
-    assert(node_args.vararg is None)
-    assert(node_args.kwarg is None)
-    args = []
-    for arg in node_args.args:
-        assert(type(arg.annotation) == ast.Name)
-        args.append(loma_ir.Arg(arg.arg,
-                                str_to_type(arg.annotation.id)))
+    assert node_args.vararg is None
+    assert node_args.kwarg is None
+    args = [loma_ir.Arg(arg.arg,
+                        annotation_to_type(arg.annotation)) for arg in node_args.args]
     body = [visit_stmt(b) for b in node.body]
     ret_type = None
     if node.returns:
-        assert(type(node.returns) == ast.Name)
-        ret_type = str_to_type(node.returns.id)
+        ret_type = annotation_to_type(node.returns)
 
     return loma_ir.Function(node.name,
                             args,
@@ -67,18 +70,22 @@ def visit_expr(node):
       else:
           assert False, f'Unknown constant type.'
     elif isinstance(node, ast.BinOp):
-      if isinstance(node.op, ast.Add):
-        return loma_ir.Add(visit_expr(node.left), visit_expr(node.right), lineno = node.lineno)
-      elif isinstance(node.op, ast.Sub):
-        return loma_ir.Sub(visit_expr(node.left), visit_expr(node.right), lineno = node.lineno)
-      elif isinstance(node.op, ast.Mult):
-        return loma_ir.Mul(visit_expr(node.left), visit_expr(node.right), lineno = node.lineno)
-      elif isinstance(node.op, ast.Div):
-        return loma_ir.Div(visit_expr(node.left), visit_expr(node.right), lineno = node.lineno)
-      else:
-        assert False, f'Unknown BinOp {type(node.op).__name__}'
+        if isinstance(node.op, ast.Add):
+            return loma_ir.Add(visit_expr(node.left), visit_expr(node.right), lineno = node.lineno)
+        elif isinstance(node.op, ast.Sub):
+            return loma_ir.Sub(visit_expr(node.left), visit_expr(node.right), lineno = node.lineno)
+        elif isinstance(node.op, ast.Mult):
+            return loma_ir.Mul(visit_expr(node.left), visit_expr(node.right), lineno = node.lineno)
+        elif isinstance(node.op, ast.Div):
+            return loma_ir.Div(visit_expr(node.left), visit_expr(node.right), lineno = node.lineno)
+        else:
+            assert False, f'Unknown BinOp {type(node.op).__name__}'
+    elif isinstance(node, ast.Subscript):
+        assert type(node.value) == ast.Name
+        index = visit_expr(node.slice)
+        return loma_ir.ArrayAccess(node.value.id, index)
     else:
-      assert False, f'Unknown expr {type(node).__name__}'
+        assert False, f'Unknown expr {type(node).__name__}'
 
 def parse(func):
     code = inspect.getsource(func)

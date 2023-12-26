@@ -15,10 +15,12 @@ def codegen(func):
             self.code += '\t' * self.tab_count
 
         def type_to_string(self, node):
-            if node == loma_ir.Int():
+            if isinstance(node, loma_ir.Int):
                 return 'int'
-            elif node == loma_ir.Float():
+            elif isinstance(node, loma_ir.Float):
                 return 'float'
+            elif isinstance(node, loma_ir.Array):
+                return self.type_to_string(node.t) + '*'
             elif node == None:
                 return 'void'
             else:
@@ -52,6 +54,8 @@ def codegen(func):
         def visit_expr(self, expr):
             if isinstance(expr, loma_ir.Var):
                 return expr.id
+            elif isinstance(expr, loma_ir.ArrayAccess):
+                return f'{expr.id}[{self.visit_expr(expr.index)}]'
             elif isinstance(expr, loma_ir.ConstFloat):
                 return expr.val
             elif isinstance(expr, loma_ir.ConstInt):

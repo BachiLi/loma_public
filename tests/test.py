@@ -4,7 +4,9 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 import compiler
+import ctypes
 import error
+from loma import Array
 
 def declaration_float() -> float:
     x : float = 5
@@ -54,6 +56,14 @@ def test_mutation():
     lib = compiler.compile(mutation)
     assert(abs(lib.mutation() - 6) < 1e-6)
 
+def array(x : Array[float]) -> float:
+    return x[0]
+
+def test_array():
+    lib = compiler.compile(array)
+    py_arr = [1.0, 2.0]
+    arr = (ctypes.c_float * len(py_arr))(*py_arr)
+    assert(lib.array(arr) == 1.0)
 
 def duplicate_declare() -> float:
     x : float = 5
@@ -85,6 +95,7 @@ if __name__ == '__main__':
     test_binary_ops()
     test_args()
     test_mutation()
+    test_array()
 
     # test compile errors
     test_duplicate_declare()
