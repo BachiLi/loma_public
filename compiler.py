@@ -58,4 +58,3 @@ def compile(func, filename = ''):
         assert False
 
     return lib
-

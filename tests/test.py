@@ -18,9 +18,9 @@ def declaration_int() -> int:
 
 def test_declaration():
     lib = compiler.compile(declaration_float)
-    assert(abs(lib.declaration_float() - 5) < 1e-6)
+    assert abs(lib.declaration_float() - 5) < 1e-6
     lib = compiler.compile(declaration_int)
-    assert(lib.declaration_int() == 4)
+    assert lib.declaration_int() == 4
 
 def binaryops() -> float:
     x : float = 5.0
@@ -37,7 +37,7 @@ def test_binary_ops():
     # b = a - x = 11 - 5 = 6
     # c = b * y = 6 * 6 = 36
     # d = c / a = 36 / 11
-    assert(abs(lib.binaryops() - 36.0 / 11.0) < 1e-6)
+    assert abs(lib.binaryops() - 36.0 / 11.0) < 1e-6
 
 def args(x : float, y : int) -> int:
     z : int = x
@@ -45,7 +45,7 @@ def args(x : float, y : int) -> int:
 
 def test_args():
     lib = compiler.compile(args)
-    assert(lib.args(4.5, 3) == 7)
+    assert lib.args(4.5, 3) == 7
 
 def mutation() -> float:
     a : float = 5.0
@@ -54,7 +54,7 @@ def mutation() -> float:
 
 def test_mutation():
     lib = compiler.compile(mutation)
-    assert(abs(lib.mutation() - 6) < 1e-6)
+    assert abs(lib.mutation() - 6) < 1e-6
 
 def array(x : Array[float]) -> float:
     return x[0]
@@ -63,7 +63,7 @@ def test_array():
     lib = compiler.compile(array)
     py_arr = [1.0, 2.0]
     arr = (ctypes.c_float * len(py_arr))(*py_arr)
-    assert(lib.array(arr) == 1.0)
+    assert lib.array(arr) == 1.0
 
 def duplicate_declare() -> float:
     x : float = 5
@@ -74,9 +74,9 @@ def test_duplicate_declare():
     try:
         lib = compiler.compile(duplicate_declare)
     except error.DuplicateVariable as e:
-        assert(e.var == 'x')
-        assert(e.first_lineno == 2)
-        assert(e.duplicate_lineno == 3)
+        assert e.var == 'x'
+        assert e.first_lineno == 2
+        assert e.duplicate_lineno == 3
 
 def undeclared_var() -> float:
     a : float = 5.0
@@ -87,8 +87,8 @@ def test_undeclared_var():
     try:
         lib = compiler.compile(undeclared_var)
     except error.UndeclaredVariable as e:
-        assert(e.var == 'b')
-        assert(e.lineno == 3)
+        assert e.var == 'b'
+        assert e.lineno == 3
 
 if __name__ == '__main__':
     test_declaration()
