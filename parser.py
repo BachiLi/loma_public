@@ -4,22 +4,30 @@ import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 
+def str_to_type(s):
+    if s == 'int':
+        return loma_ir.Int()
+    elif s == 'float':
+        return loma_ir.Float()
+    else:
+        # TODO: error message
+        assert False
+
 def visit_FunctionDef(node):
-    args = node.args
-    assert(args.vararg is None)
-    assert(args.kwarg is None)
-    args = [arg.arg for arg in args.args]
+    node_args = node.args
+    assert(node_args.vararg is None)
+    assert(node_args.kwarg is None)
+    args = []
+    for arg in node_args.args:
+        assert(type(arg.annotation) == ast.Name)
+        args.append(loma_ir.Arg(arg.arg,
+                                str_to_type(arg.annotation.id)))
     body = [visit_stmt(b) for b in node.body]
     ret_type = None
     if node.returns:
         assert(type(node.returns) == ast.Name)
-        if node.returns.id == 'int':
-            ret_type = loma_ir.Int()
-        elif node.returns.id == 'float':
-            ret_type = loma_ir.Float()
-        else:
-            # TODO: error message
-            assert False
+        ret_type = str_to_type(node.returns.id)
+
     return loma_ir.Function(node.name,
                             args,
                             body,

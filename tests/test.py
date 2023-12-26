@@ -15,12 +15,14 @@ def declaration_int() -> int:
     return x
 
 def test_declaration():
-    # lib = compiler.compile(declaration_float)
-    # assert(abs(lib.declaration() - 5) < 1e-6)
+    lib = compiler.compile(declaration_float)
+    assert(abs(lib.declaration_float() - 5) < 1e-6)
     lib = compiler.compile(declaration_int)
     assert(lib.declaration_int() == 4)
 
-def binaryops(x : float, y : float) -> float:
+def binaryops() -> float:
+    x : float = 5.0
+    y : float = 6.0
     a : float = x + y
     b : float = a - x
     c : float = b * y
@@ -33,7 +35,15 @@ def test_binary_ops():
     # b = a - x = 11 - 5 = 6
     # c = b * y = 6 * 6 = 36
     # d = c / a = 36 / 11
-    assert(abs(lib.binaryops(float(5.0), float(6.0)) - 36.0 / 11.0) < 1e-6)
+    assert(abs(lib.binaryops() - 36.0 / 11.0) < 1e-6)
+
+def args(x : float, y : int) -> int:
+    z : int = x
+    return z + y
+
+def test_args():
+    lib = compiler.compile(args)
+    assert(lib.args(4.5, 3) == 7)
 
 def mutation() -> float:
     a : float = 5.0
@@ -73,6 +83,7 @@ def test_undeclared_var():
 if __name__ == '__main__':
     test_declaration()
     test_binary_ops()
+    test_args()
     test_mutation()
 
     # test compile errors

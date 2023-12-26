@@ -18,8 +18,10 @@ def generate_asdl_file():
            | Equal      ( expr left, expr right )
            attributes   ( int? lineno, string? attr, type? t )
 
-      function = Function ( string name, string* args, stmt* body, type? ret_type)
+      function = Function ( string name, arg* args, stmt* body, type? ret_type)
                  attributes( int? lineno, string? attr )
+
+      arg  = Arg ( string id, type t )
 
       type = Int() | Float()
     }

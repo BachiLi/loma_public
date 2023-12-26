@@ -39,7 +39,12 @@ def compile(func, filename = ''):
     c_func = getattr(lib, ir.name)
     argtypes = []
     for arg in ir.args:
-        argtypes.append(ctypes.c_float)
+        if arg.t == loma_ir.Int():
+            argtypes.append(ctypes.c_int)
+        elif arg.t == loma_ir.Float():    
+            argtypes.append(ctypes.c_float)
+        else:
+            assert False
     c_func.argtypes = argtypes
     if ir.ret_type == loma_ir.Int():
         c_func.restype = ctypes.c_int

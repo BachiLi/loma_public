@@ -29,7 +29,7 @@ def codegen(func):
             for i, arg in enumerate(node.args):
                 if i > 0:
                     self.code += ', '
-                self.code += f'float {arg}'
+                self.code += f'{self.type_to_string(arg.t)} {arg.id}'
             self.code += ') {\n'
             self.tab_count += 1
             for stmt in node.body:

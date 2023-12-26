@@ -49,16 +49,16 @@ class IRVisitor:
         pass
 
     def visit_add(self, add):
-        visit_expr(add.left)
-        visit_expr(add.right)
+        self.visit_expr(add.left)
+        self.visit_expr(add.right)
 
     def visit_sub(self, sub):
-        visit_expr(add.left)
-        visit_expr(add.right)
+        self.visit_expr(add.left)
+        self.visit_expr(add.right)
 
     def visit_mul(self, mul):
-        visit_expr(add.left)
-        visit_expr(add.right)
+        self.visit_expr(add.left)
+        self.visit_expr(add.right)
 
     def visit_div(self, div):
         visit_expr(add.left)
