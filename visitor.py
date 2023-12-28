@@ -8,18 +8,19 @@ class IRVisitor:
             self.visit_stmt(stmt)
 
     def visit_stmt(self, stmt):
-        if isinstance(stmt, loma_ir.Return):
-            self.visit_return(stmt)
-        elif isinstance(stmt, loma_ir.Declare):
-            self.visit_declare(stmt)
-        elif isinstance(stmt, loma_ir.Assign):
-            self.visit_assign(stmt)
-        elif isinstance(stmt, loma_ir.IfElse):
-            self.visit_ifelse(stmt)
-        elif isinstance(stmt, loma_ir.While):
-            self.visit_while(stmt)
-        else:
-            assert False, f'Visitor error: unhandled statement {stmt}'
+        match stmt:
+            case loma_ir.Return():
+                self.visit_return(stmt)
+            case loma_ir.Declare():
+                self.visit_declare(stmt)
+            case loma_ir.Assign():
+                self.visit_assign(stmt)
+            case loma_ir.IfElse():
+                self.visit_ifelse(stmt)
+            case loma_ir.While():
+                self.visit_while(stmt)
+            case _:
+                assert False, f'Visitor error: unhandled statement {stmt}'
 
     def visit_return(self, ret):
         self.visit_expr(ret.val)
@@ -43,26 +44,27 @@ class IRVisitor:
             self.visit_stmt(stmt)
 
     def visit_expr(self, expr):
-        if isinstance(expr, loma_ir.Var):
-            self.visit_var(expr)
-        elif isinstance(expr, loma_ir.ArrayAccess):
-            self.visit_array_access(expr)
-        elif isinstance(expr, loma_ir.ConstFloat):
-            self.visit_const_float(expr)
-        elif isinstance(expr, loma_ir.ConstInt):
-            self.visit_const_int(expr)
-        elif isinstance(expr, loma_ir.Add):
-            self.visit_add(expr)
-        elif isinstance(expr, loma_ir.Sub):
-            self.visit_sub(expr)
-        elif isinstance(expr, loma_ir.Mul):
-            self.visit_mul(expr)
-        elif isinstance(expr, loma_ir.Div):
-            self.visit_div(expr)
-        elif isinstance(expr, loma_ir.Compare):
-            self.visit_compare(expr)
-        else:
-            assert False, f'Visitor error: unhandled expression {expr}'
+        match expr:
+            case loma_ir.Var():
+                self.visit_var(expr)
+            case loma_ir.ArrayAccess():
+                self.visit_array_access(expr)
+            case loma_ir.ConstFloat():
+                self.visit_const_float(expr)
+            case loma_ir.ConstInt():
+                self.visit_const_int(expr)
+            case loma_ir.Add():
+                self.visit_add(expr)
+            case loma_ir.Sub():
+                self.visit_sub(expr)
+            case loma_ir.Mul():
+                self.visit_mul(expr)
+            case loma_ir.Div():
+                self.visit_div(expr)
+            case loma_ir.Compare():
+                self.visit_compare(expr)
+            case _:
+                assert False, f'Visitor error: unhandled expression {expr}'
 
     def visit_var(self, var):
         pass

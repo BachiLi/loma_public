@@ -15,16 +15,17 @@ def codegen(func):
             self.code += '\t' * self.tab_count
 
         def type_to_string(self, node):
-            if isinstance(node, loma_ir.Int):
-                return 'int'
-            elif isinstance(node, loma_ir.Float):
-                return 'float'
-            elif isinstance(node, loma_ir.Array):
-                return self.type_to_string(node.t) + '*'
-            elif node == None:
-                return 'void'
-            else:
-                assert False
+            match node:
+                case loma_ir.Int():
+                    return 'int'
+                case loma_ir.Float():
+                    return 'float'
+                case loma_ir.Array():
+                    return self.type_to_string(node.t) + '*'
+                case None:
+                    return 'void'
+                case _:
+                    assert False
 
         def visit_function(self, node):
             self.code += f'extern \"C\" {self.type_to_string(node.ret_type)} {node.name}('
@@ -81,39 +82,43 @@ def codegen(func):
             self.code += '}\n'
 
         def visit_expr(self, expr):
-            if isinstance(expr, loma_ir.Var):
-                return expr.id
-            elif isinstance(expr, loma_ir.ArrayAccess):
-                return f'{expr.id}[{self.visit_expr(expr.index)}]'
-            elif isinstance(expr, loma_ir.ConstFloat):
-                return f'(float)({expr.val})'
-            elif isinstance(expr, loma_ir.ConstInt):
-                return f'(int)({expr.val})'
-            elif isinstance(expr, loma_ir.Add):
-                return f'({self.visit_expr(expr.left)}) + ({self.visit_expr(expr.right)})'
-            elif isinstance(expr, loma_ir.Sub):
-                return f'({self.visit_expr(expr.left)}) - ({self.visit_expr(expr.right)})'
-            elif isinstance(expr, loma_ir.Mul):
-                return f'({self.visit_expr(expr.left)}) * ({self.visit_expr(expr.right)})'
-            elif isinstance(expr, loma_ir.Div):
-                return f'({self.visit_expr(expr.left)}) / ({self.visit_expr(expr.right)})'
-            elif isinstance(expr, loma_ir.Compare):
-                if expr.op == loma_ir.Less():
-                    return f'({self.visit_expr(expr.left)}) < ({self.visit_expr(expr.right)})'
-                elif expr.op == loma_ir.LessEqual():
-                    return f'({self.visit_expr(expr.left)}) <= ({self.visit_expr(expr.right)})'
-                elif expr.op == loma_ir.Greater():
-                    return f'({self.visit_expr(expr.left)}) > ({self.visit_expr(expr.right)})'
-                elif expr.op == loma_ir.GreaterEqual():
-                    return f'({self.visit_expr(expr.left)}) >= ({self.visit_expr(expr.right)})'
-                elif expr.op == loma_ir.Equal():
-                    return f'({self.visit_expr(expr.left)}) == ({self.visit_expr(expr.right)})'
-                elif expr.op == loma_ir.And():
-                    return f'({self.visit_expr(expr.left)}) && ({self.visit_expr(expr.right)})'
-                elif expr.op == loma_ir.Or():
-                    return f'({self.visit_expr(expr.left)}) || ({self.visit_expr(expr.right)})'
-            else:
-                assert False, f'Visitor error: unhandled expression {expr}'
+            match expr:
+                case loma_ir.Var():
+                    return expr.id
+                case loma_ir.ArrayAccess():
+                    return f'{expr.id}[{self.visit_expr(expr.index)}]'
+                case loma_ir.ConstFloat():
+                    return f'(float)({expr.val})'
+                case loma_ir.ConstInt():
+                    return f'(int)({expr.val})'
+                case loma_ir.Add():
+                    return f'({self.visit_expr(expr.left)}) + ({self.visit_expr(expr.right)})'
+                case loma_ir.Sub():
+                    return f'({self.visit_expr(expr.left)}) - ({self.visit_expr(expr.right)})'
+                case loma_ir.Mul():
+                    return f'({self.visit_expr(expr.left)}) * ({self.visit_expr(expr.right)})'
+                case loma_ir.Div():
+                    return f'({self.visit_expr(expr.left)}) / ({self.visit_expr(expr.right)})'
+                case loma_ir.Compare():
+                    match expr.op:
+                        case loma_ir.Less():
+                            return f'({self.visit_expr(expr.left)}) < ({self.visit_expr(expr.right)})'
+                        case loma_ir.LessEqual():
+                            return f'({self.visit_expr(expr.left)}) <= ({self.visit_expr(expr.right)})'
+                        case loma_ir.Greater():
+                            return f'({self.visit_expr(expr.left)}) > ({self.visit_expr(expr.right)})'
+                        case loma_ir.GreaterEqual():
+                            return f'({self.visit_expr(expr.left)}) >= ({self.visit_expr(expr.right)})'
+                        case loma_ir.Equal():
+                            return f'({self.visit_expr(expr.left)}) == ({self.visit_expr(expr.right)})'
+                        case loma_ir.And():
+                            return f'({self.visit_expr(expr.left)}) && ({self.visit_expr(expr.right)})'
+                        case loma_ir.Or():
+                            return f'({self.visit_expr(expr.left)}) || ({self.visit_expr(expr.right)})'
+                        case _:
+                            assert False
+                case _:
+                    assert False, f'Visitor error: unhandled expression {expr}'
 
     cg = CGVisitor()
     cg.visit_function(func)
