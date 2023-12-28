@@ -99,11 +99,10 @@ def visit_stmt(node):
                                   index = visit_expr(target.slice),
                                   lineno = node.lineno)
     elif isinstance(node, ast.If):
-        print(node.__dict__)
         cond = visit_expr(node.test)
-        then_stmt = visit_stmt(node.body)
-        else_stmt = visit_stmt(node.orelse)
-        return loma_ir.IfElse(cond, then_stmt, else_stmt)
+        then_stmts = [visit_stmt(s) for s in node.body]
+        else_stmts = [visit_stmt(s) for s in node.orelse]
+        return loma_ir.IfElse(cond, then_stmts, else_stmts)
     else:
         assert False, f'Unknown statement {type(node).__name__}'
 
@@ -117,6 +116,11 @@ def visit_expr(node):
           return loma_ir.ConstFloat(node.value, lineno = node.lineno)
       else:
           assert False, f'Unknown constant type.'
+    elif isinstance(node, ast.UnaryOp):
+        if isinstance(node.op, ast.USub):
+            return loma_ir.Sub(loma_ir.ConstInt(0), visit_expr(node.operand))
+        else:
+            assert False, f'Unknown UnaryOp {type(node.op).__name__}'
     elif isinstance(node, ast.BinOp):
         if isinstance(node.op, ast.Add):
             return loma_ir.Add(visit_expr(node.left), visit_expr(node.right), lineno = node.lineno)

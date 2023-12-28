@@ -6,7 +6,7 @@ def generate_asdl_file():
       stmt = Assign     ( string target, expr val, expr? index )
            | Declare    ( string target, type t, expr val )
            | Return     ( expr val )
-           | IfElse     ( expr cond, stmt* then_stmt, stmt* else_stmt )
+           | IfElse     ( expr cond, stmt* then_stmts, stmt* else_stmts )
            attributes   ( int? lineno, string? attr )
 
       expr = Var         ( string id )

@@ -14,6 +14,8 @@ class IRVisitor:
             self.visit_declare(stmt)
         elif isinstance(stmt, loma_ir.Assign):
             self.visit_assign(stmt)
+        elif isinstance(stmt, loma_ir.IfElse):
+            self.visit_ifelse(stmt)
         else:
             assert False, f'Visitor error: unhandled statement {stmt}'
 
@@ -25,6 +27,13 @@ class IRVisitor:
 
     def visit_assign(self, ass):
         self.visit_expr(ass.val)
+
+    def visit_ifelse(self, ifelse):
+        self.visit_expr(ifelse.cond)
+        for stmt in ifelse.then_stmts:
+            self.visit_stmt(stmt)
+        for stmt in ifelse.else_stmts:
+            self.visit_stmt(stmt)
 
     def visit_expr(self, expr):
         if isinstance(expr, loma_ir.Var):

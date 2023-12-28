@@ -162,7 +162,7 @@ if __name__ == '__main__':
     test_array_read()
     test_array_write()
     test_compare()
-    # test_if_else()
+    test_if_else()
 
     # test compile errors
     test_duplicate_declare()

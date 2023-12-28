@@ -54,6 +54,22 @@ def codegen(func):
             else:
                 self.code += f'{ass.target}[{self.visit_expr(ass.index)}] = {self.visit_expr(ass.val)};\n'
 
+        def visit_ifelse(self, ifelse):
+            self.emit_tabs()
+            self.code += f'if ({self.visit_expr(ifelse.cond)}) {{\n'
+            self.tab_count += 1
+            for stmt in ifelse.then_stmts:
+                self.visit_stmt(stmt)
+            self.tab_count -= 1
+            self.emit_tabs()
+            self.code += f'}} else {{\n'
+            self.tab_count += 1
+            for stmt in ifelse.else_stmts:
+                self.visit_stmt(stmt)
+            self.tab_count -= 1
+            self.emit_tabs()
+            self.code += '}\n'
+
         def visit_expr(self, expr):
             if isinstance(expr, loma_ir.Var):
                 return expr.id
