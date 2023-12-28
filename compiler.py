@@ -16,6 +16,11 @@ def compile(func, filename = ''):
     check.check_ir(ir)
     code = codegen.codegen(ir)
 
+    # add standard headers
+    code = """
+#include <math.h>
+    \n""" + code
+
     # determine the filename to dump to
     caller_frame = inspect.stack()[1]
     if filename == '':

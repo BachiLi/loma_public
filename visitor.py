@@ -63,6 +63,8 @@ class IRVisitor:
                 self.visit_div(expr)
             case loma_ir.Compare():
                 self.visit_compare(expr)
+            case loma_ir.Call():
+                self.visit_call(expr)
             case _:
                 assert False, f'Visitor error: unhandled expression {expr}'
 
@@ -97,3 +99,7 @@ class IRVisitor:
     def visit_compare(self, cmp):
         self.visit_expr(cmp.left)
         self.visit_expr(cmp.right)
+
+    def visit_call(self, call):
+        for arg in call.args:
+            self.visit_expr(arg)

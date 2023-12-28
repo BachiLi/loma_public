@@ -117,6 +117,12 @@ def codegen(func):
                             return f'({self.visit_expr(expr.left)}) || ({self.visit_expr(expr.right)})'
                         case _:
                             assert False
+                case loma_ir.Call():
+                    ret = f'{expr.id}('
+                    for arg in expr.args:
+                        ret += self.visit_expr(arg)
+                    ret += ')'
+                    return ret
                 case _:
                     assert False, f'Visitor error: unhandled expression {expr}'
 

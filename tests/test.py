@@ -6,6 +6,7 @@ sys.path.append(parent)
 import compiler
 import ctypes
 import error
+import math
 from loma import Array, In, Out
 
 def declaration_float() -> float:
@@ -141,6 +142,12 @@ def test_while_loop():
     lib = compiler.compile(while_loop)
     assert lib.while_loop() == 45
 
+def intrinsic_func_call() -> float:
+    return sin(3.0)
+
+def test_intrinsic_func_call():
+    lib = compiler.compile(intrinsic_func_call)
+    assert abs(lib.intrinsic_func_call() - math.sin(3.0)) < 1e-6
 
 def duplicate_declare() -> float:
     x : float = 5
@@ -177,6 +184,7 @@ if __name__ == '__main__':
     test_compare()
     test_if_else()
     test_while_loop()
+    test_intrinsic_func_call()
 
     # test compile errors
     test_duplicate_declare()

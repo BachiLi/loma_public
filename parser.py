@@ -155,6 +155,9 @@ def visit_expr(node):
             left = visit_expr(node.values[0])
             right = visit_expr(node.values[1])
             return loma_ir.Compare(op, left, right)
+        case ast.Call():
+            assert type(node.func) == ast.Name
+            return loma_ir.Call(node.func.id, [visit_expr(arg) for arg in node.args])
         case _:
             assert False, f'Unknown expr {type(node).__name__}'
 

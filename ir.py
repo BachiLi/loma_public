@@ -19,6 +19,7 @@ def generate_asdl_file():
            | Mul         ( expr left, expr right )
            | Div         ( expr left, expr right )
            | Compare     ( cmp_op op, expr left, expr right )
+           | Call        ( string id, expr* args )
            attributes    ( int? lineno, string? attr, type? t )
 
       function = Function ( string name, arg* args, stmt* body, type? ret_type)
