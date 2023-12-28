@@ -7,7 +7,6 @@ import compiler
 import ctypes
 import error
 import math
-from loma import Array, In, Out
 
 def test_declaration():
     with open('loma_code/declaration_float.py') as f:
