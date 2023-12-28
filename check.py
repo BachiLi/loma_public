@@ -20,7 +20,7 @@ def check_duplicate_declare(node):
                                               node.lineno)
             self.ids_lineno_map[node.target] = node.lineno
 
-    DuplicateChecker().visit_modules(node)
+    DuplicateChecker().visit_function(node)
 
 def check_undeclared_vars(node):
     class UndeclaredChecker(visitor.IRVisitor):
@@ -39,9 +39,9 @@ def check_undeclared_vars(node):
             if node.target not in self.ids:
                 raise error.UndeclaredVariable(node.target, node.lineno)
 
-    UndeclaredChecker().visit_modules(node)
+    UndeclaredChecker().visit_function(node)
 
-def check_ir(node):
-    assert(isinstance(node, loma_ir.Modules))
-    check_duplicate_declare(node)
-    check_undeclared_vars(node)
+def check_ir(structs, funcs):
+    for f in funcs.values():
+        check_duplicate_declare(f)
+        check_undeclared_vars(f)

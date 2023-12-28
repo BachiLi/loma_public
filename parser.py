@@ -12,7 +12,8 @@ def annotation_to_type(node):
             elif node.id == 'float':
                 return loma_ir.Float()
             else:
-                assert False
+                # Struct members to be filled later
+                return loma_ir.Struct(node.id, [])
         case ast.Subscript():
             assert type(node.value) == ast.Name
             if node.value.id == 'In' or node.value.id == 'Out':
@@ -69,12 +70,24 @@ def visit_FunctionDef(node):
                                ret_type = ret_type,
                                lineno = node.lineno)
 
+def visit_ClassDef(node):
+    members = []
+    for member in node.body:
+        match member:
+            case ast.AnnAssign():
+                assert isinstance(member.target, ast.Name)
+                t = annotation_to_type(member.annotation)
+                members.append(loma_ir.MemberDef(member.target.id, t))
+            case _:
+                assert False, f'Unknown class member statement {type(member).__name__}'
+    return loma_ir.Struct(node.name, members, lineno = node.lineno)
+
 def visit_stmt(node):
     match node:
         case ast.Return():
             return loma_ir.Return(visit_expr(node.value), lineno = node.lineno)
         case ast.AnnAssign():
-            assert(type(node.annotation) == ast.Name)
+            assert isinstance(node.annotation, ast.Name)
             t = annotation_to_type(node.annotation)
             return loma_ir.Declare(node.target.id,
                                    t,
@@ -139,9 +152,12 @@ def visit_expr(node):
                 case _:
                     assert False, f'Unknown BinOp {type(node.op).__name__}'
         case ast.Subscript():
-            assert type(node.value) == ast.Name
+            assert isinstance(node.value, ast.Name)
             index = visit_expr(node.slice)
             return loma_ir.ArrayAccess(node.value.id, index)
+        case ast.Attribute():
+            assert isinstance(node.value, ast.Name)
+            return loma_ir.StructAccess(node.value.id, node.attr)
         case ast.Compare():
             assert len(node.ops) == 1
             assert len(node.comparators) == 1
@@ -163,4 +179,16 @@ def visit_expr(node):
 
 def parse(code):
     module = ast.parse(code)
-    return loma_ir.Modules([visit_FunctionDef(f) for f in module.body])
+    structs = {}
+    for d in module.body:
+        if isinstance(d, ast.ClassDef):
+            s = visit_ClassDef(d)
+            structs[s.id] = s
+
+    funcs = {}
+    for d in module.body:
+        if isinstance(d, ast.FunctionDef):
+            f = visit_FunctionDef(d)
+            funcs[f.id] = f
+
+    return structs, funcs

@@ -3,10 +3,6 @@ ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 
 class IRVisitor:
-    def visit_modules(self, node):
-        for d in node.defs:
-            self.visit_function(d)
-
     def visit_function(self, node):
         for stmt in node.body:
             self.visit_stmt(stmt)
@@ -53,6 +49,8 @@ class IRVisitor:
                 self.visit_var(expr)
             case loma_ir.ArrayAccess():
                 self.visit_array_access(expr)
+            case loma_ir.StructAccess():
+                self.visit_struct_access(expr)
             case loma_ir.ConstFloat():
                 self.visit_const_float(expr)
             case loma_ir.ConstInt():
@@ -77,6 +75,9 @@ class IRVisitor:
 
     def visit_array_access(self, acc):
         self.visit_expr(acc.index)
+
+    def visit_struct_access(self, s):
+        pass
 
     def visit_const_float(self, con):
         pass
