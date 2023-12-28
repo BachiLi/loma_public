@@ -129,6 +129,19 @@ def test_if_else():
     assert lib.if_else(0.5) == 4.0
     assert lib.if_else(-0.5) == -4.0
 
+def while_loop() -> int:
+    i : int = 0
+    s : int = 0
+    while i < 10:
+        s = s + i
+        i = i + 1
+    return s
+
+def test_while_loop():
+    lib = compiler.compile(while_loop)
+    assert lib.while_loop() == 45
+
+
 def duplicate_declare() -> float:
     x : float = 5
     x : float = 6
@@ -163,6 +176,7 @@ if __name__ == '__main__':
     test_array_write()
     test_compare()
     test_if_else()
+    test_while_loop()
 
     # test compile errors
     test_duplicate_declare()

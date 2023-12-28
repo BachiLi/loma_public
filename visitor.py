@@ -16,6 +16,8 @@ class IRVisitor:
             self.visit_assign(stmt)
         elif isinstance(stmt, loma_ir.IfElse):
             self.visit_ifelse(stmt)
+        elif isinstance(stmt, loma_ir.While):
+            self.visit_while(stmt)
         else:
             assert False, f'Visitor error: unhandled statement {stmt}'
 
@@ -33,6 +35,11 @@ class IRVisitor:
         for stmt in ifelse.then_stmts:
             self.visit_stmt(stmt)
         for stmt in ifelse.else_stmts:
+            self.visit_stmt(stmt)
+
+    def visit_while(self, while_loop):
+        self.visit_expr(while_loop.cond)
+        for stmt in while_loop.body:
             self.visit_stmt(stmt)
 
     def visit_expr(self, expr):

@@ -70,6 +70,16 @@ def codegen(func):
             self.emit_tabs()
             self.code += '}\n'
 
+        def visit_while(self, loop):
+            self.emit_tabs()
+            self.code += f'while ({self.visit_expr(loop.cond)}) {{\n'
+            self.tab_count += 1
+            for stmt in loop.body:
+                self.visit_stmt(stmt)
+            self.tab_count -= 1
+            self.emit_tabs()
+            self.code += '}\n'
+
         def visit_expr(self, expr):
             if isinstance(expr, loma_ir.Var):
                 return expr.id

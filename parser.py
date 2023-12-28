@@ -102,7 +102,14 @@ def visit_stmt(node):
         cond = visit_expr(node.test)
         then_stmts = [visit_stmt(s) for s in node.body]
         else_stmts = [visit_stmt(s) for s in node.orelse]
-        return loma_ir.IfElse(cond, then_stmts, else_stmts)
+        return loma_ir.IfElse(cond,
+                              then_stmts,
+                              else_stmts,
+                              lineno = node.lineno)
+    elif isinstance(node, ast.While):
+        cond = visit_expr(node.test)
+        body = [visit_stmt(s) for s in node.body]
+        return loma_ir.While(cond, body, lineno = node.lineno)
     else:
         assert False, f'Unknown statement {type(node).__name__}'
 
