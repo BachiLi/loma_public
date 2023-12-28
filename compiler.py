@@ -11,8 +11,8 @@ import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 
-def compile(func, filename = ''):
-    ir = parser.parse(func)
+def compile(loma_code, output_filename = ''):
+    ir = parser.parse(loma_code)
     check.check_ir(ir)
     code = codegen.codegen(ir)
 
@@ -23,24 +23,24 @@ def compile(func, filename = ''):
 
     # determine the filename to dump to
     caller_frame = inspect.stack()[1]
-    if filename == '':
+    if output_filename == '':
         caller_dir  = os.path.dirname(caller_frame.filename)
         try:
             os.mkdir(os.path.join(caller_dir, '_code'))
         except FileExistsError:
             pass
-        filename = os.path.join(caller_dir, '_code',
+        output_filename = os.path.join(caller_dir, '_code',
                                 f"{ir.name}.so")
     print(code)
 
-    log = run(['g++', '-shared', '-fPIC', '-o', filename, '-O2', '-x', 'c++', '-'],
+    log = run(['g++', '-shared', '-fPIC', '-o', output_filename, '-O2', '-x', 'c++', '-'],
         input = code,
         encoding='utf-8',
         capture_output=True)
     if log.returncode != 0:
         print(log.stderr)
 
-    lib = CDLL(filename)
+    lib = CDLL(output_filename)
     c_func = getattr(lib, ir.name)
     argtypes = []
     for arg in ir.args:

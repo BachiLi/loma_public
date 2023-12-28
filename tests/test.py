@@ -9,85 +9,51 @@ import error
 import math
 from loma import Array, In, Out
 
-def declaration_float() -> float:
-    x : float = 5
-    return x
-
-def declaration_int() -> int:
-    x : int = 4
-    return x
-
 def test_declaration():
-    lib = compiler.compile(declaration_float)
+    with open('loma_code/declaration_float.py') as f:
+        lib = compiler.compile(f.read())
     assert abs(lib.declaration_float() - 5) < 1e-6
-    lib = compiler.compile(declaration_int)
+    with open('loma_code/declaration_int.py') as f:
+        lib = compiler.compile(f.read())
     assert lib.declaration_int() == 4
 
-def binaryops() -> float:
-    x : float = 5.0
-    y : float = 6.0
-    a : float = x + y
-    b : float = a - x
-    c : float = b * y
-    d : float = c / a
-    return d
-
 def test_binary_ops():
-    lib = compiler.compile(binaryops)
+    with open('loma_code/binary_ops.py') as f:
+        lib = compiler.compile(f.read())
     # a = x + y = 5 + 6 = 11
     # b = a - x = 11 - 5 = 6
     # c = b * y = 6 * 6 = 36
     # d = c / a = 36 / 11
-    assert abs(lib.binaryops() - 36.0 / 11.0) < 1e-6
-
-def args(x : In[float], y : In[int]) -> int:
-    z : int = x
-    return z + y
+    assert abs(lib.binary_ops() - 36.0 / 11.0) < 1e-6
 
 def test_args():
-    lib = compiler.compile(args)
+    with open('loma_code/args.py') as f:
+        lib = compiler.compile(f.read())
     assert lib.args(4.5, 3) == 7
 
-def mutation() -> float:
-    a : float = 5.0
-    a = 6.0
-    return a
-
 def test_mutation():
-    lib = compiler.compile(mutation)
+    with open('loma_code/mutation.py') as f:
+        lib = compiler.compile(f.read())
     assert abs(lib.mutation() - 6) < 1e-6
 
-def array_read(x : In[Array[float]]) -> float:
-    return x[0]
-
 def test_array_read():
-    lib = compiler.compile(array_read)
+    with open('loma_code/array_read.py') as f:
+        lib = compiler.compile(f.read())
     py_arr = [1.0, 2.0]
     arr = (ctypes.c_float * len(py_arr))(*py_arr)
     assert lib.array_read(arr) == 1.0
 
-def array_write(x : Out[Array[float]]):
-    x[0] = 2.0
-
 def test_array_write():
-    lib = compiler.compile(array_write)
+    with open('loma_code/array_write.py') as f:
+        lib = compiler.compile(f.read())
     py_arr = [0.0, 0.0]
     arr = (ctypes.c_float * len(py_arr))(*py_arr)
     lib.array_write(arr)
     assert arr[0] == 2.0
 
-def compare(x : In[int], y : In[int],
-            out : Out[Array[int]]):
-    out[0] = x < y
-    out[1] = x <= y
-    out[2] = x > y
-    out[3] = x >= y
-    out[4] = x == y
-    out[5] = x < y and x > y
-    out[6] = x < y or x > y
-
 def test_compare():
-    lib = compiler.compile(compare)
+    with open('loma_code/compare.py') as f:
+        lib = compiler.compile(f.read())
     py_arr = [0] * 7
     arr = (ctypes.c_int * len(py_arr))(*py_arr)
     # 5 < 6 : True
@@ -117,46 +83,27 @@ def test_compare():
     assert arr[5] == 0
     assert arr[6] == 0
 
-def if_else(x : In[float]) -> float:
-    z : float = 0.0
-    if x > 0:
-        z = 4.0
-    else:
-        z = -4.0
-    return z
-
 def test_if_else():
-    lib = compiler.compile(if_else)
+    with open('loma_code/if_else.py') as f:
+        lib = compiler.compile(f.read())
     assert lib.if_else(0.5) == 4.0
     assert lib.if_else(-0.5) == -4.0
 
-def while_loop() -> int:
-    i : int = 0
-    s : int = 0
-    while i < 10:
-        s = s + i
-        i = i + 1
-    return s
-
 def test_while_loop():
-    lib = compiler.compile(while_loop)
+    with open('loma_code/while_loop.py') as f:
+        lib = compiler.compile(f.read())
     assert lib.while_loop() == 45
 
-def intrinsic_func_call() -> float:
-    return sin(3.0)
-
 def test_intrinsic_func_call():
-    lib = compiler.compile(intrinsic_func_call)
+    with open('loma_code/intrinsic_func_call.py') as f:
+        lib = compiler.compile(f.read())
     assert abs(lib.intrinsic_func_call() - math.sin(3.0)) < 1e-6
 
-def duplicate_declare() -> float:
-    x : float = 5
-    x : float = 6
-    return 0
 
 def test_duplicate_declare():
     try:
-        lib = compiler.compile(duplicate_declare)
+        with open('loma_code/duplicate_declare.py') as f:
+            lib = compiler.compile(f.read())
     except error.DuplicateVariable as e:
         assert e.var == 'x'
         assert e.first_lineno == 2
@@ -169,12 +116,15 @@ def undeclared_var() -> float:
 
 def test_undeclared_var():
     try:
-        lib = compiler.compile(undeclared_var)
+        with open('loma_code/undeclared_var.py') as f:
+            lib = compiler.compile(f.read())
     except error.UndeclaredVariable as e:
         assert e.var == 'b'
         assert e.lineno == 3
 
 if __name__ == '__main__':
+    os.chdir(os.path.dirname(os.path.realpath(__file__)))
+
     test_declaration()
     test_binary_ops()
     test_args()

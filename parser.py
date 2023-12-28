@@ -161,8 +161,7 @@ def visit_expr(node):
         case _:
             assert False, f'Unknown expr {type(node).__name__}'
 
-def parse(func):
-    code = inspect.getsource(func)
+def parse(code):
     module = ast.parse(code)
 
     # Assume we only have one function definition.
