@@ -75,6 +75,60 @@ def test_array_write():
     lib.array_write(arr)
     assert arr[0] == 2.0
 
+def compare(x : In[int], y : In[int],
+            out : Out[Array[int]]):
+    out[0] = x < y
+    out[1] = x <= y
+    out[2] = x > y
+    out[3] = x >= y
+    out[4] = x == y
+    out[5] = x < y and x > y
+    out[6] = x < y or x > y
+
+def test_compare():
+    lib = compiler.compile(compare)
+    py_arr = [0] * 7
+    arr = (ctypes.c_int * len(py_arr))(*py_arr)
+    # 5 < 6 : True
+    # 5 <= 6 : True
+    # 5 > 6 : False
+    # 5 >= 6 : False
+    # 5 == 6 : False
+    lib.compare(5, 6, arr)
+    assert arr[0] != 0
+    assert arr[1] != 0
+    assert arr[2] == 0
+    assert arr[3] == 0
+    assert arr[4] == 0
+    assert arr[5] == 0
+    assert arr[6] != 0
+    # 5 < 5 : False
+    # 5 <= 5 : True
+    # 5 > 5 : False
+    # 5 >= 5 : True
+    # 5 == 5 : True
+    lib.compare(5, 5, arr)
+    assert arr[0] == 0
+    assert arr[1] != 0
+    assert arr[2] == 0
+    assert arr[3] != 0
+    assert arr[4] != 0
+    assert arr[5] == 0
+    assert arr[6] == 0
+
+def if_else(x : In[float]) -> float:
+    z : float = 0.0
+    if x > 0:
+        z = 4.0
+    else:
+        z = -4.0
+    return z
+
+def test_if_else():
+    lib = compiler.compile(if_else)
+    assert lib.if_else(0.5) == 4.0
+    assert lib.if_else(-0.5) == -4.0
+
 def duplicate_declare() -> float:
     x : float = 5
     x : float = 6
@@ -107,6 +161,8 @@ if __name__ == '__main__':
     test_mutation()
     test_array_read()
     test_array_write()
+    test_compare()
+    # test_if_else()
 
     # test compile errors
     test_duplicate_declare()

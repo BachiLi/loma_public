@@ -43,6 +43,8 @@ class IRVisitor:
             self.visit_mul(expr)
         elif isinstance(expr, loma_ir.Div):
             self.visit_div(expr)
+        elif isinstance(expr, loma_ir.Compare):
+            self.visit_compare(expr)
         else:
             assert False, f'Visitor error: unhandled expression {expr}'
 
@@ -63,13 +65,17 @@ class IRVisitor:
         self.visit_expr(add.right)
 
     def visit_sub(self, sub):
-        self.visit_expr(add.left)
-        self.visit_expr(add.right)
+        self.visit_expr(sub.left)
+        self.visit_expr(sub.right)
 
     def visit_mul(self, mul):
-        self.visit_expr(add.left)
-        self.visit_expr(add.right)
+        self.visit_expr(mul.left)
+        self.visit_expr(mul.right)
 
     def visit_div(self, div):
-        visit_expr(add.left)
-        visit_expr(add.right)
+        self.visit_expr(div.left)
+        self.visit_expr(div.right)
+
+    def visit_compare(self, cmp):
+        self.visit_expr(cmp.left)
+        self.visit_expr(cmp.right)

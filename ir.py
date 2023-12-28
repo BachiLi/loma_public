@@ -6,6 +6,7 @@ def generate_asdl_file():
       stmt = Assign     ( string target, expr val, expr? index )
            | Declare    ( string target, type t, expr val )
            | Return     ( expr val )
+           | IfElse     ( expr cond, stmt* then_stmt, stmt* else_stmt )
            attributes   ( int? lineno, string? attr )
 
       expr = Var         ( string id )
@@ -16,7 +17,7 @@ def generate_asdl_file():
            | Sub         ( expr left, expr right )
            | Mul         ( expr left, expr right )
            | Div         ( expr left, expr right )
-           | Equal       ( expr left, expr right )
+           | Compare     ( cmp_op op, expr left, expr right )
            attributes    ( int? lineno, string? attr, type? t )
 
       function = Function ( string name, arg* args, stmt* body, type? ret_type)
@@ -27,6 +28,14 @@ def generate_asdl_file():
       type = Int()
            | Float()
            | Array( type t )
+
+      cmp_op = Less()
+             | LessEqual()
+             | Greater()
+             | GreaterEqual()
+             | Equal()
+             | And()
+             | Or()
 
       inout = In() | Out()
     }

@@ -33,6 +33,24 @@ def annotation_to_inout(node):
     else:
         assert False
 
+def ast_cmp_op_convert(node):
+    if isinstance(node, ast.Lt):
+        return loma_ir.Less()
+    elif isinstance(node, ast.LtE):
+        return loma_ir.LessEqual()
+    elif isinstance(node, ast.Gt):
+        return loma_ir.Greater()
+    elif isinstance(node, ast.GtE):
+        return loma_ir.GreaterEqual()
+    elif isinstance(node, ast.Eq):
+        return loma_ir.Equal()
+    elif isinstance(node, ast.And):
+        return loma_ir.And()
+    elif isinstance(node, ast.Or):
+        return loma_ir.Or()
+    else:
+        assert False
+
 def visit_FunctionDef(node):
     node_args = node.args
     assert node_args.vararg is None
@@ -80,8 +98,14 @@ def visit_stmt(node):
                                   visit_expr(node.value),
                                   index = visit_expr(target.slice),
                                   lineno = node.lineno)
+    elif isinstance(node, ast.If):
+        print(node.__dict__)
+        cond = visit_expr(node.test)
+        then_stmt = visit_stmt(node.body)
+        else_stmt = visit_stmt(node.orelse)
+        return loma_ir.IfElse(cond, then_stmt, else_stmt)
     else:
-      assert False, f'Unknown statement {type(node).__name__}'
+        assert False, f'Unknown statement {type(node).__name__}'
 
 def visit_expr(node):
     if isinstance(node, ast.Name):
@@ -108,6 +132,20 @@ def visit_expr(node):
         assert type(node.value) == ast.Name
         index = visit_expr(node.slice)
         return loma_ir.ArrayAccess(node.value.id, index)
+    elif isinstance(node, ast.Compare):
+        # print(node.__dict__)
+        assert len(node.ops) == 1
+        assert len(node.comparators) == 1
+        op = ast_cmp_op_convert(node.ops[0])
+        left = visit_expr(node.left)
+        right = visit_expr(node.comparators[0])
+        return loma_ir.Compare(op, left, right)
+    elif isinstance(node, ast.BoolOp):
+        op = ast_cmp_op_convert(node.op)
+        assert len(node.values) == 2
+        left = visit_expr(node.values[0])
+        right = visit_expr(node.values[1])
+        return loma_ir.Compare(op, left, right)
     else:
         assert False, f'Unknown expr {type(node).__name__}'
 

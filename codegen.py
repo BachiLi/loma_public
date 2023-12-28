@@ -71,6 +71,21 @@ def codegen(func):
                 return f'({self.visit_expr(expr.left)}) * ({self.visit_expr(expr.right)})'
             elif isinstance(expr, loma_ir.Div):
                 return f'({self.visit_expr(expr.left)}) / ({self.visit_expr(expr.right)})'
+            elif isinstance(expr, loma_ir.Compare):
+                if expr.op == loma_ir.Less():
+                    return f'({self.visit_expr(expr.left)}) < ({self.visit_expr(expr.right)})'
+                elif expr.op == loma_ir.LessEqual():
+                    return f'({self.visit_expr(expr.left)}) <= ({self.visit_expr(expr.right)})'
+                elif expr.op == loma_ir.Greater():
+                    return f'({self.visit_expr(expr.left)}) > ({self.visit_expr(expr.right)})'
+                elif expr.op == loma_ir.GreaterEqual():
+                    return f'({self.visit_expr(expr.left)}) >= ({self.visit_expr(expr.right)})'
+                elif expr.op == loma_ir.Equal():
+                    return f'({self.visit_expr(expr.left)}) == ({self.visit_expr(expr.right)})'
+                elif expr.op == loma_ir.And():
+                    return f'({self.visit_expr(expr.left)}) && ({self.visit_expr(expr.right)})'
+                elif expr.op == loma_ir.Or():
+                    return f'({self.visit_expr(expr.left)}) || ({self.visit_expr(expr.right)})'
             else:
                 assert False, f'Visitor error: unhandled expression {expr}'
 
