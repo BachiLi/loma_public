@@ -4,7 +4,7 @@ ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 import visitor
 
-def codegen(func):
+def codegen(loma_code):
 
     @attrs.define()
     class CGVisitor(visitor.IRVisitor):
@@ -126,6 +126,7 @@ def codegen(func):
                 case _:
                     assert False, f'Visitor error: unhandled expression {expr}'
 
+    assert isinstance(loma_code, loma_ir.Modules)
     cg = CGVisitor()
-    cg.visit_function(func)
+    cg.visit_modules(loma_code)
     return cg.code

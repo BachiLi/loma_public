@@ -63,11 +63,11 @@ def visit_FunctionDef(node):
     if node.returns:
         ret_type = annotation_to_type(node.returns)
 
-    return loma_ir.Function(node.name,
-                            args,
-                            body,
-                            ret_type = ret_type,
-                            lineno = node.lineno)
+    return loma_ir.FunctionDef(node.name,
+                               args,
+                               body,
+                               ret_type = ret_type,
+                               lineno = node.lineno)
 
 def visit_stmt(node):
     match node:
@@ -163,8 +163,4 @@ def visit_expr(node):
 
 def parse(code):
     module = ast.parse(code)
-
-    # Assume we only have one function definition.
-    assert(len(module.body) == 1)
-    assert(type(module.body[0]) == ast.FunctionDef)
-    return visit_FunctionDef(module.body[0])
+    return loma_ir.Modules([visit_FunctionDef(f) for f in module.body])

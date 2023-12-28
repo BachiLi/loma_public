@@ -22,8 +22,10 @@ def generate_asdl_file():
            | Call        ( string id, expr* args )
            attributes    ( int? lineno, string? attr, type? t )
 
-      function = Function ( string name, arg* args, stmt* body, type? ret_type)
-                 attributes( int? lineno, string? attr )
+      definition = FunctionDef ( string name, arg* args, stmt* body, type? ret_type)
+                   attributes( int? lineno, string? attr )
+
+      modules = Modules ( definition* defs )
 
       arg  = Arg ( string id, type t, inout i )
 

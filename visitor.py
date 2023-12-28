@@ -3,6 +3,10 @@ ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 
 class IRVisitor:
+    def visit_modules(self, node):
+        for d in node.defs:
+            self.visit_function(d)
+
     def visit_function(self, node):
         for stmt in node.body:
             self.visit_stmt(stmt)

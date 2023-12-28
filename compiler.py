@@ -11,7 +11,7 @@ import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 
-def compile(loma_code, output_filename = ''):
+def compile(loma_code, output_filename):
     ir = parser.parse(loma_code)
     check.check_ir(ir)
     code = codegen.codegen(ir)
@@ -21,16 +21,6 @@ def compile(loma_code, output_filename = ''):
 #include <math.h>
     \n""" + code
 
-    # determine the filename to dump to
-    caller_frame = inspect.stack()[1]
-    if output_filename == '':
-        caller_dir  = os.path.dirname(caller_frame.filename)
-        try:
-            os.mkdir(os.path.join(caller_dir, '_code'))
-        except FileExistsError:
-            pass
-        output_filename = os.path.join(caller_dir, '_code',
-                                f"{ir.name}.so")
     print(code)
 
     log = run(['g++', '-shared', '-fPIC', '-o', output_filename, '-O2', '-x', 'c++', '-'],
@@ -41,25 +31,26 @@ def compile(loma_code, output_filename = ''):
         print(log.stderr)
 
     lib = CDLL(output_filename)
-    c_func = getattr(lib, ir.name)
-    argtypes = []
-    for arg in ir.args:
-        if isinstance(arg.t, loma_ir.Int):
-            argtypes.append(ctypes.c_int)
-        elif isinstance(arg.t, loma_ir.Float):
-            argtypes.append(ctypes.c_float)
-        elif isinstance(arg.t, loma_ir.Array):
-            argtypes.append(ctypes.c_void_p)
+    for f in ir.defs:
+        c_func = getattr(lib, f.name)
+        argtypes = []
+        for arg in f.args:
+            if isinstance(arg.t, loma_ir.Int):
+                argtypes.append(ctypes.c_int)
+            elif isinstance(arg.t, loma_ir.Float):
+                argtypes.append(ctypes.c_float)
+            elif isinstance(arg.t, loma_ir.Array):
+                argtypes.append(ctypes.c_void_p)
+            else:
+                assert False
+        c_func.argtypes = argtypes
+        if f.ret_type == loma_ir.Int():
+            c_func.restype = ctypes.c_int
+        elif f.ret_type == loma_ir.Float():
+            c_func.restype = ctypes.c_float
+        elif f.ret_type == None:
+            c_func.restype = None
         else:
             assert False
-    c_func.argtypes = argtypes
-    if ir.ret_type == loma_ir.Int():
-        c_func.restype = ctypes.c_int
-    elif ir.ret_type == loma_ir.Float():
-        c_func.restype = ctypes.c_float
-    elif ir.ret_type == None:
-        c_func.restype = None
-    else:
-        assert False
 
     return lib
