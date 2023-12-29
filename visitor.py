@@ -127,7 +127,7 @@ class IRVisitor:
 
     def visit_ref_array(self, ref):
         self.visit_ref(ref.array)
-        self.visit_expr(lhs.index)
+        self.visit_expr(ref.index)
 
     def visit_ref_struct(self, ref):
         self.visit_ref(ref.struct)
