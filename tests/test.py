@@ -110,6 +110,12 @@ def test_struct_access():
     foo = Foo(x=3, y=4.5)
     assert abs(lib.struct_access(foo) - 3 * 4.5 < 1e-6)
 
+def test_struct_return():
+    with open('loma_code/struct_return.py') as f:
+        structs, lib = compiler.compile(f.read(), '_code/struct_return.so')
+    foo = lib.struct_return()
+    assert foo.x == 5 and abs(foo.y - 3.5) < 1e-6
+
 
 def test_duplicate_declare():
     try:
@@ -143,6 +149,7 @@ if __name__ == '__main__':
     test_intrinsic_func_call()
     test_func_decl()
     test_struct_access()
+    test_struct_return()
 
     # test compile errors
     test_duplicate_declare()

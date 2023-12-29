@@ -108,3 +108,24 @@ class IRVisitor:
     def visit_call(self, call):
         for arg in call.args:
             self.visit_expr(arg)
+
+    def visit_lhs(self, lhs):
+        match lhs:
+            case LHSName():
+                self.visit_lhs_name(lhs)
+            case LHSArray():
+                self.visit_lhs_array(lhs)
+            case LHSStruct():
+                self.visit_lhs_struct(lhs)
+            case _:
+                assert False, f'Visitor error: unhandled lhs {lhs}'
+
+    def visit_lhs_name(self, lhs):
+        pass
+
+    def visit_lhs_array(self, lhs):
+        self.visit_lhs(self.array)
+        self.visit_expr(lhs.index)
+
+    def visit_lhs_struct(self, lhs):
+        self.visit_lhs(self.struct)

@@ -35,22 +35,36 @@ def annotation_to_inout(node):
         assert False
 
 def ast_cmp_op_convert(node):
-    if isinstance(node, ast.Lt):
-        return loma_ir.Less()
-    elif isinstance(node, ast.LtE):
-        return loma_ir.LessEqual()
-    elif isinstance(node, ast.Gt):
-        return loma_ir.Greater()
-    elif isinstance(node, ast.GtE):
-        return loma_ir.GreaterEqual()
-    elif isinstance(node, ast.Eq):
-        return loma_ir.Equal()
-    elif isinstance(node, ast.And):
-        return loma_ir.And()
-    elif isinstance(node, ast.Or):
-        return loma_ir.Or()
-    else:
-        assert False
+    match node:
+        case ast.Lt():
+            return loma_ir.Less()
+        case ast.LtE():
+            return loma_ir.LessEqual()
+        case ast.Gt():
+            return loma_ir.Greater()
+        case ast.GtE():
+            return loma_ir.GreaterEqual()
+        case ast.Eq():
+            return loma_ir.Equal()
+        case ast.And():
+            return loma_ir.And()
+        case ast.Or():
+            return loma_ir.Or()
+        case _:
+            assert False
+
+def parse_lhs(node):
+    match node:
+        case ast.Name():
+            return loma_ir.LHSName(node.id)
+        case ast.Subscript():
+            return loma_ir.LHSArray(parse_lhs(node.value),
+                                    visit_expr(node.slice))
+        case ast.Attribute():
+            return loma_ir.LHSStruct(parse_lhs(node.value),
+                                     node.attr)
+        case _:
+            assert False
 
 def visit_FunctionDef(node):
     node_args = node.args
@@ -96,18 +110,9 @@ def visit_stmt(node):
         case ast.Assign():
             assert len(node.targets) == 1
             target = node.targets[0]
-            if type(target) == ast.Name:
-                return loma_ir.Assign(target.id,
-                                      visit_expr(node.value),
-                                      lineno = node.lineno)
-            elif type(target) == ast.Subscript:
-                assert type(target.value) == ast.Name
-                return loma_ir.Assign(target.value.id,
-                                      visit_expr(node.value),
-                                      index = visit_expr(target.slice),
-                                      lineno = node.lineno)
-            else:
-                assert False
+            return loma_ir.Assign(parse_lhs(target),
+                                  visit_expr(node.value),
+                                  lineno = node.lineno)
         case ast.If():
             cond = visit_expr(node.test)
             then_stmts = [visit_stmt(s) for s in node.body]
@@ -133,7 +138,7 @@ def visit_expr(node):
             elif type(node.value) == float:
                 return loma_ir.ConstFloat(node.value, lineno = node.lineno)
             else:
-                assert False, f'Unknown constant type.'
+                assert False, f'Unknown constant type'
         case ast.UnaryOp():
             if isinstance(node.op, ast.USub):
                 return loma_ir.Sub(loma_ir.ConstInt(0), visit_expr(node.operand))
@@ -174,6 +179,8 @@ def visit_expr(node):
         case ast.Call():
             assert type(node.func) == ast.Name
             return loma_ir.Call(node.func.id, [visit_expr(arg) for arg in node.args])
+        case None:
+            return None
         case _:
             assert False, f'Unknown expr {type(node).__name__}'
 

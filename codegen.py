@@ -47,14 +47,19 @@ def codegen(structs, funcs):
 
         def visit_declare(self, dec):
             self.emit_tabs()
-            self.code += f'{type_to_string(dec.t)} {dec.target} = {self.visit_expr(dec.val)};\n'
+            self.code += f'{type_to_string(dec.t)} {dec.target}'
+            expr_str = self.visit_expr(dec.val)
+            if expr_str != '':
+                self.code += f' = {expr_str}'
+            self.code += ';\n'
 
         def visit_assign(self, ass):
             self.emit_tabs()
-            if ass.index is None:
-                self.code += f'{ass.target} = {self.visit_expr(ass.val)};\n'
-            else:
-                self.code += f'{ass.target}[{self.visit_expr(ass.index)}] = {self.visit_expr(ass.val)};\n'
+            self.code += self.visit_lhs(ass.target)
+            expr_str = self.visit_expr(ass.val)
+            if expr_str != '':
+                self.code += f' = {expr_str}'
+            self.code += ';\n'
 
         def visit_ifelse(self, ifelse):
             self.emit_tabs()
@@ -126,8 +131,21 @@ def codegen(structs, funcs):
                         ret += self.visit_expr(arg)
                     ret += ')'
                     return ret
+                case None:
+                    return ''
                 case _:
                     assert False, f'Visitor error: unhandled expression {expr}'
+
+        def visit_lhs(self, lhs):
+            match lhs:
+                case loma_ir.LHSName():
+                    return lhs.id
+                case loma_ir.LHSArray():
+                    return self.visit_lhs(lhs.array) + f'[{self.visit_expr(lhs.index)}]'
+                case loma_ir.LHSStruct():
+                    return self.visit_lhs(lhs.struct) + f'.{lhs.member}'
+                case _:
+                    assert False, f'Visitor error: unhandled lhs {lhs}'
 
     # Forward declaration of structs
     code = ''

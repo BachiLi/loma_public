@@ -3,8 +3,8 @@ from asdl_gen import ADT
 def generate_asdl_file():
     ADT("""
     module loma {
-      stmt = Assign     ( string target, expr val, expr? index )
-           | Declare    ( string target, type t, expr val )
+      stmt = Assign     ( lhs target, expr val )
+           | Declare    ( string target, type t, expr? val )
            | Return     ( expr val )
            | IfElse     ( expr cond, stmt* then_stmts, stmt* else_stmts )
            | While      ( expr cond, stmt* body )
@@ -22,6 +22,10 @@ def generate_asdl_file():
            | Compare      ( cmp_op op, expr left, expr right )
            | Call         ( string id, expr* args )
            attributes     ( int? lineno, type? t )
+
+      lhs = LHSName   ( string id )
+          | LHSArray  ( lhs array, expr index )
+          | LHSStruct ( lhs struct, string member )
 
       func = FunctionDef ( string id, arg* args, stmt* body, type? ret_type)
              attributes  ( int? lineno )
