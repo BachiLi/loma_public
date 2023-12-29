@@ -154,8 +154,10 @@ def codegen(structs, funcs):
         if s in traversed_struct:
             return
         for m in s.members:
-            if isinstance(m.t, loma_ir.Struct): 
-                traverse_structs(structs[m.t.id])
+            if isinstance(m.t, loma_ir.Struct) or isinstance(m.t, loma_ir.Array):
+                next_s = m.t if isinstance(m.t, loma_ir.Struct) else m.t.t
+                if isinstance(next_s, loma_ir.Struct):
+                    traverse_structs(structs[next_s.id])
         sorted_structs_list.append(s)
         traversed_struct.add(s)
     for s in structs.values():

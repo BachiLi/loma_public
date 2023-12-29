@@ -141,6 +141,19 @@ def test_struct_in_array():
     arr = (Foo * len(py_arr))(*py_arr)
     assert lib.struct_in_array(arr) == 5
 
+def test_struct_in_array_in_struct():
+    with open('loma_code/struct_in_array_in_struct.py') as f:
+        structs, lib = compiler.compile(f.read(), '_code/struct_in_array_in_struct.so')
+    Foo = structs['Foo']
+    Bar = structs['Bar']
+    bar_py_arr_0 = [Bar(y=2)]
+    bar_arr_0 = (Bar * len(bar_py_arr_0))(*bar_py_arr_0)
+    bar_py_arr_1 = [Bar(y=4)]
+    bar_arr_1 = (Bar * len(bar_py_arr_1))(*bar_py_arr_1)
+    foo_py_arr = [Foo(x=1,b=bar_arr_0), Foo(x=3,b=bar_arr_1)]
+    foo_arr = (Foo * len(foo_py_arr))(*foo_py_arr)
+    assert lib.struct_in_array_in_struct(foo_arr) == 5
+
 
 def test_duplicate_declare():
     try:
@@ -178,6 +191,7 @@ if __name__ == '__main__':
     test_struct_in_struct()
     test_array_in_struct()
     test_struct_in_array()
+    test_struct_in_array_in_struct()
 
     # test compile errors
     test_duplicate_declare()
