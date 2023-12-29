@@ -36,10 +36,10 @@ def check_undeclared_vars(node):
             self.ids.add(node.target)
 
         def visit_assign(self, node):
-            lhs = node.target
-            if isinstance(lhs, loma_ir.LHSName):
-                if lhs.id not in self.ids:
-                    raise error.UndeclaredVariable(lhs.id, node.lineno)
+            ref = node.target
+            if isinstance(ref, loma_ir.RefName):
+                if ref.id not in self.ids:
+                    raise error.UndeclaredVariable(ref.id, node.lineno)
 
     UndeclaredChecker().visit_function(node)
 

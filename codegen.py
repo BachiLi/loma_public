@@ -55,7 +55,7 @@ def codegen(structs, funcs):
 
         def visit_assign(self, ass):
             self.emit_tabs()
-            self.code += self.visit_lhs(ass.target)
+            self.code += self.visit_ref(ass.target)
             expr_str = self.visit_expr(ass.val)
             if expr_str != '':
                 self.code += f' = {expr_str}'
@@ -92,9 +92,9 @@ def codegen(structs, funcs):
                 case loma_ir.Var():
                     return expr.id
                 case loma_ir.ArrayAccess():
-                    return f'{expr.id}[{self.visit_expr(expr.index)}]'
+                    return f'({self.visit_ref(expr.array)})[{self.visit_expr(expr.index)}]'
                 case loma_ir.StructAccess():
-                    return f'{expr.struct_id}.{expr.member_id}'
+                    return f'({self.visit_ref(expr.struct)}).{expr.member_id}'
                 case loma_ir.ConstFloat():
                     return f'(float)({expr.val})'
                 case loma_ir.ConstInt():
@@ -136,16 +136,16 @@ def codegen(structs, funcs):
                 case _:
                     assert False, f'Visitor error: unhandled expression {expr}'
 
-        def visit_lhs(self, lhs):
-            match lhs:
-                case loma_ir.LHSName():
-                    return lhs.id
-                case loma_ir.LHSArray():
-                    return self.visit_lhs(lhs.array) + f'[{self.visit_expr(lhs.index)}]'
-                case loma_ir.LHSStruct():
-                    return self.visit_lhs(lhs.struct) + f'.{lhs.member}'
+        def visit_ref(self, ref):
+            match ref:
+                case loma_ir.RefName():
+                    return ref.id
+                case loma_ir.RefArray():
+                    return self.visit_ref(ref.array) + f'[{self.visit_expr(ref.index)}]'
+                case loma_ir.RefStruct():
+                    return self.visit_ref(ref.struct) + f'.{ref.member}'
                 case _:
-                    assert False, f'Visitor error: unhandled lhs {lhs}'
+                    assert False, f'Visitor error: unhandled ref {ref}'
 
     # Sort the struct topologically
     sorted_structs_list = []

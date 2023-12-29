@@ -53,15 +53,15 @@ def ast_cmp_op_convert(node):
         case _:
             assert False
 
-def parse_lhs(node):
+def parse_ref(node):
     match node:
         case ast.Name():
-            return loma_ir.LHSName(node.id)
+            return loma_ir.RefName(node.id)
         case ast.Subscript():
-            return loma_ir.LHSArray(parse_lhs(node.value),
+            return loma_ir.RefArray(parse_ref(node.value),
                                     visit_expr(node.slice))
         case ast.Attribute():
-            return loma_ir.LHSStruct(parse_lhs(node.value),
+            return loma_ir.RefStruct(parse_ref(node.value),
                                      node.attr)
         case _:
             assert False
@@ -110,7 +110,7 @@ def visit_stmt(node):
         case ast.Assign():
             assert len(node.targets) == 1
             target = node.targets[0]
-            return loma_ir.Assign(parse_lhs(target),
+            return loma_ir.Assign(parse_ref(target),
                                   visit_expr(node.value),
                                   lineno = node.lineno)
         case ast.If():
@@ -157,12 +157,9 @@ def visit_expr(node):
                 case _:
                     assert False, f'Unknown BinOp {type(node.op).__name__}'
         case ast.Subscript():
-            assert isinstance(node.value, ast.Name)
-            index = visit_expr(node.slice)
-            return loma_ir.ArrayAccess(node.value.id, index)
+            return loma_ir.ArrayAccess(parse_ref(node.value), visit_expr(node.slice))
         case ast.Attribute():
-            assert isinstance(node.value, ast.Name)
-            return loma_ir.StructAccess(node.value.id, node.attr)
+            return loma_ir.StructAccess(parse_ref(node.value), node.attr)
         case ast.Compare():
             assert len(node.ops) == 1
             assert len(node.comparators) == 1

@@ -74,9 +74,11 @@ class IRVisitor:
         pass
 
     def visit_array_access(self, acc):
+        self.visit_ref(acc.array)
         self.visit_expr(acc.index)
 
     def visit_struct_access(self, s):
+        self.visit_ref(s.struct)
         pass
 
     def visit_const_float(self, con):
@@ -109,23 +111,23 @@ class IRVisitor:
         for arg in call.args:
             self.visit_expr(arg)
 
-    def visit_lhs(self, lhs):
-        match lhs:
-            case LHSName():
-                self.visit_lhs_name(lhs)
-            case LHSArray():
-                self.visit_lhs_array(lhs)
-            case LHSStruct():
-                self.visit_lhs_struct(lhs)
+    def visit_ref(self, ref):
+        match ref:
+            case loma_ir.RefName():
+                self.visit_ref_name(ref)
+            case loma_ir.RefArray():
+                self.visit_ref_array(ref)
+            case loma_ir.RefStruct():
+                self.visit_ref_struct(ref)
             case _:
-                assert False, f'Visitor error: unhandled lhs {lhs}'
+                assert False, f'Visitor error: unhandled ref {ref}'
 
-    def visit_lhs_name(self, lhs):
+    def visit_ref_name(self, ref):
         pass
 
-    def visit_lhs_array(self, lhs):
-        self.visit_lhs(self.array)
+    def visit_ref_array(self, ref):
+        self.visit_ref(ref.array)
         self.visit_expr(lhs.index)
 
-    def visit_lhs_struct(self, lhs):
-        self.visit_lhs(self.struct)
+    def visit_ref_struct(self, ref):
+        self.visit_ref(ref.struct)

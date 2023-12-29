@@ -124,6 +124,17 @@ def test_struct_in_struct():
     foo = lib.struct_in_struct(bar)
     assert foo.x == 5 and abs(foo.bar.y - 4.5) < 1e-6 and foo.bar.z == 3
 
+def test_array_in_struct():
+    with open('loma_code/array_in_struct.py') as f:
+        structs, lib = compiler.compile(f.read(), '_code/array_in_struct.so')
+    py_arr = [1, 2]
+    arr = (ctypes.c_int * len(py_arr))(*py_arr)
+    arr = ctypes.cast(arr, ctypes.c_void_p) # TODO: remove this
+    Foo = structs['Foo']
+    foo = Foo(arr=arr)
+    assert lib.array_in_struct(foo) == 3
+
+
 def test_duplicate_declare():
     try:
         with open('loma_code/duplicate_declare.py') as f:
@@ -158,6 +169,7 @@ if __name__ == '__main__':
     test_struct_access()
     test_struct_return()
     test_struct_in_struct()
+    test_array_in_struct()
 
     # test compile errors
     test_duplicate_declare()
