@@ -18,7 +18,7 @@ def loma_to_ctypes_type(t, ctypes_structs):
         case loma_ir.Float():
             return ctypes.c_float
         case loma_ir.Array():
-            return ctypes.c_void_p
+            return ctypes.POINTER(loma_to_ctypes_type(t.t, ctypes_structs))
         case loma_ir.Struct():
             return ctypes_structs[t.id]
         case None:

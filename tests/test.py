@@ -129,7 +129,6 @@ def test_array_in_struct():
         structs, lib = compiler.compile(f.read(), '_code/array_in_struct.so')
     py_arr = [1, 2]
     arr = (ctypes.c_int * len(py_arr))(*py_arr)
-    arr = ctypes.cast(arr, ctypes.c_void_p) # TODO: remove this
     Foo = structs['Foo']
     foo = Foo(arr=arr)
     assert lib.array_in_struct(foo) == 3
