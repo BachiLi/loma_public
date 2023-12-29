@@ -147,10 +147,28 @@ def codegen(structs, funcs):
                 case _:
                     assert False, f'Visitor error: unhandled lhs {lhs}'
 
-    # Forward declaration of structs
-    code = ''
+    # Sort the struct topologically
+    sorted_structs_list = []
+    traversed_struct = set()
+    def traverse_structs(s):
+        if s in traversed_struct:
+            return
+        for m in s.members:
+            if isinstance(m.t, loma_ir.Struct): 
+                traverse_structs(structs[m.t.id])
+        sorted_structs_list.append(s)
+        traversed_struct.add(s)
     for s in structs.values():
-        code += f'struct {s.id};\n'
+        traverse_structs(s)
+
+    # Definition of structs
+    code = ''
+    for s in sorted_structs_list:
+        code += f'struct {s.id} {{\n'
+        for m in s.members:
+            code += f'\t{type_to_string(m.t)} {m.id};\n'
+        code += f'}};\n'
+
     # Forward declaration of functions
     for f in funcs.values():
         code += f'extern \"C\" {type_to_string(f.ret_type)} {f.id}('
@@ -159,13 +177,6 @@ def codegen(structs, funcs):
                 code += ', '
             code += f'{type_to_string(arg.t)} {arg.id}'
         code += ');\n'
-    
-    # Actual definition of structs
-    for s in structs.values():
-        code += f'struct {s.id} {{\n'
-        for m in s.members:
-            code += f'\t{type_to_string(m.t)} {m.id};\n'
-        code += f'}};\n'
     
     for f in funcs.values():
         cg = CGVisitor()

@@ -116,6 +116,13 @@ def test_struct_return():
     foo = lib.struct_return()
     assert foo.x == 5 and abs(foo.y - 3.5) < 1e-6
 
+def test_struct_in_struct():
+    with open('loma_code/struct_in_struct.py') as f:
+        structs, lib = compiler.compile(f.read(), '_code/struct_in_struct.so')
+    Bar = structs['Bar']
+    bar = Bar(y=4.5, z=100)
+    foo = lib.struct_in_struct(bar)
+    assert foo.x == 5 and abs(foo.bar.y - 4.5) < 1e-6 and foo.bar.z == 3
 
 def test_duplicate_declare():
     try:
@@ -150,6 +157,7 @@ if __name__ == '__main__':
     test_func_decl()
     test_struct_access()
     test_struct_return()
+    test_struct_in_struct()
 
     # test compile errors
     test_duplicate_declare()

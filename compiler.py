@@ -11,22 +11,7 @@ import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 
-def loma_to_ctypes_type(t):
-    match t:
-        case loma_ir.Int():
-            return ctypes.c_int
-        case loma_ir.Float():
-            return ctypes.c_float
-        case loma_ir.Array():
-            return ctypes.c_void_p
-        case loma_ir.Struct():
-            return t.id
-        case None:
-            return None
-        case _:
-            assert False
-
-def loma_to_ctypes_type_w_struct_maps(t, ctypes_structs):
+def loma_to_ctypes_type(t, ctypes_structs):
     match t:
         case loma_ir.Int():
             return ctypes.c_int
@@ -60,18 +45,33 @@ def compile(loma_code, output_filename):
     if log.returncode != 0:
         print(log.stderr)
 
+    # Sort the struct topologically
+    # TODO: maybe extract this as a common function
+    sorted_structs_list = []
+    traversed_struct = set()
+    def traverse_structs(s):
+        if s in traversed_struct:
+            return
+        for m in s.members:
+            if isinstance(m.t, loma_ir.Struct): 
+                traverse_structs(structs[m.t.id])
+        sorted_structs_list.append(s)
+        traversed_struct.add(s)
+    for s in structs.values():
+        traverse_structs(s)
+
     # build ctypes structs/classes
     ctypes_structs = {}
-    for s in structs.values():
+    for s in sorted_structs_list:
         ctypes_structs[s.id] = type(s.id, (ctypes.Structure, ), {
-            '_fields_': [(m.id, loma_to_ctypes_type(m.t)) for m in s.members]
+            '_fields_': [(m.id, loma_to_ctypes_type(m.t, ctypes_structs)) for m in s.members]
         })
 
     lib = CDLL(output_filename)
     for f in funcs.values():
         c_func = getattr(lib, f.id)
         c_func.argtypes = \
-            [loma_to_ctypes_type_w_struct_maps(arg.t, ctypes_structs) for arg in f.args]
-        c_func.restype = loma_to_ctypes_type_w_struct_maps(f.ret_type, ctypes_structs)
+            [loma_to_ctypes_type(arg.t, ctypes_structs) for arg in f.args]
+        c_func.restype = loma_to_ctypes_type(f.ret_type, ctypes_structs)
 
     return ctypes_structs, lib
