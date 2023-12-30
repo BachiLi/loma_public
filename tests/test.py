@@ -177,6 +177,30 @@ def test_parallel_add():
     lib.parallel_add(x, y, z, len(py_z))
     assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
+def test_ispc_func():
+    with open('loma_code/ispc_func.py') as f:
+        structs, lib = compiler.compile(f.read(), '_code/ispc_func.so', 'c')
+    py_x = [2, 3, 5]
+    x = (ctypes.c_int * len(py_x))(*py_x)
+    py_y = [7, 11, 13]
+    y = (ctypes.c_int * len(py_y))(*py_y)
+    py_z = [0, 0, 0]
+    z = (ctypes.c_int * len(py_z))(*py_z)
+    lib.ispc_func(x, y, z, len(py_z))
+    assert z[0] == 9 and z[1] == 14 and z[2] == 18
+
+    with open('loma_code/ispc_func.py') as f:
+        structs, lib = compiler.compile(f.read(), '_code/ispc_func.so', 'ispc')
+    py_x = [2, 3, 5]
+    x = (ctypes.c_int * len(py_x))(*py_x)
+    py_y = [7, 11, 13]
+    y = (ctypes.c_int * len(py_y))(*py_y)
+    py_z = [0, 0, 0]
+    z = (ctypes.c_int * len(py_z))(*py_z)
+    lib.ispc_func(x, y, z, len(py_z))
+    assert z[0] == 9 and z[1] == 14 and z[2] == 18
+
+
 def test_duplicate_declare():
     try:
         with open('loma_code/duplicate_declare.py') as f:
@@ -197,25 +221,26 @@ def test_undeclared_var():
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-    test_declaration()
-    test_binary_ops()
-    test_args()
-    test_mutation()
-    test_array_read()
-    test_array_write()
-    test_compare()
-    test_if_else()
-    test_while_loop()
-    test_intrinsic_func_call()
-    test_func_decl()
-    test_struct_access()
-    test_struct_return()
-    test_struct_in_struct()
-    test_array_in_struct()
-    test_struct_in_array()
-    test_struct_in_array_in_struct()
-    test_parallel_add()
+    # test_declaration()
+    # test_binary_ops()
+    # test_args()
+    # test_mutation()
+    # test_array_read()
+    # test_array_write()
+    # test_compare()
+    # test_if_else()
+    # test_while_loop()
+    # test_intrinsic_func_call()
+    # test_func_decl()
+    # test_struct_access()
+    # test_struct_return()
+    # test_struct_in_struct()
+    # test_array_in_struct()
+    # test_struct_in_array()
+    # test_struct_in_array_in_struct()
+    # test_parallel_add()
+    test_ispc_func()
 
-    # test compile errors
-    test_duplicate_declare()
-    test_undeclared_var()
+    # # test compile errors
+    # test_duplicate_declare()
+    # test_undeclared_var()

@@ -58,11 +58,11 @@ class ISPCCodegenVisitor(codegen_c.CCodegenVisitor):
             self.code += '\tsync;\n'
             self.code += '}\n'
         else:
-            self.code += f'{type_to_string(node.ret_type)} {node.id}('
+            self.code += f'{codegen_c.type_to_string(node.ret_type)} {node.id}('
             for i, arg in enumerate(node.args):
                 if i > 0:
                     self.code += ', '
-                self.code += f'{type_to_string(arg.t)} {arg.id}'
+                self.code += f'{codegen_c.type_to_string(arg.t)} {arg.id}'
             self.code += ') {\n'
             self.tab_count += 1
             for stmt in node.body:
@@ -107,8 +107,8 @@ def codegen_ispc(structs, funcs):
                 code += 'uniform '
             code += f'{codegen_c.type_to_string(arg.t)}'
             if f.is_simd:
-                code += ' uniform '
-            code += f'{arg.id}'
+                code += ' uniform'
+            code += f' {arg.id}'
         if f.is_simd:
             if len(f.args) > 0:
                 code += ', '

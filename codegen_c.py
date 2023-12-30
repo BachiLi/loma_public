@@ -140,8 +140,7 @@ class CCodegenVisitor(visitor.IRVisitor):
                 if expr.id == 'thread_id':
                     return '__work_id'
                 ret = f'{expr.id}('
-                for arg in expr.args:
-                    ret += self.visit_expr(arg)
+                ret += ','.join([self.visit_expr(arg) for arg in expr.args])
                 ret += ')'
                 return ret
             case None:
