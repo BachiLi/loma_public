@@ -78,9 +78,16 @@ def visit_FunctionDef(node):
     if node.returns:
         ret_type = annotation_to_type(node.returns)
 
+    is_simd = False
+    for decorator in node.decorator_list:
+        if isinstance(decorator, ast.Name):
+            if decorator.id == 'simd':
+                is_simd = True
+
     return loma_ir.FunctionDef(node.name,
                                args,
                                body,
+                               is_simd,
                                ret_type = ret_type,
                                lineno = node.lineno)
 

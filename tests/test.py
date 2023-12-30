@@ -154,6 +154,17 @@ def test_struct_in_array_in_struct():
     foo_arr = (Foo * len(foo_py_arr))(*foo_py_arr)
     assert lib.struct_in_array_in_struct(foo_arr) == 5
 
+def test_parallel_add():
+    with open('loma_code/parallel_add.py') as f:
+        structs, lib = compiler.compile(f.read(), '_code/parallel_add.so')
+    py_x = [2, 3, 5]
+    x = (ctypes.c_int * len(py_x))(*py_x)
+    py_y = [7, 11, 13]
+    y = (ctypes.c_int * len(py_y))(*py_y)
+    py_z = [0, 0, 0]
+    z = (ctypes.c_int * len(py_z))(*py_z)
+    lib.parallel_add(x, y, z, len(py_z))
+    assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
 def test_duplicate_declare():
     try:
@@ -192,6 +203,7 @@ if __name__ == '__main__':
     test_array_in_struct()
     test_struct_in_array()
     test_struct_in_array_in_struct()
+    test_parallel_add()
 
     # test compile errors
     test_duplicate_declare()
