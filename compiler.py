@@ -1,7 +1,8 @@
 import ctypes
 from ctypes import CDLL
 import check
-import codegen
+import codegen_c
+import codegen_ispc
 import inspect
 import os
 import parser
@@ -26,24 +27,58 @@ def loma_to_ctypes_type(t, ctypes_structs):
         case _:
             assert False
 
-def compile(loma_code, output_filename):
+def compile(loma_code, output_filename, target):
     structs, funcs = parser.parse(loma_code)
     check.check_ir(structs, funcs)
-    code = codegen.codegen(structs, funcs)
+    
+    if target == 'c':
+        code = codegen_c.codegen_c(structs, funcs)
+        # add standard headers
+        code = """
+    #include <math.h>
+        \n""" + code
 
-    # add standard headers
-    code = """
-#include <math.h>
-    \n""" + code
+        print(code)
 
-    print(code)
+        log = run(['g++', '-shared', '-fPIC', '-o', output_filename, '-O2', '-x', 'c++', '-'],
+            input = code,
+            encoding='utf-8',
+            capture_output=True)
+        if log.returncode != 0:
+            print(log.stderr)
+    elif target == 'ispc':
+        code = codegen_ispc.codegen_ispc(structs, funcs)
 
-    log = run(['g++', '-shared', '-fPIC', '-o', output_filename, '-O2', '-x', 'c++', '-'],
-        input = code,
-        encoding='utf-8',
-        capture_output=True)
-    if log.returncode != 0:
-        print(log.stderr)
+        print(code)
+
+        obj_filename = output_filename + '.o'
+        log = run(['ispc', '--pic', '-o', obj_filename, '-O2', '-'],
+            input = code,
+            encoding='utf-8',
+            capture_output=True)
+        if log.returncode != 0:
+            print(log.stderr)
+
+        script_dir = os.path.dirname(os.path.abspath(
+            inspect.getfile(inspect.currentframe())))
+        tasksys_path = os.path.join(script_dir, 'runtime', 'tasksys.cpp')
+
+        output_dir = os.path.dirname(output_filename)
+        tasksys_obj_path = os.path.join(output_dir, 'tasksys.o')
+        log = run(['g++', '-c', '-o', output_filename, '-O2', '-o', tasksys_obj_path, tasksys_path],
+            encoding='utf-8',
+            capture_output=True)
+        if log.returncode != 0:
+            print(log.stderr)        
+
+        log = run(['g++', '-shared', '-o', output_filename, '-O2', obj_filename, tasksys_obj_path],
+            encoding='utf-8',
+            capture_output=True)
+        if log.returncode != 0:
+            print(log.stderr)
+    else:
+        assert False, f'unrecognized compilation target {target}'
+
 
     # Sort the struct topologically
     # TODO: maybe extract this as a common function

@@ -20,7 +20,7 @@ def type_to_string(node):
             assert False
 
 @attrs.define()
-class CGVisitor(visitor.IRVisitor):
+class CCodegenVisitor(visitor.IRVisitor):
     code = ''
     tab_count = 0
 
@@ -36,21 +36,21 @@ class CGVisitor(visitor.IRVisitor):
         if node.is_simd:
             if len(node.args) > 0:
                 self.code += ', '
-            self.code += 'int __num_threads'
+            self.code += 'int __total_work'
         self.code += ') {\n'
         self.tab_count += 1
         if node.is_simd:
             self.emit_tabs()
-            self.code += 'for (int __thread_id = 0; __thread_id < __num_threads; __thread_id++) {{\n'
+            self.code += 'for (int __work_id = 0; __work_id < __total_work; __work_id++) {\n'
             self.tab_count += 1
         for stmt in node.body:
             self.visit_stmt(stmt)
         if node.is_simd:
             self.tab_count -= 1
             self.emit_tabs()
-            self.code += '}}\n'
+            self.code += '}\n'
         self.tab_count -= 1
-        self.code += '}\n'        
+        self.code += '}\n'
 
     def visit_return(self, ret):
         self.emit_tabs()
@@ -138,7 +138,7 @@ class CGVisitor(visitor.IRVisitor):
                         assert False
             case loma_ir.Call():
                 if expr.id == 'thread_id':
-                    return '__thread_id'
+                    return '__work_id'
                 ret = f'{expr.id}('
                 for arg in expr.args:
                     ret += self.visit_expr(arg)
@@ -159,6 +159,7 @@ class CGVisitor(visitor.IRVisitor):
                 return self.visit_ref(ref.struct) + f'.{ref.member}'
             case _:
                 assert False, f'Visitor error: unhandled ref {ref}'
+
 
 def codegen_c(structs, funcs):
     # Sort the struct topologically
@@ -195,11 +196,11 @@ def codegen_c(structs, funcs):
         if f.is_simd:
             if len(f.args) > 0:
                 code += ', '
-            code += 'int __num_threads'
+            code += 'int __work_id'
         code += ');\n'
-
+    
     for f in funcs.values():
-        cg = CGVisitor()
+        cg = CCodegenVisitor()
         cg.visit_function(f)
         code += cg.code
     return code
