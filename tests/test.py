@@ -50,6 +50,11 @@ def test_array_write():
     lib.array_write(arr)
     assert arr[0] == 2.0
 
+def test_local_static_array():
+    with open('loma_code/local_static_array.py') as f:
+        _, lib = compiler.compile(f.read(), '_code/local_static_array.so', 'c')
+    assert lib.local_static_array() == 55
+
 def test_compare():
     with open('loma_code/compare.py') as f:
         _, lib = compiler.compile(f.read(), '_code/compare.so', 'c')
@@ -221,26 +226,27 @@ def test_undeclared_var():
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-    # test_declaration()
-    # test_binary_ops()
-    # test_args()
-    # test_mutation()
-    # test_array_read()
-    # test_array_write()
-    # test_compare()
-    # test_if_else()
-    # test_while_loop()
-    # test_intrinsic_func_call()
-    # test_func_decl()
-    # test_struct_access()
-    # test_struct_return()
-    # test_struct_in_struct()
-    # test_array_in_struct()
-    # test_struct_in_array()
-    # test_struct_in_array_in_struct()
-    # test_parallel_add()
+    test_declaration()
+    test_binary_ops()
+    test_args()
+    test_mutation()
+    test_array_read()
+    test_array_write()
+    test_local_static_array()
+    test_compare()
+    test_if_else()
+    test_while_loop()
+    test_intrinsic_func_call()
+    test_func_decl()
+    test_struct_access()
+    test_struct_return()
+    test_struct_in_struct()
+    test_array_in_struct()
+    test_struct_in_array()
+    test_struct_in_array_in_struct()
+    test_parallel_add()
     test_ispc_func()
 
-    # # test compile errors
-    # test_duplicate_declare()
-    # test_undeclared_var()
+    # test compile errors
+    test_duplicate_declare()
+    test_undeclared_var()

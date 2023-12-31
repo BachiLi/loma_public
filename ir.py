@@ -34,7 +34,7 @@ def generate_asdl_file():
 
       type = Int    ( )
            | Float  ( )
-           | Array  ( type t )
+           | Array  ( type t, int? static_size )
            | Struct ( string id, struct_member* members, int? lineno )
 
       struct_member = MemberDef ( string id, type t )

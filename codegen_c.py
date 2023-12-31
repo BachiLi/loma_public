@@ -58,7 +58,12 @@ class CCodegenVisitor(visitor.IRVisitor):
 
     def visit_declare(self, dec):
         self.emit_tabs()
-        self.code += f'{type_to_string(dec.t)} {dec.target}'
+        if not isinstance(dec.t, loma_ir.Array):
+            self.code += f'{type_to_string(dec.t)} {dec.target}'
+        else:
+            # Special rule for arrays
+            assert dec.t.static_size != None
+            self.code += f'{type_to_string(dec.t.t)} {dec.target}[{dec.t.static_size}]'
         expr_str = self.visit_expr(dec.val)
         if expr_str != '':
             self.code += f' = {expr_str}'

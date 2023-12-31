@@ -15,12 +15,19 @@ def annotation_to_type(node):
                 # Struct members to be filled later
                 return loma_ir.Struct(node.id, [])
         case ast.Subscript():
-            assert type(node.value) == ast.Name
+            assert isinstance(node.value, ast.Name)
             if node.value.id == 'In' or node.value.id == 'Out':
                 # Ignore input/output qualifiers
                 return annotation_to_type(node.slice)
             assert node.value.id == 'Array'
-            return loma_ir.Array(annotation_to_type(node.slice))
+            array_type = node.slice
+            static_size = None
+            if isinstance(array_type, ast.Tuple):
+                assert len(array_type.elts) == 2 # TODO: error message
+                assert isinstance(array_type.elts[1], ast.Constant)
+                static_size = int(array_type.elts[1].value)
+                array_type = array_type.elts[0]
+            return loma_ir.Array(annotation_to_type(array_type), static_size)
         case _:
             assert False
 
@@ -108,7 +115,6 @@ def visit_stmt(node):
         case ast.Return():
             return loma_ir.Return(visit_expr(node.value), lineno = node.lineno)
         case ast.AnnAssign():
-            assert isinstance(node.annotation, ast.Name)
             t = annotation_to_type(node.annotation)
             return loma_ir.Declare(node.target.id,
                                    t,
