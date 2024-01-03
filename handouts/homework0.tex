@@ -9,7 +9,7 @@ In this course, we will be using a C-like parallel programming language \textbf{
 The design principles of loma are:
 \begin{itemize}
 	\item \textbf{Minimal}. To make implementing the compiler and the differentiation as simple as possible, we restrict as much language features as possible. As a result, the language lacks advanced object-oriented/functional features such as higher-order functions or fancy type inference.
-	\item \textbf{Differentiable}. Furthermore, to make differentiation possible/simpler/efficient, we impose restrictions to the language. For example, functions can only have one \lstinline{return} statement in the end, all \lstinline{while} loops need to have a static upper bound on the iteration size, and recursion is not allowed. These restrictions will make more sense as you start to implement differentiation. As a result, loma is not Turing complete and can be seen as a domain-specific language -- this is a good thing as we can specialize the compiler to generate efficient code.
+	\item \textbf{Differentiable}. Furthermore, to make differentiation possible/simpler/efficient, we impose restrictions to the language. For example, functions can only have one \lstinline{return} statement in the end, all \lstinline{while} loops need to have a static upper bound on the iteration size, recursion is not allowed, and there is no pointer. These restrictions will make more sense as you start to implement differentiation. As a result, loma is not Turing complete and can be seen as a domain-specific language -- this is a good thing as we can specialize the compiler to generate efficient code.
 	\item \textbf{Static}. For efficiency purpose, to minimize dynamic memory allocation, loma's variables are all statically typed. In fact, all memory allocation inside loma needs to have size known at compile time. You can, however, allocate the memory dynamically outside of loma in the host code.
 	\item \textbf{SIMD Parallel}. Loma programs will likely need to be executed in an optimization loop, either for machine learning, simulation, or inverse problems. These days it's not entirely practical to run these loops without any parallelism. Therefore, we need to be able to compile loma programs to vectorized CPU code or GPU code. Loma thus adopts a \href{https://en.wikipedia.org/wiki/Single_instruction,_multiple_data}{Single-Instruction-Multiple-Data} parallelism execution model.
 	\item \textbf{Python embedding}. For ease of both scripting of loma programs and compiler development, loma is embedded in Python, and mostly follows Python's syntax. We aim for the syntax's familiarity and want to reuse Python's parser and AST modules (and existing syntax highlighters). Embedding in Python also makes it easy to use loma from a Python host code. Fortunately, loma should be much faster than Python in general since it's a compiled static type language and has GPU backends.
@@ -68,5 +68,167 @@ assert abs(lib.sum_array(arr, len(py_arr)) - 15.0) < 1e-6
 \end{lstlisting}
 
 \section{Intermediate Representation}
+
+The most important component of a programming language is its intermediate representation (IR). They are the data structures we use for representing a program and store important information. An IR is usually a directed graph without cycles (i.e. a directed acyclic graph (DAG)). It's probably easiest to look at the IR to understand it. 
+The IR of loma in the \href{https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form}{Backus-Naur Form} is:
+\begin{grammar}
+<func> ::= 'FunctionDef' <string> <arg>* <stmt>* <is_simd> <type>?
+
+<stmt> ::= ('Assign' <ref> <expr>
+\alt 'Declare' <string> <type> [<expr>]? 
+\alt 'Return' <expr>
+\alt 'IfElse' <expr> <stmt>* <stmt>*
+\alt 'While' <expr> <stmt>*) \\
+'attributes' <int>?
+
+<expr> ::= ('Var' <string>
+\alt 'ArrayAccess' <ref> <expr>
+\alt 'StructAccess' <ref> <string>
+\alt 'ConstFloat' <float>
+\alt 'ConstInt' <int>
+\alt 'BinaryOp' <bin_op> <expr> <expr>
+\alt 'Call' <string> <expr>*) \\
+'attributes' <int>? <type>?
+
+<ref> ::= 'RefName' <string>
+\alt 'RefArray' <ref> <expr>
+\alt 'RefStruct' <ref> 
+
+<arg> ::= 'Arg' <string> <type> <inout>
+
+<type> ::= 'Int'
+\alt 'Float'
+\alt 'Array' <type> <int>?
+\alt 'Struct' <string> <struct_member>* <int>?
+
+<struct_member> ::= 'MemberDef' <string> <type>
+
+<bin_op> ::= 'Add'
+\alt 'Sub'
+\alt 'Mul'
+\alt 'Div'
+\alt 'Less'
+\alt 'LessEqual'
+\alt 'Greater'
+\alt 'GreaterEqual'
+\alt 'Equal'
+\alt 'And'
+\alt 'Or'
+
+<inout> ::= 'In' \alt 'Out'
+
+<is_simd> :: 'True' \alt 'False'
+\end{grammar}
+
+If you have never seen anything like this, here is how to read it:
+Each rule (\lstinline{::=}) defines how a symbol (e.g., \lstinline{<func>}) can be expanded. The first rule says a function definition \lstinline{<func>} consists of a \lstinline{<string>} (for the name of the function), zero or more arguments \lstinline{<arg>} (for the function arguments), zero or more statements \lstinline{<stmt>} (for the function body), a flag \lstinline{<is_simd>} (for whether the function is a SIMD kernel or not -- more about this later), and an optional return type. The \lstinline{|} character represents alternatives. For example, a statement \lstinline{<stmt>} can be either an assignment (\lstinline{'Assign'}), a variable declaration (\lstinline{'Declare'}), function return (\lstinline{'Return'}), if-else (\lstinline{'IfElse'}), or a while loop (\lstinline{'While'}). At the end of each statement we attached \lstinline{'attributes'} for extra information -- here we store the line number for error messages.
+
+To implement the IR above, we represent it using ASDL (Abstract Syntax Definition Language) -- see \href{https://eli.thegreenplace.net/2014/06/04/using-asdl-to-describe-asts-in-compilers}{Eli Bendersky's blog post} for a brief introduction. This is what Python used for representing its \href{https://github.com/python/cpython/blob/main/Parser/Python.asdl}{abstract syntax tree}. The IR above can be written in the following ASDL:
+\begin{lstlisting}
+    module loma {
+      func = FunctionDef ( string id, arg* args, stmt* body, bool is_simd, type? ret_type )
+             attributes  ( int? lineno )
+
+      stmt = Assign     ( ref target, expr val )
+           | Declare    ( string target, type t, expr? val )
+           | Return     ( expr val )
+           | IfElse     ( expr cond, stmt* then_stmts, stmt* else_stmts )
+           | While      ( expr cond, stmt* body )
+           attributes   ( int? lineno )
+
+      expr = Var          ( string id )
+           | ArrayAccess  ( ref array, expr index )
+           | StructAccess ( ref struct, string member_id )
+           | ConstFloat   ( float val )
+           | ConstInt     ( int val )
+           | BinaryOp     ( bin_op op, expr left, expr right )
+           | Call         ( string id, expr* args )
+           attributes     ( int? lineno, type? t )
+
+      ref = RefName   ( string id )
+          | RefArray  ( ref array, expr index )
+          | RefStruct ( ref struct, string member )
+
+      arg  = Arg ( string id, type t, inout i )
+
+      type = Int    ( )
+           | Float  ( )
+           | Array  ( type t, int? static_size )
+           | Struct ( string id, struct_member* members, int? lineno )
+
+      struct_member = MemberDef ( string id, type t )
+
+      bin_op = Add()
+             | Sub()
+             | Mul()
+             | Div()
+             | Less()
+             | LessEqual()
+             | Greater()
+             | GreaterEqual()
+             | Equal()
+             | And()
+             | Or()
+
+      inout = In() | Out()
+\end{lstlisting}
+
+The ASDL above is pretty much a direct translation of the Backus-Naur form. We then use a nice library written by Gilbert Bernstein to convert the ASDL into a hierarchy of Python classes. For example, the \lstinline{stmt} ruleset above is converted to the following classes (code simplified a bit):
+\begin{lstlisting}[language=python]
+import attrs
+from typing import Optional
+# ...
+
+class stmt:
+  pass
+
+@attrs.define(frozen=True)
+class Assign(stmt):
+    target: ref
+    val: expr
+    lineno: Optional[int] = None
+
+@attrs.define(frozen=True)
+class Declare(stmt):
+    target: str
+    t: type
+    val: Optional[expr] = None
+    lineno: Optional[int] = None
+
+# ...
+\end{lstlisting}
+Hopefully you can see how the rest of the classes are constructed from the example above. 
+
+Once we have these classes, we can then construct loma programs by composing objects of these classes. For example, the following code
+\begin{lstlisting}[language=python]
+x : int = y + 5
+\end{lstlisting}
+Would be converted into the following loma IR:
+\begin{lstlisting}[language=python]
+Declare(target='x', t=Int(), val=Add(Var('y'), ConstInt(5)))
+\end{lstlisting}
+
+\paragraph{Type System and Semantic Analysis.} The type system of loma is similar to C except it's even simpler. The \lstinline{<type>} rule set above defines all the possible types in loma. There are only two primitive types: \lstinline{Int} and \lstinline{Float}. We can also define an \lstinline{Array} that is a list of the same type (the optional integer represents a fixed-size array). Finally, loma also supports \lstinline{Struct} (product types if you're a functional guru).
+
+The type checking for loma checks the obvious stuff: whether the assignment and function calls having the right types or not. 
+\TODO{implement this}
+
+In addition to the type check, loma imposes the following restrictions to the program:
+\begin{itemize}
+	\item All \lstinline{Array} and \lstinline{Struct} declarations inside a function need to have a size known at compile time (e.g., an array needs to have a fixed size, and a struct cannot contain a dynamic array).
+	\item \lstinline{Return} can only be the last statement in the function. That is, a function can only have a single exit point. This is to make the implementation of differentiation much easier. It's not too complicated to add a syntax sugar to relax this constraint.
+	\item The function calls cannot be recursive. That is, function calling other functions cannot form a cycle.
+	\item The \lstinline{Struct} definitions cannot be recursive. That is, struct consists of other structs cannot form a cycle.
+	\item A SIMD function cannot be called by other functions.
+\end{itemize}
+\TODO{implement this and update the list}
+
+\paragraph{Intrinsic functions.}
+Loma maintains a list of instrinsic functions for users to call:
+\begin{itemize}
+	\item \textbf{Math functions}: \lstinline{sin}, \lstinline{cos}, \lstinline{exp}, \lstinline{log}.
+	\item \textbf{Parallelism}: \lstinline{atomic_add}, \lstinline{thread_id}.
+\end{itemize}
+\TODO{implement and update the list}
 
 \end{document}

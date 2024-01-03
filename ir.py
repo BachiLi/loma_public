@@ -3,6 +3,9 @@ from asdl_gen import ADT
 def generate_asdl_file():
     ADT("""
     module loma {
+      func = FunctionDef ( string id, arg* args, stmt* body, bool is_simd, type? ret_type )
+             attributes  ( int? lineno )
+
       stmt = Assign     ( ref target, expr val )
            | Declare    ( string target, type t, expr? val )
            | Return     ( expr val )
@@ -22,9 +25,6 @@ def generate_asdl_file():
       ref = RefName   ( string id )
           | RefArray  ( ref array, expr index )
           | RefStruct ( ref struct, string member )
-
-      func = FunctionDef ( string id, arg* args, stmt* body, bool is_simd, type? ret_type )
-             attributes  ( int? lineno )
 
       arg  = Arg ( string id, type t, inout i )
 
