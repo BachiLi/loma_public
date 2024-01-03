@@ -7,18 +7,29 @@ import compiler
 import ctypes
 import error
 import math
+import gpuctypes.opencl as cl
+import cl_utils
+
+###########################################################################
+# Correctness test
 
 def test_declaration():
     with open('loma_code/declaration_float.py') as f:
-        _, lib = compiler.compile(f.read(), '_code/declaration_float.so', 'c')
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/declaration_float.so')
     assert abs(lib.declaration_float() - 5) < 1e-6
     with open('loma_code/declaration_int.py') as f:
-        _, lib = compiler.compile(f.read(), '_code/declaration_int.so', 'c')
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/declaration_int.so')
     assert lib.declaration_int() == 4
 
 def test_binary_ops():
     with open('loma_code/binary_ops.py') as f:
-        _, lib = compiler.compile(f.read(), '_code/binary_ops.so', 'c')
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/binary_ops.so')
     # a = x + y = 5 + 6 = 11
     # b = a - x = 11 - 5 = 6
     # c = b * y = 6 * 6 = 36
@@ -27,24 +38,32 @@ def test_binary_ops():
 
 def test_args():
     with open('loma_code/args.py') as f:
-        _, lib = compiler.compile(f.read(), '_code/args.so', 'c')
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/args.so')
     assert lib.args(4.5, 3) == 7
 
 def test_mutation():
     with open('loma_code/mutation.py') as f:
-        _, lib = compiler.compile(f.read(), '_code/mutation.so', 'c')
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/mutation.so')
     assert abs(lib.mutation() - 6) < 1e-6
 
 def test_array_read():
     with open('loma_code/array_read.py') as f:
-        _, lib = compiler.compile(f.read(), '_code/array_read.so', 'c')
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/array_read.so')
     py_arr = [1.0, 2.0]
     arr = (ctypes.c_float * len(py_arr))(*py_arr)
     assert lib.array_read(arr) == 1.0
 
 def test_array_write():
     with open('loma_code/array_write.py') as f:
-        _, lib = compiler.compile(f.read(), '_code/array_write.so', 'c')
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/array_write.so')
     py_arr = [0.0, 0.0]
     arr = (ctypes.c_float * len(py_arr))(*py_arr)
     lib.array_write(arr)
@@ -52,12 +71,16 @@ def test_array_write():
 
 def test_local_static_array():
     with open('loma_code/local_static_array.py') as f:
-        _, lib = compiler.compile(f.read(), '_code/local_static_array.so', 'c')
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/local_static_array.so')
     assert lib.local_static_array() == 55
 
 def test_compare():
     with open('loma_code/compare.py') as f:
-        _, lib = compiler.compile(f.read(), '_code/compare.so', 'c')
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/compare.so')
     py_arr = [0] * 7
     arr = (ctypes.c_int * len(py_arr))(*py_arr)
     # 5 < 6 : True
@@ -89,41 +112,55 @@ def test_compare():
 
 def test_if_else():
     with open('loma_code/if_else.py') as f:
-        _, lib = compiler.compile(f.read(), '_code/if_else.so', 'c')
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/if_else.so')
     assert lib.if_else(0.5) == 4.0
     assert lib.if_else(-0.5) == -4.0
 
 def test_while_loop():
     with open('loma_code/while_loop.py') as f:
-        _, lib = compiler.compile(f.read(), '_code/while_loop.so', 'c')
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/while_loop.so')
     assert lib.while_loop() == 45
 
 def test_intrinsic_func_call():
     with open('loma_code/intrinsic_func_call.py') as f:
-        _, lib = compiler.compile(f.read(), '_code/intrinsic_func_call.so', 'c')
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/intrinsic_func_call.so')
     assert abs(lib.intrinsic_func_call() - math.sin(3.0)) < 1e-6
 
 def test_func_decl():
     with open('loma_code/func_decl.py') as f:
-        _, lib = compiler.compile(f.read(), '_code/func_decl.so', 'c')
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/func_decl.so')
     assert lib.func_decl() == 42
 
 def test_struct_access():
     with open('loma_code/struct_access.py') as f:
-        structs, lib = compiler.compile(f.read(), '_code/struct_access.so', 'c')
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/struct_access.so')
     Foo = structs['Foo']
     foo = Foo(x=3, y=4.5)
     assert abs(lib.struct_access(foo) - 3 * 4.5 < 1e-6)
 
 def test_struct_return():
     with open('loma_code/struct_return.py') as f:
-        structs, lib = compiler.compile(f.read(), '_code/struct_return.so', 'c')
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/struct_return.so')
     foo = lib.struct_return()
     assert foo.x == 5 and abs(foo.y - 3.5) < 1e-6
 
 def test_struct_in_struct():
     with open('loma_code/struct_in_struct.py') as f:
-        structs, lib = compiler.compile(f.read(), '_code/struct_in_struct.so', 'c')
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/struct_in_struct.so')
     Bar = structs['Bar']
     bar = Bar(y=4.5, z=100)
     foo = lib.struct_in_struct(bar)
@@ -131,7 +168,9 @@ def test_struct_in_struct():
 
 def test_array_in_struct():
     with open('loma_code/array_in_struct.py') as f:
-        structs, lib = compiler.compile(f.read(), '_code/array_in_struct.so', 'c')
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/array_in_struct.so')
     py_arr = [1, 2]
     arr = (ctypes.c_int * len(py_arr))(*py_arr)
     Foo = structs['Foo']
@@ -140,7 +179,9 @@ def test_array_in_struct():
 
 def test_struct_in_array():
     with open('loma_code/struct_in_array.py') as f:
-        structs, lib = compiler.compile(f.read(), '_code/struct_in_array.so', 'c')
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/struct_in_array.so')
     Foo = structs['Foo']
     py_arr = [Foo(x=1,y=2), Foo(x=3,y=4)]
     arr = (Foo * len(py_arr))(*py_arr)
@@ -148,7 +189,9 @@ def test_struct_in_array():
 
 def test_struct_in_array_in_struct():
     with open('loma_code/struct_in_array_in_struct.py') as f:
-        structs, lib = compiler.compile(f.read(), '_code/struct_in_array_in_struct.so', 'c')
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/struct_in_array_in_struct.so')
     Foo = structs['Foo']
     Bar = structs['Bar']
     bar_py_arr_0 = [Bar(y=2)]
@@ -161,7 +204,9 @@ def test_struct_in_array_in_struct():
 
 def test_parallel_add():
     with open('loma_code/parallel_add.py') as f:
-        structs, lib = compiler.compile(f.read(), '_code/parallel_add.so', 'c')
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/parallel_add.so')
     py_x = [2, 3, 5]
     x = (ctypes.c_int * len(py_x))(*py_x)
     py_y = [7, 11, 13]
@@ -172,7 +217,9 @@ def test_parallel_add():
     assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
     with open('loma_code/parallel_add.py') as f:
-        structs, lib = compiler.compile(f.read(), '_code/parallel_add.so', 'ispc')
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'ispc',
+                                        output_filename = '_code/parallel_add.so')
     py_x = [2, 3, 5]
     x = (ctypes.c_int * len(py_x))(*py_x)
     py_y = [7, 11, 13]
@@ -182,9 +229,61 @@ def test_parallel_add():
     lib.parallel_add(x, y, z, len(py_z))
     assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
+    cl_ctx, cl_device, cl_cmd_queue = cl_utils.create_context()
+
+    with open('loma_code/parallel_add.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'opencl',
+                                        opencl_context = cl_ctx,
+                                        opencl_device = cl_device,
+                                        opencl_command_queue = cl_cmd_queue)
+    py_x = [2, 3, 5]
+    x = (ctypes.c_int * len(py_x))(*py_x)
+    py_y = [7, 11, 13]
+    y = (ctypes.c_int * len(py_y))(*py_y)
+    py_z = [0, 0, 0]
+    z = (ctypes.c_int * len(py_z))(*py_z)
+
+    status = ctypes.c_int32()
+    bufx = cl.clCreateBuffer(cl_ctx,
+                             cl.CL_MEM_READ_ONLY | cl.CL_MEM_COPY_HOST_PTR,
+                             ctypes.sizeof(x),
+                             ctypes.byref(x),
+                             ctypes.byref(status))
+    cl_utils.cl_check(status.value)
+    bufy = cl.clCreateBuffer(cl_ctx,
+                             cl.CL_MEM_READ_ONLY | cl.CL_MEM_COPY_HOST_PTR,
+                             ctypes.sizeof(y),
+                             ctypes.byref(y),
+                             ctypes.byref(status))
+    cl_utils.cl_check(status.value)
+    bufz = cl.clCreateBuffer(cl_ctx,
+                             cl.CL_MEM_WRITE_ONLY,
+                             ctypes.sizeof(z),
+                             None,
+                             ctypes.byref(status))
+    cl_utils.cl_check(status.value)
+
+    lib.parallel_add(bufx, bufy, bufz, len(py_z))
+    cl.clFinish(cl_cmd_queue)
+
+    cl.clEnqueueReadBuffer(cl_cmd_queue,
+                           bufz,
+                           cl.CL_TRUE,
+                           0,
+                           ctypes.sizeof(z),
+                           ctypes.byref(z),
+                           0,
+                           None,
+                           None)
+
+    assert z[0] == 9 and z[1] == 14 and z[2] == 18
+
 def test_ispc_func():
     with open('loma_code/ispc_func.py') as f:
-        structs, lib = compiler.compile(f.read(), '_code/ispc_func.so', 'c')
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/ispc_func.so')
     py_x = [2, 3, 5]
     x = (ctypes.c_int * len(py_x))(*py_x)
     py_y = [7, 11, 13]
@@ -195,7 +294,9 @@ def test_ispc_func():
     assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
     with open('loma_code/ispc_func.py') as f:
-        structs, lib = compiler.compile(f.read(), '_code/ispc_func.so', 'ispc')
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'ispc',
+                                        output_filename = '_code/ispc_func.so')
     py_x = [2, 3, 5]
     x = (ctypes.c_int * len(py_x))(*py_x)
     py_y = [7, 11, 13]
@@ -205,11 +306,15 @@ def test_ispc_func():
     lib.ispc_func(x, y, z, len(py_z))
     assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
+###########################################################################
+# Test compile error
 
 def test_duplicate_declare():
     try:
         with open('loma_code/duplicate_declare.py') as f:
-            _, lib = compiler.compile(f.read(), '_code/duplicate_declare.so', 'c')
+            _, lib = compiler.compile(f.read(),
+                                      target = 'c',
+                                      output_filename = '_code/duplicate_declare.so')
     except error.DuplicateVariable as e:
         assert e.var == 'x'
         assert e.first_lineno == 2
@@ -218,7 +323,9 @@ def test_duplicate_declare():
 def test_undeclared_var():
     try:
         with open('loma_code/undeclared_var.py') as f:
-            _, lib = compiler.compile(f.read(), '_code/undeclared_var.so', 'c')
+            _, lib = compiler.compile(f.read(),
+                                      target = 'c',
+                                      output_filename = '_code/undeclared_var.so')
     except error.UndeclaredVariable as e:
         assert e.var == 'b'
         assert e.lineno == 3

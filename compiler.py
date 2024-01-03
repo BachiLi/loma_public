@@ -1,8 +1,10 @@
+import attrs
 import ctypes
 from ctypes import CDLL
 import check
 import codegen_c
 import codegen_ispc
+import codegen_opencl
 import inspect
 import os
 import parser
@@ -11,6 +13,8 @@ from subprocess import run
 import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
+import numpy as np
+import cl_utils
 
 def loma_to_ctypes_type(t, ctypes_structs):
     match t:
@@ -27,10 +31,33 @@ def loma_to_ctypes_type(t, ctypes_structs):
         case _:
             assert False
 
-def compile(loma_code, output_filename, target):
+def compile(loma_code,
+            target = 'c',
+            output_filename = None,
+            opencl_context = None,
+            opencl_device = None,
+            opencl_command_queue = None):
     structs, funcs = parser.parse(loma_code)
     check.check_ir(structs, funcs)
     
+    # Sort the struct topologically
+    # TODO: maybe extract this as a common function
+    sorted_structs_list = []
+    traversed_struct = set()
+    def traverse_structs(s):
+        if s in traversed_struct:
+            return
+        for m in s.members:
+            if isinstance(m.t, loma_ir.Struct) or isinstance(m.t, loma_ir.Array):
+                next_s = m.t if isinstance(m.t, loma_ir.Struct) else m.t.t
+                if isinstance(next_s, loma_ir.Struct):
+                    traverse_structs(structs[next_s.id])
+        sorted_structs_list.append(s)
+        traversed_struct.add(s)
+    for s in structs.values():
+        traverse_structs(s)
+
+    # Generate and compile the code
     if target == 'c':
         code = codegen_c.codegen_c(structs, funcs)
         # add standard headers
@@ -76,26 +103,15 @@ def compile(loma_code, output_filename, target):
             capture_output=True)
         if log.returncode != 0:
             print(log.stderr)
+    elif target == 'opencl':
+        code = codegen_opencl.codegen_opencl(structs, funcs)
+        lib = cl_utils.cl_compile(opencl_context,
+                                  opencl_device,
+                                  opencl_command_queue,
+                                  code,
+                                  funcs.keys())
     else:
         assert False, f'unrecognized compilation target {target}'
-
-
-    # Sort the struct topologically
-    # TODO: maybe extract this as a common function
-    sorted_structs_list = []
-    traversed_struct = set()
-    def traverse_structs(s):
-        if s in traversed_struct:
-            return
-        for m in s.members:
-            if isinstance(m.t, loma_ir.Struct) or isinstance(m.t, loma_ir.Array):
-                next_s = m.t if isinstance(m.t, loma_ir.Struct) else m.t.t
-                if isinstance(next_s, loma_ir.Struct):
-                    traverse_structs(structs[next_s.id])
-        sorted_structs_list.append(s)
-        traversed_struct.add(s)
-    for s in structs.values():
-        traverse_structs(s)
 
     # build ctypes structs/classes
     ctypes_structs = {}
@@ -104,11 +120,13 @@ def compile(loma_code, output_filename, target):
             '_fields_': [(m.id, loma_to_ctypes_type(m.t, ctypes_structs)) for m in s.members]
         })
 
-    lib = CDLL(output_filename)
-    for f in funcs.values():
-        c_func = getattr(lib, f.id)
-        c_func.argtypes = \
-            [loma_to_ctypes_type(arg.t, ctypes_structs) for arg in f.args]
-        c_func.restype = loma_to_ctypes_type(f.ret_type, ctypes_structs)
+    # load the dynamic library
+    if target == 'c' or target == 'ispc':
+        lib = CDLL(output_filename)
+        for f in funcs.values():
+            c_func = getattr(lib, f.id)
+            c_func.argtypes = \
+                [loma_to_ctypes_type(arg.t, ctypes_structs) for arg in f.args]
+            c_func.restype = loma_to_ctypes_type(f.ret_type, ctypes_structs)
 
     return ctypes_structs, lib

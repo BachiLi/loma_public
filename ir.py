@@ -27,7 +27,7 @@ def generate_asdl_file():
           | RefArray  ( ref array, expr index )
           | RefStruct ( ref struct, string member )
 
-      func = FunctionDef ( string id, arg* args, stmt* body, bool is_simd, type? ret_type)
+      func = FunctionDef ( string id, arg* args, stmt* body, bool is_simd, type? ret_type )
              attributes  ( int? lineno )
 
       arg  = Arg ( string id, type t, inout i )
