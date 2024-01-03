@@ -115,16 +115,16 @@ class CCodegenVisitor(visitor.IRVisitor):
                 return f'(float)({expr.val})'
             case loma_ir.ConstInt():
                 return f'(int)({expr.val})'
-            case loma_ir.Add():
-                return f'({self.visit_expr(expr.left)}) + ({self.visit_expr(expr.right)})'
-            case loma_ir.Sub():
-                return f'({self.visit_expr(expr.left)}) - ({self.visit_expr(expr.right)})'
-            case loma_ir.Mul():
-                return f'({self.visit_expr(expr.left)}) * ({self.visit_expr(expr.right)})'
-            case loma_ir.Div():
-                return f'({self.visit_expr(expr.left)}) / ({self.visit_expr(expr.right)})'
-            case loma_ir.Compare():
+            case loma_ir.BinaryOp():
                 match expr.op:
+                    case loma_ir.Add():
+                        return f'({self.visit_expr(expr.left)}) + ({self.visit_expr(expr.right)})'
+                    case loma_ir.Sub():
+                        return f'({self.visit_expr(expr.left)}) - ({self.visit_expr(expr.right)})'
+                    case loma_ir.Mul():
+                        return f'({self.visit_expr(expr.left)}) * ({self.visit_expr(expr.right)})'
+                    case loma_ir.Div():
+                        return f'({self.visit_expr(expr.left)}) / ({self.visit_expr(expr.right)})'
                     case loma_ir.Less():
                         return f'({self.visit_expr(expr.left)}) < ({self.visit_expr(expr.right)})'
                     case loma_ir.LessEqual():

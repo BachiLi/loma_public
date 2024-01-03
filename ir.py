@@ -15,11 +15,7 @@ def generate_asdl_file():
            | StructAccess ( ref struct, string member_id )
            | ConstFloat   ( float val )
            | ConstInt     ( int val )
-           | Add          ( expr left, expr right )
-           | Sub          ( expr left, expr right )
-           | Mul          ( expr left, expr right )
-           | Div          ( expr left, expr right )
-           | Compare      ( cmp_op op, expr left, expr right )
+           | BinaryOp     ( bin_op op, expr left, expr right )
            | Call         ( string id, expr* args )
            attributes     ( int? lineno, type? t )
 
@@ -39,7 +35,11 @@ def generate_asdl_file():
 
       struct_member = MemberDef ( string id, type t )
 
-      cmp_op = Less()
+      bin_op = Add()
+             | Sub()
+             | Mul()
+             | Div()
+             | Less()
              | LessEqual()
              | Greater()
              | GreaterEqual()

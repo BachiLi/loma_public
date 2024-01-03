@@ -154,19 +154,31 @@ def visit_expr(node):
                 assert False, f'Unknown constant type'
         case ast.UnaryOp():
             if isinstance(node.op, ast.USub):
-                return loma_ir.Sub(loma_ir.ConstInt(0), visit_expr(node.operand))
+                return loma_ir.BinaryOp(loma_ir.Sub(), loma_ir.ConstInt(0), visit_expr(node.operand))
             else:
                 assert False, f'Unknown UnaryOp {type(node.op).__name__}'
         case ast.BinOp():
             match node.op:
                 case ast.Add():
-                    return loma_ir.Add(visit_expr(node.left), visit_expr(node.right), lineno = node.lineno)
+                    return loma_ir.BinaryOp(loma_ir.Add(),
+                                            visit_expr(node.left),
+                                            visit_expr(node.right),
+                                            lineno = node.lineno)
                 case ast.Sub():
-                    return loma_ir.Sub(visit_expr(node.left), visit_expr(node.right), lineno = node.lineno)
+                    return loma_ir.BinaryOp(loma_ir.Sub(),
+                                            visit_expr(node.left),
+                                            visit_expr(node.right),
+                                            lineno = node.lineno)
                 case ast.Mult():
-                    return loma_ir.Mul(visit_expr(node.left), visit_expr(node.right), lineno = node.lineno)
+                    return loma_ir.BinaryOp(loma_ir.Mul(),
+                                            visit_expr(node.left),
+                                            visit_expr(node.right),
+                                            lineno = node.lineno)
                 case ast.Div():
-                    return loma_ir.Div(visit_expr(node.left), visit_expr(node.right), lineno = node.lineno)
+                    return loma_ir.BinaryOp(loma_ir.Div(),
+                                            visit_expr(node.left),
+                                            visit_expr(node.right),
+                                            lineno = node.lineno)
                 case _:
                     assert False, f'Unknown BinOp {type(node.op).__name__}'
         case ast.Subscript():
@@ -179,13 +191,13 @@ def visit_expr(node):
             op = ast_cmp_op_convert(node.ops[0])
             left = visit_expr(node.left)
             right = visit_expr(node.comparators[0])
-            return loma_ir.Compare(op, left, right)
+            return loma_ir.BinaryOp(op, left, right)
         case ast.BoolOp():
             op = ast_cmp_op_convert(node.op)
             assert len(node.values) == 2
             left = visit_expr(node.values[0])
             right = visit_expr(node.values[1])
-            return loma_ir.Compare(op, left, right)
+            return loma_ir.BinaryOp(op, left, right)
         case ast.Call():
             assert type(node.func) == ast.Name
             return loma_ir.Call(node.func.id, [visit_expr(arg) for arg in node.args])

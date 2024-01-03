@@ -1,3 +1,5 @@
+import ir
+ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 import error
 import visitor

@@ -55,16 +55,8 @@ class IRVisitor:
                 self.visit_const_float(expr)
             case loma_ir.ConstInt():
                 self.visit_const_int(expr)
-            case loma_ir.Add():
-                self.visit_add(expr)
-            case loma_ir.Sub():
-                self.visit_sub(expr)
-            case loma_ir.Mul():
-                self.visit_mul(expr)
-            case loma_ir.Div():
-                self.visit_div(expr)
-            case loma_ir.Compare():
-                self.visit_compare(expr)
+            case loma_ir.BinaryOp():
+                self.visit_binary_op(expr.op, expr.left, expr.right)
             case loma_ir.Call():
                 self.visit_call(expr)
             case _:
@@ -87,25 +79,74 @@ class IRVisitor:
     def visit_const_int(self, con):
         pass
 
-    def visit_add(self, add):
-        self.visit_expr(add.left)
-        self.visit_expr(add.right)
+    def visit_binary_op(self, op, left, right):
+        match op:
+            case loma_ir.Add():
+                self.visit_add(left, right)
+            case loma_ir.Sub():
+                self.visit_sub(left, right)
+            case loma_ir.Mul():
+                self.visit_mul(left, right)
+            case loma_ir.Div():
+                self.visit_div(left, right)
+            case loma_ir.Less():
+                self.visit_less(left, right)
+            case loma_ir.LessEqual():
+                self.visit_less_equal(left, right)
+            case loma_ir.Greater():
+                self.visit_greater(left, right)
+            case loma_ir.GreaterEqual():
+                self.visit_greater_equal(left, right)
+            case loma_ir.Equal():
+                self.visit_equal(left, right)
+            case loma_ir.And():
+                self.visit_and(left, right)
+            case loma_ir.Or():
+                self.visit_or(left, right)
 
-    def visit_sub(self, sub):
-        self.visit_expr(sub.left)
-        self.visit_expr(sub.right)
+    def visit_add(self, left, right):
+        self.visit_expr(left)
+        self.visit_expr(right)
 
-    def visit_mul(self, mul):
-        self.visit_expr(mul.left)
-        self.visit_expr(mul.right)
+    def visit_sub(self, left, right):
+        self.visit_expr(left)
+        self.visit_expr(right)
 
-    def visit_div(self, div):
-        self.visit_expr(div.left)
-        self.visit_expr(div.right)
+    def visit_mul(self, left, right):
+        self.visit_expr(left)
+        self.visit_expr(right)
 
-    def visit_compare(self, cmp):
-        self.visit_expr(cmp.left)
-        self.visit_expr(cmp.right)
+    def visit_div(self, left, right):
+        self.visit_expr(left)
+        self.visit_expr(right)
+
+    def visit_less(self, left, right):
+        self.visit_expr(left)
+        self.visit_expr(right)
+
+    def visit_less_equal(self, left, right):
+        self.visit_expr(left)
+        self.visit_expr(right)
+
+    def visit_greater(self, left, right):
+        self.visit_expr(left)
+        self.visit_expr(right)
+
+    def visit_greater_equal(self, left, right):
+        self.visit_expr(left)
+        self.visit_expr(right)
+
+    def visit_equal(self, left, right):
+        self.visit_expr(left)
+        self.visit_expr(right)
+
+    def visit_and(self, left, right):
+        self.visit_expr(left)
+        self.visit_expr(right)
+
+    def visit_or(self, left, right):
+        self.visit_expr(left)
+        self.visit_expr(right)
 
     def visit_call(self, call):
         for arg in call.args:
