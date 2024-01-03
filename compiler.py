@@ -105,11 +105,12 @@ def compile(loma_code,
             print(log.stderr)
     elif target == 'opencl':
         code = codegen_opencl.codegen_opencl(structs, funcs)
+        kernel_names = [func_name for func_name, func in funcs.items() if func.is_simd]
         lib = cl_utils.cl_compile(opencl_context,
                                   opencl_device,
                                   opencl_command_queue,
                                   code,
-                                  funcs.keys())
+                                  kernel_names)
     else:
         assert False, f'unrecognized compilation target {target}'
 

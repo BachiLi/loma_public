@@ -189,7 +189,7 @@ def create_context():
     cl_check(status.value)
 
     if answers is None:
-        print('Set the environment variable PYOPENCL_CTX=\'%s\' to '
+        print('Set the environment variable OPENCL_CTX=\'%s\' to '
               'avoid being asked again.' % ':'.join([str(a) for a in current_answers]))
 
     return context, device, cmd_queue

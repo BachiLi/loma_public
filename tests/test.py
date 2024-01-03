@@ -279,31 +279,81 @@ def test_parallel_add():
 
     assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
-def test_ispc_func():
-    with open('loma_code/ispc_func.py') as f:
+def test_simd_local_func():
+    with open('loma_code/simd_local_func.py') as f:
         structs, lib = compiler.compile(f.read(),
                                         target = 'c',
-                                        output_filename = '_code/ispc_func.so')
+                                        output_filename = '_code/simd_local_func.so')
     py_x = [2, 3, 5]
     x = (ctypes.c_int * len(py_x))(*py_x)
     py_y = [7, 11, 13]
     y = (ctypes.c_int * len(py_y))(*py_y)
     py_z = [0, 0, 0]
     z = (ctypes.c_int * len(py_z))(*py_z)
-    lib.ispc_func(x, y, z, len(py_z))
+    lib.simd_local_func(x, y, z, len(py_z))
     assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
-    with open('loma_code/ispc_func.py') as f:
+    with open('loma_code/simd_local_func.py') as f:
         structs, lib = compiler.compile(f.read(),
                                         target = 'ispc',
-                                        output_filename = '_code/ispc_func.so')
+                                        output_filename = '_code/simd_local_func.so')
     py_x = [2, 3, 5]
     x = (ctypes.c_int * len(py_x))(*py_x)
     py_y = [7, 11, 13]
     y = (ctypes.c_int * len(py_y))(*py_y)
     py_z = [0, 0, 0]
     z = (ctypes.c_int * len(py_z))(*py_z)
-    lib.ispc_func(x, y, z, len(py_z))
+    lib.simd_local_func(x, y, z, len(py_z))
+    assert z[0] == 9 and z[1] == 14 and z[2] == 18
+
+    cl_ctx, cl_device, cl_cmd_queue = cl_utils.create_context()
+
+    with open('loma_code/simd_local_func.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'opencl',
+                                        opencl_context = cl_ctx,
+                                        opencl_device = cl_device,
+                                        opencl_command_queue = cl_cmd_queue)
+    py_x = [2, 3, 5]
+    x = (ctypes.c_int * len(py_x))(*py_x)
+    py_y = [7, 11, 13]
+    y = (ctypes.c_int * len(py_y))(*py_y)
+    py_z = [0, 0, 0]
+    z = (ctypes.c_int * len(py_z))(*py_z)
+
+    status = ctypes.c_int32()
+    bufx = cl.clCreateBuffer(cl_ctx,
+                             cl.CL_MEM_READ_ONLY | cl.CL_MEM_COPY_HOST_PTR,
+                             ctypes.sizeof(x),
+                             ctypes.byref(x),
+                             ctypes.byref(status))
+    cl_utils.cl_check(status.value)
+    bufy = cl.clCreateBuffer(cl_ctx,
+                             cl.CL_MEM_READ_ONLY | cl.CL_MEM_COPY_HOST_PTR,
+                             ctypes.sizeof(y),
+                             ctypes.byref(y),
+                             ctypes.byref(status))
+    cl_utils.cl_check(status.value)
+    bufz = cl.clCreateBuffer(cl_ctx,
+                             cl.CL_MEM_WRITE_ONLY,
+                             ctypes.sizeof(z),
+                             None,
+                             ctypes.byref(status))
+    cl_utils.cl_check(status.value)
+
+    lib.simd_local_func(bufx, bufy, bufz, len(py_z))
+    cl.clFinish(cl_cmd_queue)
+
+    cl.clEnqueueReadBuffer(cl_cmd_queue,
+                           bufz,
+                           cl.CL_TRUE,
+                           0,
+                           ctypes.sizeof(z),
+                           ctypes.byref(z),
+                           0,
+                           None,
+                           None)
+
     assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
 ###########################################################################
@@ -352,7 +402,7 @@ if __name__ == '__main__':
     test_struct_in_array()
     test_struct_in_array_in_struct()
     test_parallel_add()
-    test_ispc_func()
+    test_simd_local_func()
 
     # test compile errors
     test_duplicate_declare()
