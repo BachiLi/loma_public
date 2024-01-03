@@ -15,6 +15,7 @@ ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 import numpy as np
 import cl_utils
+import pathlib
 
 def loma_to_ctypes_type(t, ctypes_structs):
     match t:
@@ -57,12 +58,15 @@ def compile(loma_code,
     for s in structs.values():
         traverse_structs(s)
 
+    if output_filename is not None:
+        pathlib.Path(os.path.dirname(output_filename)).mkdir(parents=True, exist_ok=True)
+
     # Generate and compile the code
     if target == 'c':
         code = codegen_c.codegen_c(structs, funcs)
         # add standard headers
         code = """
-    #include <math.h>
+#include <math.h>
         \n""" + code
 
         print(code)

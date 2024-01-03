@@ -1,0 +1,72 @@
+\input{preamble}
+
+\begin{document}
+
+\header{0}{Introduction to the \textbf{loma} Programming Language}
+
+In this course, we will be using a C-like parallel programming language \textbf{loma} (invented for this course!). Our ultimate goal is to make loma ``differentiable'' and capable of automatic generating the derivatives of its code, and then use loma to implement your final project. In this handout, we will introduce the language and its compiler.
+
+The design principles of loma are:
+\begin{itemize}
+	\item \textbf{Minimal}. To make implementing the compiler and the differentiation as simple as possible, we restrict as much language features as possible. As a result, the language lacks advanced object-oriented/functional features such as higher-order functions or fancy type inference.
+	\item \textbf{Differentiable}. Furthermore, to make differentiation possible/simpler/efficient, we impose restrictions to the language. For example, functions can only have one \lstinline{return} statement in the end, all \lstinline{while} loops need to have a static upper bound on the iteration size, and recursion is not allowed. These restrictions will make more sense as you start to implement differentiation. As a result, loma is not Turing complete and can be seen as a domain-specific language -- this is a good thing as we can specialize the compiler to generate efficient code.
+	\item \textbf{Static}. For efficiency purpose, to minimize dynamic memory allocation, loma's variables are all statically typed. In fact, all memory allocation inside loma needs to have size known at compile time. You can, however, allocate the memory dynamically outside of loma in the host code.
+	\item \textbf{SIMD Parallel}. Loma programs will likely need to be executed in an optimization loop, either for machine learning, simulation, or inverse problems. These days it's not entirely practical to run these loops without any parallelism. Therefore, we need to be able to compile loma programs to vectorized CPU code or GPU code. Loma thus adopts a \href{https://en.wikipedia.org/wiki/Single_instruction,_multiple_data}{Single-Instruction-Multiple-Data} parallelism execution model.
+	\item \textbf{Python embedding}. For ease of both scripting of loma programs and compiler development, loma is embedded in Python, and mostly follows Python's syntax. We aim for the syntax's familiarity and want to reuse Python's parser and AST modules (and existing syntax highlighters). Embedding in Python also makes it easy to use loma from a Python host code. Fortunately, loma should be much faster than Python in general since it's a compiled static type language and has GPU backends.
+\end{itemize}
+
+\section{Hello, loma}
+
+An example loma program looks like this:
+\begin{lstlisting}[language=python]
+# sum_array.py
+def sum_array(arr : In[Array[float]], arr_size : In[int]) -> float:
+    i : int = 0
+    s : float = 0.0
+    while i < arr_size:
+        s = s + arr[i]
+        i = i + 1
+    s_relu : float = 0.0
+    if s > 0:
+    	s_relu = s
+    return s_relu
+\end{lstlisting}
+Hopefully the code explains itself: it sums over an array, and returns the sum if the sum if larger than zero, otherwise it returns zero. Note that despite the Python syntax, all variables have an explicit static type.
+
+When you feed this program to the loma compiler and specifies C as a backend (currently, the two other available backends are ISPC and OpenCL, we will get to them later), the compiler will emit the following C code:
+\begin{lstlisting}[language=c]
+#include <math.h>
+        
+extern "C" float sum_array(float* arr, int arr_size);
+extern "C" float sum_array(float* arr, int arr_size) {
+	int i = (int)(0);
+	float s = (float)(0.0);
+	while ((i) < (arr_size)) {
+		s = (s) + ((arr)[i]);
+		i = (i) + ((int)(1));
+	}
+	float s_relu = (float)(0.0);
+	if ((s) > ((int)(0))) {
+		s_relu = s;
+	} else {
+	}
+	return s_relu;
+}
+\end{lstlisting}
+
+It then compiles the C code, loads it into a dynamic library (using \href{https://docs.python.org/3/library/ctypes.html}{ctypes}). You can compile and use this loma function in Python like this:
+\begin{lstlisting}[language=python]
+# sum_array_host.py
+with open('loma_code/sum_array.py') as f:
+    _, lib = compiler.compile(f.read(),
+                              target = 'c',
+                              output_filename = '_code/sum_array.so')
+
+py_arr = [1.0, 2.0, 3.0, 4.0, 5.0]
+arr = (ctypes.c_float * len(py_arr))(*py_arr)
+assert abs(lib.sum_array(arr, len(py_arr)) - 15.0) < 1e-6
+\end{lstlisting}
+
+\section{Intermediate Representation}
+
+\end{document}
