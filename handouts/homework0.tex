@@ -255,6 +255,8 @@ int x = 5;
 
 The \lstinline{val} part is optional. If it is \lstinline{None}, the variable is initialized to zero. \TODO{implement the initialization}
 
+All the variable declaration needs to have a static size known at compile time. For example, a declaration of a struct object with an unbounded array member is not a valid loma program. \TODO{implement the check.}
+
 \paragraph{Variable assignment.}
 The following \lstinline{Assign} statement in loma IR
 \begin{lstlisting}
@@ -425,5 +427,87 @@ While(cond=BinaryOp(op=Less(), left=Var(id='i'),
       right=ConstInt(val=10)),
       body=(Assign(target=RefName(id='i'), val=BinaryOp(op=Add(), left=Var(id='i'), right=ConstInt(val=1)),))
 \end{lstlisting}
+
+\subsection{Struct definitions}
+Following class definition in Python
+\begin{lstlisting}[language=Python]
+class Foo:
+    x : int
+    bar : Bar
+
+class Bar:
+    y : float
+    z : int
+\end{lstlisting}
+will be translated to
+\begin{lstlisting}
+Struct(id='Foo', members=(MemberDef(id='x', t=Int()), MemberDef(id='bar', t=Struct(id='Bar', members=()))))
+Struct(id='Bar', members=(MemberDef(id='y', t=Float()), MemberDef(id='z', t=Int())))
+\end{lstlisting}
+
+\subsection{Implementation}
+
+To implement the translation above, we use the \lstinline{ast} package in Python and build a \href{https://en.wikipedia.org/wiki/Recursive_descent_parser}{recursive descent parser}. See \lstinline{parser.py} for more details.
+
+For example, in the Python frontend, the top level definition can either be a \lstinline{ast.ClassDef} or a \lstinline{ast.FunctionDef}. So we parse them using the following code:
+\begin{lstlisting}[language=Python]
+def parse(code):
+    module = ast.parse(code)
+    structs = {}
+    for d in module.body:
+        if isinstance(d, ast.ClassDef):
+            s = visit_ClassDef(d)
+            structs[s.id] = s
+
+    funcs = {}
+    for d in module.body:
+        if isinstance(d, ast.FunctionDef):
+            f = visit_FunctionDef(d)
+            funcs[f.id] = f
+
+    return structs, funcs
+\end{lstlisting}
+
+The \lstinline{parse} function then relies on \lstinline{visit_ClassDef} and \lstinline{visit_FunctionDef}:
+\begin{lstlisting}[language=Python]
+def visit_ClassDef(node):
+    members = []
+    for member in node.body:
+        match member:
+            case ast.AnnAssign():
+                assert isinstance(member.target, ast.Name)
+                t = annotation_to_type(member.annotation)
+                members.append(loma_ir.MemberDef(member.target.id, t))
+            case _:
+                assert False, f'Unknown class member statement {type(member).__name__}'
+    return loma_ir.Struct(node.name, members, lineno = node.lineno)
+
+def visit_FunctionDef(node):
+    node_args = node.args
+    assert node_args.vararg is None
+    assert node_args.kwarg is None
+    args = [loma_ir.Arg(arg.arg,
+                        annotation_to_type(arg.annotation),
+                        annotation_to_inout(arg.annotation)) for arg in node_args.args]
+    body = [visit_stmt(b) for b in node.body]
+    ret_type = None
+    if node.returns:
+        ret_type = annotation_to_type(node.returns)
+
+    is_simd = False
+    for decorator in node.decorator_list:
+        if isinstance(decorator, ast.Name):
+            if decorator.id == 'simd':
+                is_simd = True
+
+    return loma_ir.FunctionDef(node.name,
+                               args,
+                               body,
+                               is_simd,
+                               ret_type = ret_type,
+                               lineno = node.lineno)
+\end{lstlisting}
+
+\section{Backends}
 
 \end{document}
