@@ -8,11 +8,11 @@ In this course, we will be using a C-like parallel programming language \textbf{
 
 The design principles of loma are:
 \begin{itemize}
-	\item \textbf{Minimal}. To make implementing the compiler and the differentiation as simple as possible, we restrict as much language features as possible. As a result, the language lacks advanced object-oriented/functional features such as higher-order functions or fancy type inference.
-	\item \textbf{Differentiable}. Furthermore, to make differentiation possible/simpler/efficient, we impose restrictions to the language. For example, functions can only have one \lstinline{return} statement in the end, all \lstinline{while} loops need to have a static upper bound on the iteration size, recursion is not allowed, and there is no pointer. These restrictions will make more sense as you start to implement differentiation. As a result, loma is not Turing complete and can be seen as a domain-specific language -- this is a good thing as we can specialize the compiler to generate efficient code.
-	\item \textbf{Static}. For efficiency purpose, to minimize dynamic memory allocation, loma's variables are all statically typed. In fact, all memory allocation inside loma needs to have size known at compile time. You can, however, allocate the memory dynamically outside of loma in the host code.
-	\item \textbf{SIMD Parallel}. Loma programs will likely need to be executed in an optimization loop, either for machine learning, simulation, or inverse problems. These days it's not entirely practical to run these loops without any parallelism. Therefore, we need to be able to compile loma programs to vectorized CPU code or GPU code. Loma thus adopts a \href{https://en.wikipedia.org/wiki/Single_instruction,_multiple_data}{Single-Instruction-Multiple-Data} parallelism execution model.
-	\item \textbf{Python embedding}. For ease of both scripting of loma programs and compiler development, loma is embedded in Python, and mostly follows Python's syntax. We aim for the syntax's familiarity and want to reuse Python's parser and AST modules (and existing syntax highlighters). Embedding in Python also makes it easy to use loma from a Python host code. Fortunately, loma should be much faster than Python in general since it's a compiled static type language and has GPU backends.
+    \item \textbf{Minimal}. To make implementing the compiler and the differentiation as simple as possible, we restrict as much language features as possible. As a result, the language lacks advanced object-oriented/functional features such as higher-order functions or fancy type inference.
+    \item \textbf{Differentiable}. Furthermore, to make differentiation possible/simpler/efficient, we impose restrictions to the language. For example, functions can only have one \lstinline{return} statement in the end, all \lstinline{while} loops need to have a static upper bound on the iteration size, recursion is not allowed, and there is no pointer. These restrictions will make more sense as you start to implement differentiation. As a result, loma is not Turing complete and can be seen as a domain-specific language -- this is a good thing as we can specialize the compiler to generate efficient code.
+    \item \textbf{Static}. For efficiency purpose, to minimize dynamic memory allocation, loma's variables are all statically typed. In fact, all memory allocation inside loma needs to have size known at compile time. You can, however, allocate the memory dynamically outside of loma in the host code.
+    \item \textbf{SIMD Parallel}. Loma programs will likely need to be executed in an optimization loop, either for machine learning, simulation, or inverse problems. These days it's not entirely practical to run these loops without any parallelism. Therefore, we need to be able to compile loma programs to vectorized CPU code or GPU code. Loma thus adopts a \href{https://en.wikipedia.org/wiki/Single_instruction,_multiple_data}{Single-Instruction-Multiple-Data} parallelism execution model.
+    \item \textbf{Python embedding}. For ease of both scripting of loma programs and compiler development, loma is embedded in Python, and mostly follows Python's syntax. We aim for the syntax's familiarity and want to reuse Python's parser and AST modules (and existing syntax highlighters). Embedding in Python also makes it easy to use loma from a Python host code. Fortunately, loma should be much faster than Python in general since it's a compiled static type language and has GPU backends.
 \end{itemize}
 
 \section{Hello, loma}
@@ -28,7 +28,7 @@ def sum_array(arr : In[Array[float]], arr_size : In[int]) -> float:
         i = i + 1
     s_relu : float = 0.0
     if s > 0:
-    	s_relu = s
+        s_relu = s
     return s_relu
 \end{lstlisting}
 Hopefully the code explains itself: it sums over an array, and returns the sum if the sum if larger than zero, otherwise it returns zero. Note that despite the Python syntax, all variables have an explicit static type.
@@ -39,18 +39,18 @@ When you feed this program to the loma compiler and specifies C as a backend (cu
         
 extern "C" float sum_array(float* arr, int arr_size);
 extern "C" float sum_array(float* arr, int arr_size) {
-	int i = (int)(0);
-	float s = (float)(0.0);
-	while ((i) < (arr_size)) {
-		s = (s) + ((arr)[i]);
-		i = (i) + ((int)(1));
-	}
-	float s_relu = (float)(0.0);
-	if ((s) > ((int)(0))) {
-		s_relu = s;
-	} else {
-	}
-	return s_relu;
+    int i = (int)(0);
+    float s = (float)(0.0);
+    while ((i) < (arr_size)) {
+        s = (s) + ((arr)[i]);
+        i = (i) + ((int)(1));
+    }
+    float s_relu = (float)(0.0);
+    if ((s) > ((int)(0))) {
+        s_relu = s;
+    } else {
+    }
+    return s_relu;
 }
 \end{lstlisting}
 
@@ -123,7 +123,9 @@ The IR of loma in the \href{https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_fo
 If you have never seen anything like this, here is how to read it:
 Each rule (\lstinline{::=}) defines how a symbol (e.g., \lstinline{<func>}) can be expanded. The first rule says a function definition \lstinline{<func>} consists of a \lstinline{<string>} (for the name of the function), zero or more arguments \lstinline{<arg>} (for the function arguments), zero or more statements \lstinline{<stmt>} (for the function body), a flag \lstinline{<is_simd>} (for whether the function is a SIMD kernel or not -- more about this later), and an optional return type. The \lstinline{|} character represents alternatives. For example, a statement \lstinline{<stmt>} can be either an assignment (\lstinline{'Assign'}), a variable declaration (\lstinline{'Declare'}), function return (\lstinline{'Return'}), if-else (\lstinline{'IfElse'}), or a while loop (\lstinline{'While'}). At the end of each statement we attached \lstinline{'attributes'} for extra information -- here we store the line number for error messages.
 
-To implement the IR above, we represent it using ASDL (Abstract Syntax Definition Language) -- see \href{https://eli.thegreenplace.net/2014/06/04/using-asdl-to-describe-asts-in-compilers}{Eli Bendersky's blog post} for a brief introduction. This is what Python used for representing its \href{https://github.com/python/cpython/blob/main/Parser/Python.asdl}{abstract syntax tree}. The IR above can be written in the following ASDL:
+We will explain the more precise semantics of the IR later, but most of them should be self-explainable.
+
+To implement the IR above, we represent it using ASDL (Abstract Syntax Definition Language) -- see \href{https://eli.thegreenplace.net/2014/06/04/using-asdl-to-describe-asts-in-compilers}{Eli Bendersky's blog post} for a brief introduction. This is what Python used for representing its \href{https://github.com/python/cpython/blob/main/Parser/Python.asdl}{abstract syntax tree}. The IR above can be directly translated to the following ASDL:
 \begin{lstlisting}
     module loma {
       func = FunctionDef ( string id, arg* args, stmt* body, bool is_simd, type? ret_type )
@@ -173,7 +175,7 @@ To implement the IR above, we represent it using ASDL (Abstract Syntax Definitio
       inout = In() | Out()
 \end{lstlisting}
 
-The ASDL above is pretty much a direct translation of the Backus-Naur form. We then use a nice library written by Gilbert Bernstein to convert the ASDL into a hierarchy of Python classes. For example, the \lstinline{stmt} ruleset above is converted to the following classes (code simplified a bit):
+We then use a nice library written by Gilbert Bernstein to convert the ASDL into a hierarchy of Python classes. For example, the \lstinline{stmt} ruleset above is converted to the following classes (code simplified a bit):
 \begin{lstlisting}[language=python]
 import attrs
 from typing import Optional
@@ -203,32 +205,225 @@ Once we have these classes, we can then construct loma programs by composing obj
 \begin{lstlisting}[language=python]
 x : int = y + 5
 \end{lstlisting}
-Would be converted into the following loma IR:
+would be converted into the following loma IR:
 \begin{lstlisting}[language=python]
 Declare(target='x', t=Int(), val=Add(Var('y'), ConstInt(5)))
 \end{lstlisting}
 
-\paragraph{Type System and Semantic Analysis.} The type system of loma is similar to C except it's even simpler. The \lstinline{<type>} rule set above defines all the possible types in loma. There are only two primitive types: \lstinline{Int} and \lstinline{Float}. We can also define an \lstinline{Array} that is a list of the same type (the optional integer represents a fixed-size array). Finally, loma also supports \lstinline{Struct} (product types if you're a functional guru).
+\section{Semantics.}
+The meaning of the IR above follows a similar C program. We will explain the semantics through examples -- hopefully this is generalizable. You can also read \lstinline{codegen_c.py} as a reference: whatever is in it is the official semantics.
 
-The type checking for loma checks the obvious stuff: whether the assignment and function calls having the right types or not. 
-\TODO{implement this}
+\subsection{Function definition} 
+The following \lstinline{FunctionDef} in loma IR
+\begin{lstlisting}
+FunctionDef(id='plus',
+            args=(Arg(id='x', t=Int(), i=In()),
+                  Arg(id='y', t=Int(), i=In()),
+                  Arg(id='z', t=Array(t=Float(), static_size=None), i=Out())),
+            body=(Return(val=ConstInt(val=0)),),
+            is_simd=False,
+            ret_type=Int())
+\end{lstlisting}
+(take some time to read it, it's not too bad), has the same meaning as the following C function definition:
+\begin{lstlisting}[language=C]
+int plus(int x, int y, float* z) {
+    return 0;
+}
+\end{lstlisting}
 
-In addition to the type check, loma imposes the following restrictions to the program:
-\begin{itemize}
-	\item All \lstinline{Array} and \lstinline{Struct} declarations inside a function need to have a size known at compile time (e.g., an array needs to have a fixed size, and a struct cannot contain a dynamic array).
-	\item \lstinline{Return} can only be the last statement in the function. That is, a function can only have a single exit point. This is to make the implementation of differentiation much easier. It's not too complicated to add a syntax sugar to relax this constraint.
-	\item The function calls cannot be recursive. That is, function calling other functions cannot form a cycle.
-	\item The \lstinline{Struct} definitions cannot be recursive. That is, struct consists of other structs cannot form a cycle.
-	\item A SIMD function cannot be called by other functions.
-\end{itemize}
-\TODO{implement this and update the list}
+Each function argument needs to be tagged either as an input (\lstinline{In()}) or an output (\lstinline{Out()}), and its type \lstinline{t} needs to be specified. If a function returns a value, the type of the returned value must also be specified. If a function does not return a value, then it's \lstinline{ret_type} is \lstinline{None}.
 
-\paragraph{Intrinsic functions.}
-Loma maintains a list of instrinsic functions for users to call:
-\begin{itemize}
-	\item \textbf{Math functions}: \lstinline{sin}, \lstinline{cos}, \lstinline{exp}, \lstinline{log}.
-	\item \textbf{Parallelism}: \lstinline{atomic_add}, \lstinline{thread_id}.
-\end{itemize}
-\TODO{implement and update the list}
+We will explain the \lstinline{is_simd} flag later when we talk about parallelization.
+
+\subsection{Types}
+
+The type system of loma is similar to C except it's even simpler. The \lstinline{<type>} rule set above defines all the possible types in loma. There are only two primitive types: \lstinline{Int} and \lstinline{Float}. We can also define an \lstinline{Array} that is a list of the same type (the optional integer represents a fixed-size array). Finally, loma also supports \lstinline{Struct} (product types if you're a functional guru).
+
+\subsection{Statements}
+
+\paragraph{Variable declaration.}
+The following \lstinline{Declare} statement in loma IR
+\begin{lstlisting}
+Declare(target='x',
+        t=Int(),
+        val=ConstInt(val=5))
+\end{lstlisting}
+has the same meaning as the following C code
+\begin{lstlisting}
+int x = 5;
+\end{lstlisting}
+
+The \lstinline{val} part is optional. If it is \lstinline{None}, the variable is initialized to zero. \TODO{implement the initialization}
+
+\paragraph{Variable assignment.}
+The following \lstinline{Assign} statement in loma IR
+\begin{lstlisting}
+Assign(target=RefName(id='x'),
+       val=ConstInt(val=6))
+\end{lstlisting}
+has the same meaning as the following C code
+\begin{lstlisting}
+x = 6;
+\end{lstlisting}
+If \lstinline{x} is not declared before hand, this is an illegal loma program.
+
+The target of the assign statement needs to be a \lstinline{ref}. A \lstinline{ref} can be a member of a struct or an element of an array. For example,
+\begin{lstlisting}
+Assign(target=RefArray(array=RefName(id='a'), index=ConstInt(val=1)),
+       val=ConstInt(val=6))
+Assign(target=RefStruct(struct=RefName(id='b'), member='c'),
+       val=ConstInt(val=7))
+\end{lstlisting}
+means
+\begin{lstlisting}
+a[1] = 6;
+b.c = 7;
+\end{lstlisting}
+
+The type of the target should match the right hand side \TODO{add explicit type casting}, and the final type cannot be an array.
+
+\paragraph{Return.}
+The following \lstinline{Return} statement in loma IR
+\begin{lstlisting}
+Return(val=ConstInt(val=0))
+\end{lstlisting}
+has the same meaning as the following C code
+\begin{lstlisting}[language=c]
+return 0;
+\end{lstlisting}
+
+To make differentiation easy, a \lstinline{Return} statement in loma IR can only be at the last statement, and can only appear once. \TODO{implement this}
+
+\paragraph{Condition.}
+The following \lstinline{IfElse} statement in loma IR
+\begin{lstlisting}
+IfElse(cond=BinaryOp(op=Greater(), left=Var(id='x'),
+       right=ConstInt(val=0, lineno=4, t=None)),
+       then_stmts=(Assign(target=RefName(id='y'), val=ConstInt(val=3)),),
+       else_stmts=(Assign(target=RefName(id='z'), val=ConstInt(val=7)),))
+\end{lstlisting}
+has the same meaning as the following C code
+\begin{lstlisting}[language=c]
+if (x > 0) {
+    y = 3;
+} else {
+    z = 7;
+}
+\end{lstlisting}
+
+There is no \lstinline{else if} in loma IR. You can have an if statement inside the else statement. The else statement is optional.
+
+\paragraph{While loops.}
+The following \lstinline{While} statement in loma IR
+\begin{lstlisting}
+While(cond=BinaryOp(op=Less(), left=Var(id='i'),
+      right=ConstInt(val=10)),
+      body=(Assign(target=RefName(id='i'), val=BinaryOp(op=Add(), left=Var(id='i'), right=ConstInt(val=1)),))
+\end{lstlisting}
+has the same meaning as the following C code
+\begin{lstlisting}[language=c]
+while (i < 10) {
+    i = i + 1;
+}
+\end{lstlisting}
+
+\TODO{implement loop upper bound and explain it}
+
+We will omit the specification of expressions.
+
+\section{Frontend and Parsing}
+As hinted at the beginning, loma is embedded in Python. That is, we borrow the Python syntax (but not the semantics), so that we can reuse Python's parser, and we can exploit on people's familiarity of Python's syntax. 
+
+The frontend has an almost one-to-one relationship to the IR. Below we list how we translate the Python syntax to loma's IR: 
+
+\subsection{Function definition.} 
+The following Python frontend code:
+\begin{lstlisting}[language=Python]
+def plus(x : In[int], y : In[int], z : Out[Array[float]]) -> int:
+\end{lstlisting}
+will be translated to the following loma IR:
+\begin{lstlisting}
+FunctionDef(id='plus',
+            args=(Arg(id='x', t=Int(), i=In()),
+                  Arg(id='y', t=Int(), i=In()),
+                  Arg(id='z', t=Array(t=Float(), static_size=None), i=Out())),
+            body=(Return(val=ConstInt(val=0, lineno=2, t=None), lineno=2),),
+            is_simd=False,
+            ret_type=Int())
+\end{lstlisting}
+
+\subsection{Statements.} 
+
+\paragraph{Variable declaration.} This code
+\begin{lstlisting}[language=Python]
+x : int = 5
+\end{lstlisting}
+will be translated to:
+\begin{lstlisting}
+Declare(target='x',
+        t=Int(),
+        val=ConstInt(val=5))
+\end{lstlisting}
+
+The value part is optional. For example, you can write
+\begin{lstlisting}[language=Python]
+x : int
+\end{lstlisting}
+and it will be translated to
+\begin{lstlisting}
+Declare(target='x',
+        t=Int(),
+        val=None)
+\end{lstlisting}
+
+\paragraph{Variable assignment.} This code
+\begin{lstlisting}[language=Python]
+x = 6
+\end{lstlisting}
+will be translated to
+\begin{lstlisting}
+Assign(target=RefName(id='x'),
+       val=ConstInt(val=6))
+\end{lstlisting}
+
+Note that in loma, \lstinline{x : int = 5} and \lstinline{x = 5} are two different statements, while in Python they are the same.
+
+\paragraph{Return.} This code
+\begin{lstlisting}[language=Python]
+return 0
+\end{lstlisting}
+will be translated to
+\begin{lstlisting}
+Return(val=ConstInt(val=0))
+\end{lstlisting}
+
+\paragraph{If statements.} This code
+\begin{lstlisting}[language=c]
+if (x > 0):
+    y = 3
+else:
+    z = 7
+\end{lstlisting}
+will be translated to
+\begin{lstlisting}
+IfElse(cond=BinaryOp(op=Greater(), left=Var(id='x'),
+       right=ConstInt(val=0, lineno=4, t=None)),
+       then_stmts=(Assign(target=RefName(id='y'), val=ConstInt(val=3)),),
+       else_stmts=(Assign(target=RefName(id='z'), val=ConstInt(val=7)),))
+\end{lstlisting}
+
+Our frontend does not support \lstinline{elif} in Python.
+
+\paragraph{While loops.} This code
+\begin{lstlisting}[language=python]
+while i < 10:
+    i = i + 1
+\end{lstlisting}
+will be translated to
+\begin{lstlisting}
+While(cond=BinaryOp(op=Less(), left=Var(id='i'),
+      right=ConstInt(val=10)),
+      body=(Assign(target=RefName(id='i'), val=BinaryOp(op=Add(), left=Var(id='i'), right=ConstInt(val=1)),))
+\end{lstlisting}
 
 \end{document}
