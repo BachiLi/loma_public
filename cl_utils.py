@@ -225,7 +225,7 @@ def cl_compile(context,
                                  0, None,
                                  ctypes.byref(log_size))
         cl.clGetProgramBuildInfo(program,
-                                 devicedevice_array[0],
+                                 device_array[0],
                                  cl.CL_PROGRAM_BUILD_LOG,
                                  log_size.value, mstr := ctypes.create_string_buffer(log_size.value), None)
         assert False, ctypes.string_at(mstr, size=log_size.value).decode()
