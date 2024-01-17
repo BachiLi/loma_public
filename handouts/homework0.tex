@@ -4,7 +4,7 @@
 
 \header{0}{Introduction to the \textbf{loma} Programming Language}
 
-In this course, we will be using a C-like parallel programming language \textbf{loma} (invented for this course!). Our ultimate goal is to make loma ``differentiable'' and capable of automatic generating the derivatives of its code, and then use loma to implement your final project. In this handout, we will introduce the language and its compiler.
+In this course, we will be using a C-like parallel programming language \textbf{loma} (invented for this course!). Our ultimate goal is to make loma ``differentiable'' and capable of automatically generating the derivatives of its code, and then use loma to implement your final project. In this handout, we will introduce the language and its compiler.
 
 The design principles of loma are:
 \begin{itemize}
@@ -68,8 +68,9 @@ assert abs(lib.sum_array(arr, len(py_arr)) - 15.0) < 1e-6
 \end{lstlisting}
 
 \section{Intermediate Representation}
+\label{sec:IR}
 
-The most important component of a programming language is its intermediate representation (IR). They are the data structures we use for representing a program and store important information. An IR is usually a directed graph without cycles (i.e. a directed acyclic graph (DAG)). It's probably easiest to look at the IR to understand it. 
+The most important component of a programming language is its intermediate representation (IR). They are the data structures we use for representing a program and store important information. An IR is usually a directed graph. In our case, we further limit the graph to have no cycles (i.e. a directed acyclic graph, DAG). It's probably easiest to look at the IR to understand it. 
 The IR of loma in the \href{https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form}{Backus-Naur Form} is:
 \begin{grammar}
 <func> ::= 'FunctionDef' <string> <arg>* <stmt>* <is_simd> <type>?
@@ -174,8 +175,9 @@ To implement the IR above, we represent it using ASDL (Abstract Syntax Definitio
 
       inout = In() | Out()
 \end{lstlisting}
+This IR is defined in \lstinline{ir.py} in the source code.
 
-We then use a nice library written by Gilbert Bernstein to convert the ASDL into a hierarchy of Python classes. For example, the \lstinline{stmt} ruleset above is converted to the following classes (code simplified a bit):
+We then use a nice library written by Gilbert Bernstein (see \lstinline{asdl_gen.py}) to convert the ASDL into a hierarchy of Python classes. For example, the \lstinline{stmt} ruleset above is converted to the following classes (code simplified a bit):
 \begin{lstlisting}[language=python]
 import attrs
 from typing import Optional
@@ -199,7 +201,7 @@ class Declare(stmt):
 
 # ...
 \end{lstlisting}
-Hopefully you can see how the rest of the classes are constructed from the example above. 
+Hopefully you can see how the rest of the classes are constructed from the example above. When we run the loma compiler, the classes will be generated as a Python file in \lstinline{_asdl/loma.py}, where you can inspect these generated classes. 
 
 Once we have these classes, we can then construct loma programs by composing objects of these classes. For example, the following code
 \begin{lstlisting}[language=python]
@@ -211,7 +213,7 @@ Declare(target='x', t=Int(), val=Add(Var('y'), ConstInt(5)))
 \end{lstlisting}
 
 \section{Semantics.}
-The meaning of the IR above follows a similar C program. We will explain the semantics through examples -- hopefully this is generalizable. You can also read \lstinline{codegen_c.py} as a reference: whatever is in it is the official semantics.
+The meaning of the IR above follows a similar C program. We will explain the semantics through examples -- hopefully this is generalizable. You can also read \lstinline{codegen_c.py} as a reference.
 
 \subsection{Function definition} 
 The following \lstinline{FunctionDef} in loma IR
@@ -237,7 +239,7 @@ We will explain the \lstinline{is_simd} flag later when we talk about paralleliz
 
 \subsection{Types}
 
-The type system of loma is similar to C except it's even simpler. The \lstinline{<type>} rule set above defines all the possible types in loma. There are only two primitive types: \lstinline{Int} and \lstinline{Float}. We can also define an \lstinline{Array} that is a list of the same type (the optional integer represents a fixed-size array). Finally, loma also supports \lstinline{Struct} (product types if you're a functional guru).
+The type system of loma is similar to C except it's even simpler. The \lstinline{<type>} rule set above defines all the possible types in loma. There are only two primitive types: \lstinline{Int} and \lstinline{Float}. We can also define an \lstinline{Array} that is a list of the same type (the optional integer represents a fixed-size array). Finally, loma also supports \lstinline{Struct} (product types if you're a functional guru). We do not support sum types (e.g., unions in C) to make differentiation easy.
 
 \subsection{Statements}
 
@@ -508,6 +510,236 @@ def visit_FunctionDef(node):
                                lineno = node.lineno)
 \end{lstlisting}
 
-\section{Backends}
+\section{Type and semantic checks}
+\TODO{talk about IRVisitor and the checking phase}
+
+\section{C Backend}
+
+Given a loma program, we will ``lower'' it to a target language in the backends. Currently loma supports three backends: C, \href{https://ispc.github.io/index.html}{ispc}, and OpenCL. Let's talk about the C backend here, and we will discuss ispc and OpenCL backends after we discuss the parallelization model of loma.
+
+To transform a program, we recursively visit the IR nodes using an \lstinline{IRVisitor}:
+\begin{lstlisting}[language=python]
+class CCodegenVisitor(visitor.IRVisitor):
+    code = ''
+    tab_count = 0
+
+    # ...
+\end{lstlisting}
+
+For example, following is the visit member function for a while loop:
+\begin{lstlisting}[language=python]
+def visit_while(self, loop):
+    self.emit_tabs()
+    self.code += f'while ({self.visit_expr(loop.cond)}) {{\n'
+    self.tab_count += 1
+    for stmt in loop.body:
+        self.visit_stmt(stmt)
+    self.tab_count -= 1
+    self.emit_tabs()
+    self.code += '}\n'
+\end{lstlisting}
+
+We recursively visit the conditions and body statements using other visit functions, and append the generated code to \lstinline{self.code}.
+
+The translation straightforwardly follows the program semantics discussed in Section~\ref{sec:IR}.
+
+The compiled C functions are compatible with \href{https://docs.python.org/3/library/ctypes.html}{ctypes}. You can call the functions in the Python host code like the following:
+\begin{lstlisting}[language=python]
+# foo.py
+class Foo:
+    arr : Array[int]
+
+def foo(f : In[Foo], g : int) -> int:
+    return f.arr[0] + f.arr[1] + g
+
+# host code
+with open('foo.py') as f:
+    structs, lib = compiler.compile(f.read(),
+                                    target = 'c',
+                                    output_filename = '_code/foo.so')
+py_arr = [1, 2]
+arr = (ctypes.c_int * len(py_arr))(*py_arr)
+Foo = structs['Foo']
+f = Foo(arr=arr)
+assert lib.foo(f, 3) == 6
+\end{lstlisting}
+
+The \lstinline{compile} function returns both a dictionary of \lstinline{structs}, and a ctypes library \lstinline{lib}. The \lstinline{structs} dictionary contains all of the ctypes structs indexed by name. You can then use them to assemble the function arguments and call the function to get the results.
+
+\section{SIMD Parallelism and the OpenCL backend}
+
+As mentioned, to use loma in practice, it's more or less necessary these days to support some form of parallelism. We adopt a SIMD parallelism model similar to how CUDA and OpenCL work. For example, the following loma program parallely adds two integer arrays \lstinline{x} and \lstinline{y} and store the results into the array \lstinline{z}.
+\begin{lstlisting}[language=python] 
+@simd
+def parallel_add(x : In[Array[int]],
+                 y : In[Array[int]],
+                 z : Out[Array[int]]):
+    i : int = thread_id()
+    z[i] = x[i] + y[i]
+\end{lstlisting}
+
+Effectively, the semantics of this function is equivalent to the following program with a parallel for loop at the outmost:
+\begin{lstlisting}[language=c]
+void parallel_add(int *x, int *y, int *z, int n) {
+    /* runs in parallel */
+    for (int thread_id = 0; thread_id < n; i++) {
+        int i = thread_id;
+        z[i] = x[i] + y[i];
+    }
+}
+\end{lstlisting}
+Note that the number of threads \lstinline{n} is lifted to an extra argument of the function.
+
+If compiling using the C backend, loma generates the equivalent C code to above and simulate the parallelism serially. More interesting things happen if we specify other backends. Specifically, loma supports two other backends: \href{https://ispc.github.io/}{ISPC} and OpenCL. We'll focus the discussion on the OpenCL backend, but the ISPC backend works similarly (read the ISPC documentation in their webpage if you're interested in it).
+
+The loma code above would be translated into the following OpenCL code.
+\begin{lstlisting}[language=c]
+__kernel void parallel_add(__global int* x, __global int* y, __global int* z) {
+    int i = get_global_id(0);
+    z[i] = x[i] + y[i];
+}
+\end{lstlisting}
+
+The only differences are the two extra keywords: \lstinline{__kernel}, \lstinline{__global} and the function for getting thread id: \lstinline{get_global_id()}. 
+
+In OpenCL, \lstinline{__kernel} marks a function as a SIMD function (similar to the \lstinline{@simd} decorator in loma). This allows a host program outside of OpenCL to call the kernel. Functions not marked as kernel can only be called by functions inside the same OpenCL program. The \lstinline{__global} keyword marks an argument to be pointing to a global memory pool (e.g. the GPU global memory). The \lstinline{get_global_id} function, expectedly, get the ID of the current thread, and the argument \lstinline{0} specifies the dimension of the workers, which in our case is irrelevant since we always launch threads in a single dimension. 
+
+As you can see, the generation of a OpenCL kernel is basically the same as a C code, so we can inherit most of our C generation code. See \lstinline{codegen_opencl.py} for reference.
+
+Calling the OpenCL kernel from our Python host code is more complicated though. Following is the code:
+\begin{lstlisting}[language=python]
+cl_ctx, cl_device, cl_cmd_queue = cl_utils.create_context()
+
+with open('loma_code/parallel_add.py') as f:
+    structs, lib = compiler.compile(f.read(),
+                                    target = 'opencl',
+                                    opencl_context = cl_ctx,
+                                    opencl_device = cl_device,
+                                    opencl_command_queue = cl_cmd_queue)
+py_x = [2, 3, 5]
+x = (ctypes.c_int * len(py_x))(*py_x)
+py_y = [7, 11, 13]
+y = (ctypes.c_int * len(py_y))(*py_y)
+py_z = [0, 0, 0]
+z = (ctypes.c_int * len(py_z))(*py_z)
+
+status = ctypes.c_int32()
+bufx = cl.clCreateBuffer(cl_ctx,
+                         cl.CL_MEM_READ_ONLY | cl.CL_MEM_COPY_HOST_PTR,
+                         ctypes.sizeof(x),
+                         ctypes.byref(x),
+                         ctypes.byref(status))
+cl_utils.cl_check(status.value)
+bufy = cl.clCreateBuffer(cl_ctx,
+                         cl.CL_MEM_READ_ONLY | cl.CL_MEM_COPY_HOST_PTR,
+                         ctypes.sizeof(y),
+                         ctypes.byref(y),
+                         ctypes.byref(status))
+cl_utils.cl_check(status.value)
+bufz = cl.clCreateBuffer(cl_ctx,
+                         cl.CL_MEM_WRITE_ONLY,
+                         ctypes.sizeof(z),
+                         None,
+                         ctypes.byref(status))
+cl_utils.cl_check(status.value)
+
+lib.parallel_add(bufx, bufy, bufz, len(py_z))
+cl.clFinish(cl_cmd_queue)
+
+cl.clEnqueueReadBuffer(cl_cmd_queue,
+                       bufz,
+                       cl.CL_TRUE,
+                       0,
+                       ctypes.sizeof(z),
+                       ctypes.byref(z),
+                       0,
+                       None,
+                       None)
+
+assert z[0] == 9 and z[1] == 14 and z[2] == 18
+\end{lstlisting}
+We're using the wonderful library \href{https://github.com/tinygrad/gpuctypes}{gpuctypes} from geohot for wrapping OpenCL APIs in Python. We then abstract some of the OpenCL functions in \lstinline{cl_utils.py}. Let's look at the code line by line:
+\begin{lstlisting}[language=python]
+cl_ctx, cl_device, cl_cmd_queue = cl_utils.create_context()
+\end{lstlisting}
+This line creates a OpenCL ``context'', selects the relevant device (CPU or GPU or something else), and creates a command queue we can use to launch the kernels. To select a device, by default the function asks the user interactively like the following:
+\begin{lstlisting}
+Choose platform:
+[0] b'Apple'
+Choice [0]:0
+
+Choose device:
+[0] b'Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz'
+[1] b'Intel(R) UHD Graphics 630'
+[2] b'AMD Radeon Pro 5300M Compute Engine'
+Choice [0]:2
+
+Set the environment variable OPENCL_CTX='0:2' to avoid being asked again.
+\end{lstlisting}
+Here, we choose our device to be the AMD GPU on my Apple machine.
+
+The lines 
+\begin{lstlisting}[language=python]
+with open('loma_code/parallel_add.py') as f:
+    structs, lib = compiler.compile(f.read(),
+                                    target = 'opencl',
+                                    opencl_context = cl_ctx,
+                                    opencl_device = cl_device,
+                                    opencl_command_queue = cl_cmd_queue)
+py_x = [2, 3, 5]
+x = (ctypes.c_int * len(py_x))(*py_x)
+py_y = [7, 11, 13]
+y = (ctypes.c_int * len(py_y))(*py_y)
+py_z = [0, 0, 0]
+z = (ctypes.c_int * len(py_z))(*py_z)
+\end{lstlisting}
+are similar to the C backend.
+
+Next, we create the OpenCL buffers for the inputs and outputs:
+\begin{lstlisting}[language=python]
+status = ctypes.c_int32()
+bufx = cl.clCreateBuffer(cl_ctx,
+                         cl.CL_MEM_READ_ONLY | cl.CL_MEM_COPY_HOST_PTR,
+                         ctypes.sizeof(x),
+                         ctypes.byref(x),
+                         ctypes.byref(status))
+cl_utils.cl_check(status.value)
+bufy = cl.clCreateBuffer(cl_ctx,
+                         cl.CL_MEM_READ_ONLY | cl.CL_MEM_COPY_HOST_PTR,
+                         ctypes.sizeof(y),
+                         ctypes.byref(y),
+                         ctypes.byref(status))
+cl_utils.cl_check(status.value)
+bufz = cl.clCreateBuffer(cl_ctx,
+                         cl.CL_MEM_WRITE_ONLY,
+                         ctypes.sizeof(z),
+                         None,
+                         ctypes.byref(status))
+cl_utils.cl_check(status.value)
+\end{lstlisting}
+We use \lstinline{cl_utils.cl_check} to check whether the buffer creation has succeed or not.
+
+Next, we launch the kernel (the kernel launching is encapsulated in a class \lstinline{OpenCLKernel} in \lstinline{cl_utils.py}.), and wait for the kernel to finish computation.
+\begin{lstlisting}[language=python]
+lib.parallel_add(bufx, bufy, bufz, len(py_z))
+cl.clFinish(cl_cmd_queue)
+\end{lstlisting}
+
+Lastly, we read from the buffer (potentially copy the results from GPU to CPU) and compare the expected results.
+\begin{lstlisting}[language=python]
+cl.clEnqueueReadBuffer(cl_cmd_queue,
+                       bufz,
+                       cl.CL_TRUE,
+                       0,
+                       ctypes.sizeof(z),
+                       ctypes.byref(z),
+                       0,
+                       None,
+                       None)
+
+assert z[0] == 9 and z[1] == 14 and z[2] == 18
+\end{lstlisting}
+
+
 
 \end{document}
