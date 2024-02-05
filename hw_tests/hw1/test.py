@@ -134,9 +134,9 @@ def test_call():
 
 def test_array_output():
     with open('loma_code/array_output.py') as f:
-        _, lib = compiler.compile(f.read(),
-                                  target = 'c',
-                                  output_filename = '_code/array_output.so')
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/array_output.so')
     _dfloat = structs['_dfloat']
     x = _dfloat(0.7, 0.8)
     py_y = [_dfloat(0.0, 0.0), _dfloat(0.0, 0.0)]
@@ -145,7 +145,7 @@ def test_array_output():
     assert abs(y[0].val - x.val * x.val) < epsilon and \
            abs(y[0].dval - 2 * x.val * x.dval) < epsilon and \
            abs(y[1].val - x.val * x.val * x.val) < epsilon and \
-           abs(y[1].dval - 3 * x.val * x.dval) < epsilon
+           abs(y[1].dval - 3 * x.val * x.val * x.dval) < epsilon
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
