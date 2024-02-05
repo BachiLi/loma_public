@@ -1,0 +1,73 @@
+\input{preamble}
+
+\begin{document}
+
+\header{1}{Forward mode automatic differentiation}
+
+In our first homework, we will implement what is known as the ``forward mode'' automatic differentiation in loma for generating code that computes the derivatives. 
+Specifically, given a (differentiable) function $f: \mathbb{R}^n \rightarrow \mathbb{R}^m$, we will automatically generate its \href{https://en.wikipedia.org/wiki/Total_derivative}{total derivative} $df: \mathbb{R}^n \times \mathbb{R}^n \rightarrow \mathbb{R}^m$. 
+The total derivative $df(\mathbf{x}, \mathbf{dx})$ (noticed that it takes two inputs $\mathbf{x}$ and $\mathbf{dx}$ instead of only one!) is defined as the best linear approximation at point $\mathbf{x}$:
+\begin{equation}
+\lim_{dx \rightarrow 0} \frac{\left\|f(x + dx) - \left(f(x) + df(x, dx)\right)\right\|}{\left\|dx\right\|} = 0,
+\label{eq:totalderiv}
+\end{equation}
+where $df(x, dx)$ is linear over the $dx$ argument (but not necessarily linear over the $x$ argument).
+
+For notational convienence, we further define a function $Df: \mathbf{R}^n \times \mathbf{R}^n \rightarrow \mathbb{R}^m \times \mathbb{R}^m$ that combines the outputs of function $f$ and its total derivative $df$:
+\begin{equation}
+Df(x, dx) = \left(f(x), df(x, dx)\right).
+\end{equation}
+
+We will focus on straight-line code for this homework, that is, code without if-else statements, loops, and function calls to other loma functions. We will relax this assumption in Homework 3. 
+
+The key idea of forward-mode automatic differentiation is the \textbf{chain rule}. Let
+\begin{equation}
+	f(x) = g(h(x)).
+\end{equation}
+Then,
+\begin{equation}
+	Df(x, dx) = Dg(Dh(x, dx)).
+\end{equation}
+(Try proving this using the definition ot total derivative!)
+
+Therefore, if we have a straight-line code of a function \lstinline{f}
+\begin{lstlisting}[language=Python]
+def f(x : float, y : float) -> float:
+	z0 : float = h(x, y)
+	z1 : float = g(z0)
+	return z1
+\end{lstlisting}
+We can automatically synthesize its \lstinline{Df} by 1) replacing all datatypes \lstinline{float} with a new struct \lstinline{DFloat} that stores both the primal value and the total derivative, and 2) replacing all function calls with their own ``Df'':
+\begin{lstlisting}[language=Python]
+class DFloat:
+	val : float
+	dval : float
+
+def Df(x : DFloat, y : DFloat) -> DFloat:
+	z0 : DFloat = Dh(x, y)
+	z1 : DFloat = Dg(z0)
+	return z1
+\end{lstlisting}
+We can recursively perform this transformation to function \lstinline{h} and \lstinline{g}, then we are done!
+
+Now, we need to provide the terminal cases of our recursive transformation. Notice that these \lstinline{h} and \lstinline{g} functions can be \emph{any} function. For example, if $h(x, y) = x + y$, then we can derive (from the definition of total derivative) that $Dh(x, y, dx, dy) = (x + y, dx + dy)$. 
+
+Here, we provide the list of terminal cases of the basic operations in loma:
+\begin{equation}
+\begin{aligned}
+\text{DAdd}(x, y, dx, dy) &= (x + y, dx + dy) \\
+\text{DSub}(x, y, dx, dy) &= (x - y, dx - dy) \\
+\text{DMul}(x, y, dx, dy) &= (x \cdot y, x \cdot dy + y \cdot dx) \\
+\text{DDiv}(x, y, dx, dy) &= \left(\frac{x}{y}, \frac{x \cdot dy - y \cdot dx}{y^2}\right) \\
+\text{DSin}(x, dx) &= \left(\sin(x), \cos(x) \cdot dx\right) \\
+\text{DCos}(x, dx) &= \left(\cos(x), -\sin(x) \cdot dx\right) \\
+\text{DSqrt}(x, dx) &= \left(\sqrt{x}, \frac{dx}{2\sqrt{x}}\right) \\
+\text{DPow}(x, y, dx, dy) &= \left(x^y, dx \cdot \left(y \cdot x^{y-1}\right) + dy \cdot \left(x^y \log(x)\right)\right) \\
+\text{DExp}(x, dx) &= \left(\exp{x}, \exp{x} \cdot dx\right) \\
+\text{DLog}(x, dx) &= \left(\log{x}, \frac{dx}{x}\right) \\
+\end{aligned}
+\end{equation}
+
+
+
+\end{document}
