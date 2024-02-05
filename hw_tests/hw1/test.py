@@ -153,7 +153,8 @@ def test_array_input():
                                         target = 'c',
                                         output_filename = '_code/array_input.so')
     _dfloat = structs['_dfloat']
-    x = [_dfloat(0.7, 0.8), _dfloat(0.3, 0.5)]
+    py_x = [_dfloat(0.7, 0.8), _dfloat(0.3, 0.5)]
+    x = (_dfloat * len(py_x))(*py_x)
     out = lib.d_array_input(x)
     assert abs(out.val - (0.7 + 0.3)) < epsilon and \
            abs(out.dval - (0.8 + 0.5)) < epsilon
