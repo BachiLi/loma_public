@@ -4,7 +4,7 @@ import _asdl.loma as loma_ir
 
 def differentiate(structs, funcs):
     funcs_to_be_diffed = False
-    for f in funcs:
+    for f in funcs.values():
         if isinstance(f, loma_ir.ForwardDiff) or isinstance(f, loma_ir.ReverseDiff):
             funcs_to_be_diffed = True
 
