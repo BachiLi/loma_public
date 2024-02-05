@@ -2,7 +2,7 @@ import attrs
 import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
-import visitor
+import irvisitor
 
 def type_to_string(node):
     match node:
@@ -20,7 +20,7 @@ def type_to_string(node):
             assert False
 
 @attrs.define()
-class CCodegenVisitor(visitor.IRVisitor):
+class CCodegenVisitor(irvisitor.IRVisitor):
     code = ''
     tab_count = 0
 

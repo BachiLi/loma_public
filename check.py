@@ -2,11 +2,11 @@ import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 import error
-import visitor
+import irvisitor
 
 # TODO: add scope
 def check_duplicate_declare(node):
-    class DuplicateChecker(visitor.IRVisitor):
+    class DuplicateChecker(irvisitor.IRVisitor):
         ids_lineno_map = {}
 
         def visit_function_def(self, node):
@@ -25,7 +25,7 @@ def check_duplicate_declare(node):
     DuplicateChecker().visit_function(node)
 
 def check_undeclared_vars(node):
-    class UndeclaredChecker(visitor.IRVisitor):
+    class UndeclaredChecker(irvisitor.IRVisitor):
         ids = set()
 
         def visit_function_def(self, node):
@@ -46,7 +46,7 @@ def check_undeclared_vars(node):
     UndeclaredChecker().visit_function(node)
 
 def check_unhandled_differentiation(node):
-    class UnhandledDiffChecker(visitor.IRVisitor):
+    class UnhandledDiffChecker(irvisitor.IRVisitor):
         def visit_forward_diff(self, node):
             raise error.UnhandledDifferentiation(node.id, node.lineno)
 
