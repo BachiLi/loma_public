@@ -159,6 +159,23 @@ def test_array_input():
     assert abs(out.val - (0.7 + 0.3)) < epsilon and \
            abs(out.dval - (0.8 + 0.5)) < epsilon
 
+def test_multiple_outputs():
+    with open('loma_code/multiple_outputs.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/multiple_outputs.so')
+    _dfloat = structs['_dfloat']
+    x = _dfloat(0.7, 0.8)
+    py_y = [_dfloat(0.0, 0.0), _dfloat(0.0, 0.0)]
+    y = (_dfloat * len(py_y))(*py_y)
+    z = _dfloat(0.5, -0.3)
+    lib.d_array_output(x, y, ctypes.pointer(z))
+    assert abs(y[0].val - x.val * x.val) < epsilon and \
+           abs(y[0].dval - 2 * x.val * x.dval) < epsilon and \
+           abs(y[1].val - x.val * x.val * x.val) < epsilon and \
+           abs(y[1].dval - 3 * x.val * x.val * x.dval) < epsilon and \
+           abs(z.val - y[0].val * y[1].val) < epsilon and \
+           abs(z.dval - (y[0].val * y[1].dval + y[0].dval * y[1].val)) < epsilon
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
@@ -171,3 +188,4 @@ if __name__ == '__main__':
     test_call()
     test_array_output()
     test_array_input()
+    test_multiple_outputs()
