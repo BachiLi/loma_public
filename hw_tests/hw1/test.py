@@ -72,6 +72,19 @@ def test_declare():
     assert abs(out.val - z2_val) < 1e-6 and \
            abs(out.dval - z2_dval) < 1e-6
 
+def test_assign():
+    with open('loma_code/assign.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/assign.so')
+    _dfloat = structs['_dfloat']
+    x = _dfloat(-3.0, -1.0)
+    y = _dfloat(5.0, 3.0)
+    out = lib.d_assign(x, y)
+
+    assert abs(out.val - (-3.0 + 5.0)) < 1e-6 and \
+           abs(out.dval - (-1.0 + 3.0)) < 1e-6
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
@@ -79,3 +92,4 @@ if __name__ == '__main__':
     test_constant()
     test_binary_ops()
     test_declare()
+    test_assign()
