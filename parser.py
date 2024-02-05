@@ -102,7 +102,6 @@ def visit_Differentiate(node):
     assert isinstance(node, ast.Assign)
     assert len(node.targets) == 1
     func_id = node.targets[0].id
-    print(node.value.__dict__)
     assert isinstance(node.value, ast.Call)
     call_name = node.value.func
     assert isinstance(call_name, ast.Name)
