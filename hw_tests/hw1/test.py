@@ -147,6 +147,17 @@ def test_array_output():
            abs(y[1].val - x.val * x.val * x.val) < epsilon and \
            abs(y[1].dval - 3 * x.val * x.val * x.dval) < epsilon
 
+def test_array_input():
+    with open('loma_code/array_input.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/array_input.so')
+    _dfloat = structs['_dfloat']
+    x = [_dfloat(0.7, 0.8), _dfloat(0.3, 0.5)]
+    out = lib.d_array_input(x)
+    assert abs(out.val - (0.7 + 0.3)) < epsilon and \
+           abs(out.dval - (0.8 + 0.5)) < epsilon
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
@@ -158,3 +169,4 @@ if __name__ == '__main__':
     test_side_effect()
     test_call()
     test_array_output()
+    test_array_input()
