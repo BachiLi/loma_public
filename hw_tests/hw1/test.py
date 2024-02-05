@@ -169,7 +169,7 @@ def test_multiple_outputs():
     py_y = [_dfloat(0.0, 0.0), _dfloat(0.0, 0.0)]
     y = (_dfloat * len(py_y))(*py_y)
     z = _dfloat(0.5, -0.3)
-    lib.d_array_output(x, y, ctypes.pointer(z))
+    lib.d_multiple_outputs(x, y, ctypes.pointer(z))
     assert abs(y[0].val - x.val * x.val) < epsilon and \
            abs(y[0].dval - 2 * x.val * x.dval) < epsilon and \
            abs(y[1].val - x.val * x.val * x.val) < epsilon and \
