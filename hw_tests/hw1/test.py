@@ -85,6 +85,19 @@ def test_assign():
     assert abs(out.val - (-3.0 + 5.0)) < 1e-6 and \
            abs(out.dval - (-1.0 + 3.0)) < 1e-6
 
+def test_side_effect():
+    with open('loma_code/side_effect.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/side_effect.so')
+    _dfloat = structs['_dfloat']
+    x = _dfloat(-3.5, -1.5)
+    y = _dfloat(7.0, 2.0)
+    out = lib.d_side_effect(x, y)
+
+    assert abs(out.val - (x.val * y.val)) < 1e-6 and \
+           abs(out.dval - (x.dval * y.val + x.val * y.dval)) < 1e-6
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
@@ -93,3 +106,4 @@ if __name__ == '__main__':
     test_binary_ops()
     test_declare()
     test_assign()
+    test_side_effect()
