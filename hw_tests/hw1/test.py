@@ -132,6 +132,21 @@ def test_call():
     assert abs(out.val - z5_val) < epsilon and \
            abs(out.dval - z5_dval) < epsilon
 
+def test_array_output():
+    with open('loma_code/array_output.py') as f:
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/array_output.so')
+    _dfloat = structs['_dfloat']
+    x = _dfloat(0.7, 0.8)
+    py_y = [_dfloat(0.0, 0.0), _dfloat(0.0, 0.0)]
+    y = (_dfloat * len(py_y))(*py_y)
+    lib.d_array_output(x, y)
+    assert abs(y[0].val - x.val * x.val) < epsilon and \
+           abs(y[0].dval - 2 * x.val * x.dval) < epsilon and \
+           abs(y[1].val - x.val * x.val * x.val) < epsilon and \
+           abs(y[1].dval - 3 * x.val * x.dval) < epsilon
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
@@ -142,3 +157,4 @@ if __name__ == '__main__':
     test_assign()
     test_side_effect()
     test_call()
+    test_array_output()
