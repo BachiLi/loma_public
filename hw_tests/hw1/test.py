@@ -10,6 +10,8 @@ import math
 import gpuctypes.opencl as cl
 import cl_utils
 
+epsilon = 1e-5
+
 def test_identity():
     with open('loma_code/identity.py') as f:
         structs, lib = compiler.compile(f.read(),
@@ -18,7 +20,7 @@ def test_identity():
     _dfloat = structs['_dfloat']
     x = _dfloat(1.23, 4.56)
     out = lib.d_identity(x)
-    assert abs(out.val - 1.23) < 1e-6 and abs(out.dval - 4.56) < 1e-6
+    assert abs(out.val - 1.23) < epsilon and abs(out.dval - 4.56) < epsilon
 
 def test_constant():
     with open('loma_code/constant.py') as f:
@@ -28,7 +30,7 @@ def test_constant():
     _dfloat = structs['_dfloat']
     x = _dfloat(1.23, 4.56)
     out = lib.d_constant(x)
-    assert abs(out.val - 2.0) < 1e-6 and abs(out.dval - 0.0) < 1e-6
+    assert abs(out.val - 2.0) < epsilon and abs(out.dval - 0.0) < epsilon
 
 def test_binary_ops():
     with open('loma_code/binary_ops.py') as f:
@@ -39,17 +41,17 @@ def test_binary_ops():
     x = _dfloat(5.0, 0.5)
     y = _dfloat(6.0, 1.5)
     out_plus = lib.d_plus(x, y)
-    assert abs(out_plus.val - (x.val + y.val)) < 1e-6 and \
-           abs(out_plus.dval - (x.dval + y.dval)) < 1e-6
+    assert abs(out_plus.val - (x.val + y.val)) < epsilon and \
+           abs(out_plus.dval - (x.dval + y.dval)) < epsilon
     out_sub = lib.d_subtract(x, y)
-    assert abs(out_sub.val - (x.val - y.val)) < 1e-6 and \
-           abs(out_sub.dval - (x.dval - y.dval)) < 1e-6
+    assert abs(out_sub.val - (x.val - y.val)) < epsilon and \
+           abs(out_sub.dval - (x.dval - y.dval)) < epsilon
     out_mul = lib.d_multiply(x, y)
-    assert abs(out_mul.val - x.val * y.val) < 1e-6 and \
-    	   abs(out_mul.dval - (x.dval * y.val + x.val * y.dval)) < 1e-6
+    assert abs(out_mul.val - x.val * y.val) < epsilon and \
+    	   abs(out_mul.dval - (x.dval * y.val + x.val * y.dval)) < epsilon
     out_div = lib.d_divide(x, y)
-    assert abs(out_div.val - (x.val/y.val)) < 1e-6 and \
-           abs(out_div.dval - ((x.dval * y.val - x.val * y.dval)/(y.val * y.val))) < 1e-6
+    assert abs(out_div.val - (x.val/y.val)) < epsilon and \
+           abs(out_div.dval - ((x.dval * y.val - x.val * y.dval)/(y.val * y.val))) < epsilon
 
 def test_declare():
     with open('loma_code/declare.py') as f:
@@ -69,8 +71,8 @@ def test_declare():
     z2_val = z1_val * z0_val
     z2_dval = z1_dval * z0_val + z0_dval * z1_val
 
-    assert abs(out.val - z2_val) < 1e-6 and \
-           abs(out.dval - z2_dval) < 1e-6
+    assert abs(out.val - z2_val) < epsilon and \
+           abs(out.dval - z2_dval) < epsilon
 
 def test_assign():
     with open('loma_code/assign.py') as f:
@@ -82,8 +84,8 @@ def test_assign():
     y = _dfloat(5.0, 3.0)
     out = lib.d_assign(x, y)
 
-    assert abs(out.val - (-3.0 + 5.0)) < 1e-6 and \
-           abs(out.dval - (-1.0 + 3.0)) < 1e-6
+    assert abs(out.val - (-3.0 + 5.0)) < epsilon and \
+           abs(out.dval - (-1.0 + 3.0)) < epsilon
 
 def test_side_effect():
     with open('loma_code/side_effect.py') as f:
@@ -95,8 +97,8 @@ def test_side_effect():
     y = _dfloat(7.0, 2.0)
     out = lib.d_side_effect(x, y)
 
-    assert abs(out.val - (x.val * y.val)) < 1e-6 and \
-           abs(out.dval - (x.dval * y.val + x.val * y.dval)) < 1e-6
+    assert abs(out.val - (x.val * y.val)) < epsilon and \
+           abs(out.dval - (x.dval * y.val + x.val * y.dval)) < epsilon
 
 def test_call():
     with open('loma_code/call.py') as f:
@@ -119,15 +121,16 @@ def test_call():
     z2_dval = z1_dval / (2 * math.sqrt(z1_val))
     z3_val = math.pow(z2_val, z1_val)
     z3_dval = z2_dval * z1_val * math.pow(z2_val, z1_val - 1) \
-            + z1_dval * math.pow(z2_val, z1_val) * math.log(z1_val)
+            + z1_dval * math.pow(z2_val, z1_val) * math.log(z2_val)
     z4_val = math.exp(z3_val)
     z4_dval = math.exp(z3_val) * z3_dval
     z5_val = math.log(z3_val + z4_val)
     z5_dval = (z3_dval + z4_dval) / (z3_val + z4_val)
 
     out = lib.d_call(x)
-    assert abs(out.val - z5_val) < 1e-6 and \
-           abs(out.dval - z5_dval) < 1e-6
+
+    assert abs(out.val - z5_val) < epsilon and \
+           abs(out.dval - z5_dval) < epsilon
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))

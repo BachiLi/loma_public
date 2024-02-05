@@ -144,7 +144,22 @@ class CCodegenVisitor(irvisitor.IRVisitor):
             case loma_ir.Call():
                 if expr.id == 'thread_id':
                     return '__work_id'
-                ret = f'{expr.id}('
+                func_id = expr.id
+                # call the single precision versions of the intrinsic functions
+                if func_id == 'sin':
+                    func_id = 'sinf'
+                elif func_id == 'cos':
+                    func_id = 'cosf'
+                elif func_id == 'sqrt':
+                    func_id = 'sqrtf'
+                elif func_id == 'pow':
+                    func_id = 'powf'
+                elif func_id == 'exp':
+                    func_id = 'expf'
+                elif func_id == 'log':
+                    func_id = 'logf'
+
+                ret = f'{func_id}('
                 ret += ','.join([self.visit_expr(arg) for arg in expr.args])
                 ret += ')'
                 return ret
