@@ -1,4 +1,5 @@
 import attrs
+import autodiff
 import ctypes
 from ctypes import CDLL
 import check
