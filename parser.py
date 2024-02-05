@@ -98,6 +98,26 @@ def visit_FunctionDef(node):
                                ret_type = ret_type,
                                lineno = node.lineno)
 
+def visit_Differentiate(node):
+    assert isinstance(node, ast.Assign)
+    assert len(node.targets) == 1
+    func_id = node.targets[0].id
+    print(node.value.__dict__)
+    assert isinstance(node.value, ast.Call)
+    call_name = node.value.func
+    assert isinstance(call_name, ast.Name)
+    call_name = call_name.id
+    assert len(node.value.args) == 1
+    primal_func_id = node.value.args[0]
+    assert isinstance(primal_func_id, ast.Name)
+    primal_func_id = primal_func_id.id
+    if call_name == 'fwd_diff':
+        return loma_ir.ForwardDiff(func_id, primal_func_id, lineno = node.lineno)
+    elif call_name == 'rev_diff':
+        return loma_ir.ReverseDiff(func_id, primal_func_id, lineno = node.lineno)
+    else:
+        assert False, f'Unknown function transform operation {call_name}'
+
 def visit_ClassDef(node):
     members = []
     for member in node.body:
@@ -208,6 +228,7 @@ def visit_expr(node):
 
 def parse(code):
     module = ast.parse(code)
+
     structs = {}
     for d in module.body:
         if isinstance(d, ast.ClassDef):
@@ -218,6 +239,9 @@ def parse(code):
     for d in module.body:
         if isinstance(d, ast.FunctionDef):
             f = visit_FunctionDef(d)
+            funcs[f.id] = f
+        elif isinstance(d, ast.Assign):
+            f = visit_Differentiate(d)
             funcs[f.id] = f
 
     return structs, funcs

@@ -1,7 +1,7 @@
 import codegen_c
 
 class ISPCCodegenVisitor(codegen_c.CCodegenVisitor):
-    def visit_function(self, node):
+    def visit_function_def(self, node):
         if node.is_simd:
             self.code += f'task void __{node.id}_task('
             for i, arg in enumerate(node.args):

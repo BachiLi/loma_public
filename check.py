@@ -9,7 +9,7 @@ def check_duplicate_declare(node):
     class DuplicateChecker(visitor.IRVisitor):
         ids_lineno_map = {}
 
-        def visit_function(self, node):
+        def visit_function_def(self, node):
             for arg in node.args:
                 self.ids_lineno_map[arg.id] = node.lineno
             for stmt in node.body:
@@ -28,7 +28,7 @@ def check_undeclared_vars(node):
     class UndeclaredChecker(visitor.IRVisitor):
         ids = set()
 
-        def visit_function(self, node):
+        def visit_function_def(self, node):
             for arg in node.args:
                 self.ids.add(arg.id)
             for stmt in node.body:
@@ -45,7 +45,18 @@ def check_undeclared_vars(node):
 
     UndeclaredChecker().visit_function(node)
 
+def check_unhandled_differentiation(node):
+    class UnhandledDiffChecker(visitor.IRVisitor):
+        def visit_forward_diff(self, node):
+            raise error.UnhandledDifferentiation(node.id, node.lineno)
+
+        def visit_reverse_diff(self, node):
+            raise error.UnhandledDifferentiation(node.id, node.lineno)
+
+    UnhandledDiffChecker().visit_function(node)
+
 def check_ir(structs, funcs):
     for f in funcs.values():
         check_duplicate_declare(f)
         check_undeclared_vars(f)
+        check_unhandled_differentiation(f)

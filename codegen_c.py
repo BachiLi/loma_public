@@ -27,7 +27,7 @@ class CCodegenVisitor(visitor.IRVisitor):
     def emit_tabs(self):
         self.code += '\t' * self.tab_count
 
-    def visit_function(self, node):
+    def visit_function_def(self, node):
         self.code += f'extern \"C\" {type_to_string(node.ret_type)} {node.id}('
         for i, arg in enumerate(node.args):
             if i > 0:

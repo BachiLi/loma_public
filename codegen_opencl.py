@@ -4,7 +4,7 @@ ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 
 class OpenCLCodegenVisitor(codegen_c.CCodegenVisitor):
-    def visit_function(self, node):
+    def visit_function_def(self, node):
         if node.is_simd:
             self.code += f'__kernel void {node.id}('
             for i, arg in enumerate(node.args):

@@ -4,8 +4,25 @@ import _asdl.loma as loma_ir
 
 class IRVisitor:
     def visit_function(self, node):
+        match node:
+            case loma_ir.FunctionDef():
+                self.visit_function_def(node)
+            case loma_ir.ForwardDiff():
+                self.visit_forward_diff(node)
+            case loma_ir.ReverseDiff():
+                self.visit_reverse_diff(node)
+            case _:
+                assert False, f'Visitor error: unhandled func {node}'
+
+    def visit_function_def(self, node):
         for stmt in node.body:
             self.visit_stmt(stmt)
+
+    def visit_forward_diff(self, node):
+        pass
+
+    def visit_reverse_diff(self, node):
+        pass
 
     def visit_stmt(self, stmt):
         match stmt:

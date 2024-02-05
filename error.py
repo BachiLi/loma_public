@@ -18,3 +18,13 @@ class UndeclaredVariable(UserError):
     var : str
     # line number where the variable is assigned
     lineno : int
+
+class InternalError(Exception):
+    pass
+
+@attrs.define(frozen=True)
+class UnhandledDifferentiation(InternalError):
+    # ID of the derivative function
+    diff_func_id : str
+    # line number where the differentiation is declared
+    lineno : int

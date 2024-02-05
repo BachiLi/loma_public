@@ -32,7 +32,7 @@ Then,
 
 Therefore, if we have a straight-line code of a function \lstinline{f}
 \begin{lstlisting}[language=Python]
-def f(x : float, y : float) -> float:
+def f(x : in[float], y : in[float]) -> float:
 	z0 : float = h(x, y)
 	z1 : float = g(z0)
 	return z1
@@ -43,7 +43,7 @@ class DFloat:
 	val : float
 	dval : float
 
-def Df(x : DFloat, y : DFloat) -> DFloat:
+def Df(x : in[DFloat], y : in[DFloat]) -> DFloat:
 	z0 : DFloat = Dh(x, y)
 	z1 : DFloat = Dg(z0)
 	return z1
