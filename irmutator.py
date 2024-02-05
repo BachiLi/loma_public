@@ -1,6 +1,16 @@
 import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
+import itertools
+
+def flatten(nested_list):
+    # recursively flatten a nested list
+    if len(nested_list) == 0:
+        return nested_list
+    if isinstance(nested_list[0], list):
+        return flatten(nested_list[0]) + flatten(nested_list[1:])
+    else:
+        return nested_list[:1] + flatten(nested_list[1:])
 
 class IRMutator:
     def mutate_function(self, node):
@@ -16,6 +26,8 @@ class IRMutator:
 
     def mutate_function_def(self, node):
         new_body = [self.mutate_stmt(stmt) for stmt in node.body]
+        # Important: mutate_stmt can return a list of statements. We need to flatten the list.
+        new_body = flatten(new_body)
         return loma_ir.FunctionDef(\
             node.id, node.args, new_body, node.is_simd, node.ret_type, lineno = node.lineno)
 
@@ -62,6 +74,9 @@ class IRMutator:
         new_cond = self.mutate_expr(ifelse.cond)
         new_then_stmts = [self.mutate_stmt(stmt) for stmt in ifelse.then_stmts]
         new_else_stmts = [self.mutate_stmt(stmt) for stmt in ifelse.else_stmts]
+        # Important: mutate_stmt can return a list of statements. We need to flatten the lists.
+        new_then_stmts = flatten(new_then_stmts)
+        new_else_stmts = flatten(new_else_stmts)
         return loma_ir.IfElse(\
             new_cond,
             new_then_stmts,
@@ -71,6 +86,8 @@ class IRMutator:
     def mutate_while(self, while_loop):
         new_cond = self.mutate_expr(while_loop.cond)
         new_body = [self.mutate_stmt(stmt) for stmt in while_loop.body]
+        # Important: mutate_stmt can return a list of statements. We need to flatten the list.
+        new_body = flatten(new_body)
         return loma_ir.While(\
             new_cond,
             new_body,
