@@ -45,20 +45,20 @@ class IRMutator:
             self.mutate_expr(ret.val),
             lineno = ret.lineno)
 
-    def visit_declare(self, dec):
+    def mutate_declare(self, dec):
         return loma_ir.Declare(\
             dec.target,
             dec.t,
             self.mutate_expr(dec.val),
             lineno = dec.lineno)
 
-    def visit_assign(self, ass):
+    def mutate_assign(self, ass):
         return loma_ir.Assign(\
             ass.target,
             self.mutate_expr(ass.val),
             lineno = ass.lineno)
 
-    def visit_ifelse(self, ifelse):
+    def mutate_ifelse(self, ifelse):
         new_cond = self.mutate_expr(ifelse.cond)
         new_then_stmts = [self.mutate_stmt(stmt) for stmt in ifelse.then_stmts]
         new_else_stmts = [self.mutate_stmt(stmt) for stmt in ifelse.else_stmts]
@@ -68,7 +68,7 @@ class IRMutator:
             new_else_stmts,
             lineno = ifelse.lineno)
 
-    def visit_while(self, while_loop):
+    def mutate_while(self, while_loop):
         new_cond = self.mutate_expr(while_loop.cond)
         new_body = [self.mutate_stmt(stmt) for stmt in while_loop.body]
         return loma_ir.While(\
@@ -76,7 +76,7 @@ class IRMutator:
             new_body,
             lineno = while_loop.lineno)
 
-    def visit_expr(self, expr):
+    def mutate_expr(self, expr):
         match expr:
             case loma_ir.Var():
                 return self.mutate_var(expr)
