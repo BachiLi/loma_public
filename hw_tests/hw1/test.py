@@ -98,6 +98,37 @@ def test_side_effect():
     assert abs(out.val - (x.val * y.val)) < 1e-6 and \
            abs(out.dval - (x.dval * y.val + x.val * y.dval)) < 1e-6
 
+def test_call():
+    with open('loma_code/call.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/call.so')
+    _dfloat = structs['_dfloat']
+    x = _dfloat(1.5, 1.2)
+    # z0 : float = sin(x)
+    # z1 : float = cos(z0) + 1.0
+    # z2 : float = sqrt(z1)
+    # z3 : float = pow(z2, z1)
+    # z4 : float = exp(z3)
+    # z5 : float = log(z3 + z4)
+    z0_val = math.sin(x.val)
+    z0_dval = math.cos(x.val) * x.dval
+    z1_val = math.cos(z0_val) + 1.0
+    z1_dval = -math.sin(z0_val) * z0_dval
+    z2_val = math.sqrt(z1_val)
+    z2_dval = z1_dval / (2 * math.sqrt(z1_val))
+    z3_val = math.pow(z2_val, z1_val)
+    z3_dval = z2_dval * z1_val * math.pow(z2_val, z1_val - 1) \
+            + z1_dval * math.pow(z2_val, z1_val) * math.log(z1_val)
+    z4_val = math.exp(z3_val)
+    z4_dval = math.exp(z3_val) * z3_dval
+    z5_val = math.log(z3_val + z4_val)
+    z5_dval = (z3_dval + z4_dval) / (z3_val + z4_val)
+
+    out = lib.d_call(x)
+    assert abs(out.val - z5_val) < 1e-6 and \
+           abs(out.dval - z5_dval) < 1e-6
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
@@ -107,3 +138,4 @@ if __name__ == '__main__':
     test_declare()
     test_assign()
     test_side_effect()
+    test_call()

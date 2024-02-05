@@ -40,8 +40,9 @@ def compile(loma_code,
             opencl_device = None,
             opencl_command_queue = None):
     structs, funcs = parser.parse(loma_code)
+    check.check_ir(structs, funcs, check_diff = False)
     structs, funcs = autodiff.differentiate(structs, funcs)
-    check.check_ir(structs, funcs)
+    check.check_ir(structs, funcs, check_diff = True)
     
     # Sort the struct topologically
     # TODO: maybe extract this as a common function

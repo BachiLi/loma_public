@@ -55,6 +55,8 @@ Now, we need to provide the terminal cases of our recursive transformation. Noti
 Here, we provide the list of terminal cases of the basic operations in loma:
 \begin{equation}
 \begin{aligned}
+\text{DConstant}(c) &= (c, 0) \\
+\text{DVariable}(x, dx) &= (x, dx) \\
 \text{DAdd}(x, y, dx, dy) &= (x + y, dx + dy) \\
 \text{DSub}(x, y, dx, dy) &= (x - y, dx - dy) \\
 \text{DMul}(x, y, dx, dy) &= (x \cdot y, x \cdot dy + y \cdot dx) \\
