@@ -20,6 +20,16 @@ def test_identity():
     out = lib.d_identity(x)
     assert abs(out.val - 1.23) < 1e-6 and abs(out.dval - 4.56) < 1e-6
 
+def test_constant():
+    with open('loma_code/constant.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/constant.so')
+    _dfloat = structs['_dfloat']
+    x = _dfloat(1.23, 4.56)
+    out = lib.d_constant(x)
+    assert abs(out.val - 2.0) < 1e-6 and abs(out.dval - 0.0) < 1e-6
+
 def test_binary_ops():
     with open('loma_code/binary_ops.py') as f:
         structs, lib = compiler.compile(f.read(),
@@ -41,8 +51,31 @@ def test_binary_ops():
     assert abs(out_div.val - (x.val/y.val)) < 1e-6 and \
            abs(out_div.dval - ((x.dval * y.val - x.val * y.dval)/(y.val * y.val))) < 1e-6
 
+def test_declare():
+    with open('loma_code/declare.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/declare.so')
+    _dfloat = structs['_dfloat']
+    x = _dfloat(5.0, 0.5)
+    y = _dfloat(6.0, 1.5)
+    out = lib.d_declare(x, y)
+
+    # simulate the forward-diff program
+    z0_val = x.val + y.val
+    z0_dval = x.dval + y.dval
+    z1_val = z0_val + 5.0
+    z1_dval = z0_dval + 0.0
+    z2_val = z1_val * z0_val
+    z2_dval = z1_dval * z0_val + z0_dval * z1_val
+
+    assert abs(out.val - z2_val) < 1e-6 and \
+           abs(out.dval - z2_dval) < 1e-6
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
     test_identity()
+    test_constant()
     test_binary_ops()
+    test_declare()
