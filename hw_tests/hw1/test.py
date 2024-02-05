@@ -177,7 +177,7 @@ def test_multiple_outputs():
            abs(z.val - y[0].val * y[1].val) < epsilon and \
            abs(z.dval - (y[0].val * y[1].dval + y[0].dval * y[1].val)) < epsilon
 
-def test_int_inputs():
+def test_int_input():
     with open('loma_code/int_input.py') as f:
         structs, lib = compiler.compile(f.read(),
                                         target = 'c',
@@ -188,7 +188,7 @@ def test_int_inputs():
     y = _dint(3)
     out = lib.d_int_input(x, y)
     assert abs(out.val - (5 * x.val + y.val - 1)) < epsilon and \
-           abs(out.dval - 5 * x.dval)
+           abs(out.dval - 5 * x.dval) < epsilon
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
