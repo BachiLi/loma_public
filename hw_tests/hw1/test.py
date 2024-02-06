@@ -343,6 +343,23 @@ def test_array_in_struct():
     assert out.val - (int_arr.val + float_arr.val) < epsilon and \
            out.dval - float_arr.dval < epsilon
 
+def test_struct_in_array():
+    with open('loma_code/struct_in_array.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/struct_in_array.so')
+    _dfloat = structs['_dfloat']
+    _dint = structs['_dint']
+    _dFoo = structs['_dFoo']
+
+    x = _dint(3)
+    y = _dfloat(5.0, 7.0)
+    in_f = _dFoo(x, y)
+    out_f = _dFoo()
+    lib.d_struct_in_array(ctypes.pointer(in_f), ctypes.pointer(out_f))
+    assert out_f.val - (x.val * y.val) < epsilon and \
+           out_f.dval - y.dval < epsilon
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
@@ -366,3 +383,4 @@ if __name__ == '__main__':
     test_struct_output()
     test_nested_struct_output()
     test_array_in_struct()
+    test_struct_in_array()
