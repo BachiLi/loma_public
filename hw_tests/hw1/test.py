@@ -190,6 +190,18 @@ def test_int_input():
     assert abs(out.val - (5 * x.val + y.val - 1)) < epsilon and \
            abs(out.dval - 5 * x.dval) < epsilon
 
+def test_int_output():
+    with open('loma_code/int_output.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/int_output.so')
+    _dfloat = structs['_dfloat']
+    _dint = structs['_dint']
+    x = _dfloat(1.23, 4.56)
+    y = _dint(3)
+    out = lib.d_int_output(x, y)
+    assert abs(out.val - int(5 * x.val + y.val - 1)) < epsilon
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
@@ -204,3 +216,4 @@ if __name__ == '__main__':
     test_array_input()
     test_multiple_outputs()
     test_int_input()
+    test_int_output()
