@@ -208,11 +208,10 @@ def test_struct_input():
                                         target = 'c',
                                         output_filename = '_code/struct_input.so')
     _dFoo = structs['_dFoo']
-    _dfloat = structs['_dfloat']
-    _dint = structs['_dint']
-    x = _dfloat(1.23, 4.56)
-    y = _dint(3)
-    foo = _dFoo(x, y)
+    Foo = structs['Foo']
+    f = Foo(1.23, 3)
+    df = Foo(4.56, -1)
+    foo = _dFoo(f, df)
     out = lib.d_struct_input(foo)
     assert abs(out.val - (5 * x.val + y.val - 1)) < epsilon and \
            abs(out.dval - 5 * x.dval) < epsilon
