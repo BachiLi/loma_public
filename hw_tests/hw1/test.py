@@ -213,8 +213,8 @@ def test_struct_input():
     df = Foo(4.56, -1)
     foo = _dFoo(f, df)
     out = lib.d_struct_input(foo)
-    assert abs(out.val - (5 * x.val + y.val - 1)) < epsilon and \
-           abs(out.dval - 5 * x.dval) < epsilon
+    assert abs(out.val - (5 * f.val.x + f.val.y - 1)) < epsilon and \
+           abs(out.dval - 5 * f.dval.x) < epsilon
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
