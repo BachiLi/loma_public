@@ -215,6 +215,20 @@ def test_struct_input():
     assert abs(out.val - (5 * f.x.val + f.y.val - 1)) < epsilon and \
            abs(out.dval - 5 * f.x.dval) < epsilon
 
+def test_nested_struct_input():
+    with open('loma_code/nested_struct_input.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/nested_struct_input.so')
+    _dfloat = structs['_dfloat']
+    _dint = structs['_dint']
+    _dFoo = structs['_dFoo']
+    _dBar = structs['_dBar']
+    f = _dFoo(_dfloat(1.23, 4.56), _dBar(_dint(3), _dfloat(1.23, 4.56)))
+    out = lib.d_nested_struct_input(f)
+    assert abs(out.val - (f.x.val + f.y.z.val + f.y.w.val + 5) * 3) < epsilon and \
+           abs(out.dval - (f.x.dval + f.y.w.dval) * 3) < epsilon
+
 def test_struct_output():
     with open('loma_code/struct_output.py') as f:
         structs, lib = compiler.compile(f.read(),
@@ -233,17 +247,18 @@ def test_struct_output():
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-    # test_identity()
-    # test_constant()
-    # test_binary_ops()
-    # test_declare()
-    # test_assign()
-    # test_side_effect()
-    # test_call()
-    # test_array_output()
-    # test_array_input()
-    # test_multiple_outputs()
-    # test_int_input()
-    # test_int_output()
-    # test_struct_input()
+    test_identity()
+    test_constant()
+    test_binary_ops()
+    test_declare()
+    test_assign()
+    test_side_effect()
+    test_call()
+    test_array_output()
+    test_array_input()
+    test_multiple_outputs()
+    test_int_input()
+    test_int_output()
+    test_struct_input()
+    test_nested_struct_input()
     test_struct_output()
