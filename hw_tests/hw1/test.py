@@ -357,8 +357,9 @@ def test_struct_in_array():
     in_f = _dFoo(x, y)
     out_f = _dFoo()
     lib.d_struct_in_array(ctypes.pointer(in_f), ctypes.pointer(out_f))
-    assert out_f.val - (x.val * y.val) < epsilon and \
-           out_f.dval - y.dval < epsilon
+    assert out_f.x.val - int(x.val * y.val) < epsilon and \
+           out_f.y.val - (x.val + y.val) < epsilon and \
+           out_f.y.dval - y.dval < epsilon
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
