@@ -216,6 +216,21 @@ def test_struct_input():
     assert abs(out.val - (5 * foo.val.x + foo.val.y - 1)) < epsilon and \
            abs(out.dval - 5 * foo.dval.x) < epsilon
 
+def test_struct_output():
+    with open('loma_code/struct_output.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/struct_output.so')
+
+    _dfloat = structs['_dfloat']
+    _dint = structs['_dint']
+    x = _dfloat(1.23, 4.56)
+    y = _dint(3)
+    out = lib.d_struct_output(x, y)
+    assert abs(out.val.a - (x.val + y.val * x.val)) < epsilon and \
+           abs(out.val.b - int(y.val - x.val)) < epsilon and \
+           abs(out.dval.a - (x.dval + y * x.dval)) < epsilon
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
@@ -232,3 +247,4 @@ if __name__ == '__main__':
     test_int_input()
     test_int_output()
     test_struct_input()
+    test_struct_output()
