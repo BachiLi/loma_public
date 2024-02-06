@@ -5,6 +5,22 @@ import attrs
 import error
 import irmutator
 
+def fill_in_struct_info(t, structs):
+    match t:
+        case loma_ir.Int():
+            return t
+        case loma_ir.Float():
+            return t
+        case loma_ir.Array():
+            return loma_ir.Array(fill_in_struct_info(t.t, structs), t.static_size)
+        case loma_ir.Struct():
+            if len(t.members) == 0:
+                return structs[t.id]
+            else:
+                return t
+        case _:
+            assert False
+
 class TypeInferencer(irmutator.IRMutator):
     def __init__(self, structs, funcs):
         self.var_types = {}
@@ -35,9 +51,7 @@ class TypeInferencer(irmutator.IRMutator):
         # Go over the arguments and record their types
         self.current_func_args = list(node.args)
         for i, arg in enumerate(node.args):
-            t = arg.t
-            if isinstance(t, loma_ir.Struct) and len(t.members) == 0:
-                t = self.structs[t.id]
+            t = fill_in_struct_info(arg.t, self.structs)
             self.var_types[arg.id] = t
             self.current_func_args[i] = loma_ir.Arg(arg.id, t, arg.i)
         new_args = self.current_func_args
