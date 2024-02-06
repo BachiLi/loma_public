@@ -132,6 +132,31 @@ def test_call():
     assert abs(out.val - z5_val) < epsilon and \
            abs(out.dval - z5_dval) < epsilon
 
+def test_int_input():
+    with open('loma_code/int_input.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/int_input.so')
+    _dfloat = structs['_dfloat']
+    _dint = structs['_dint']
+    x = _dfloat(1.23, 4.56)
+    y = _dint(3)
+    out = lib.d_int_input(x, y)
+    assert abs(out.val - (5 * x.val + y.val - 1)) < epsilon and \
+           abs(out.dval - 5 * x.dval) < epsilon
+
+def test_int_output():
+    with open('loma_code/int_output.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/int_output.so')
+    _dfloat = structs['_dfloat']
+    _dint = structs['_dint']
+    x = _dfloat(1.23, 4.56)
+    y = _dint(3)
+    out = lib.d_int_output(x, y)
+    assert abs(out.val - int(5 * x.val + y.val - 1)) < epsilon
+
 def test_array_output():
     with open('loma_code/array_output.py') as f:
         structs, lib = compiler.compile(f.read(),
@@ -177,31 +202,6 @@ def test_multiple_outputs():
            abs(z.val - y[0].val * y[1].val) < epsilon and \
            abs(z.dval - (y[0].val * y[1].dval + y[0].dval * y[1].val)) < epsilon
 
-def test_int_input():
-    with open('loma_code/int_input.py') as f:
-        structs, lib = compiler.compile(f.read(),
-                                        target = 'c',
-                                        output_filename = '_code/int_input.so')
-    _dfloat = structs['_dfloat']
-    _dint = structs['_dint']
-    x = _dfloat(1.23, 4.56)
-    y = _dint(3)
-    out = lib.d_int_input(x, y)
-    assert abs(out.val - (5 * x.val + y.val - 1)) < epsilon and \
-           abs(out.dval - 5 * x.dval) < epsilon
-
-def test_int_output():
-    with open('loma_code/int_output.py') as f:
-        structs, lib = compiler.compile(f.read(),
-                                        target = 'c',
-                                        output_filename = '_code/int_output.so')
-    _dfloat = structs['_dfloat']
-    _dint = structs['_dint']
-    x = _dfloat(1.23, 4.56)
-    y = _dint(3)
-    out = lib.d_int_output(x, y)
-    assert abs(out.val - int(5 * x.val + y.val - 1)) < epsilon
-
 def test_struct_input():
     with open('loma_code/struct_input.py') as f:
         structs, lib = compiler.compile(f.read(),
@@ -245,7 +245,7 @@ def test_struct_output():
            abs(out.a.dval - (x.dval + y.val * x.dval)) < epsilon
 
 def test_nested_struct_output():
-    with open('loma_code/test_nested_struct_output.py') as f:
+    with open('loma_code/nested_struct_output.py') as f:
         structs, lib = compiler.compile(f.read(),
                                         target = 'c',
                                         output_filename = '_code/nested_struct_output.so')
@@ -274,11 +274,11 @@ if __name__ == '__main__':
     test_assign()
     test_side_effect()
     test_call()
+    test_int_input()
+    test_int_output()
     test_array_output()
     test_array_input()
     test_multiple_outputs()
-    test_int_input()
-    test_int_output()
     test_struct_input()
     test_nested_struct_input()
     test_struct_output()
