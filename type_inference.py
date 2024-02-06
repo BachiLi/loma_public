@@ -91,7 +91,7 @@ class TypeInferencer(irmutator.IRMutator):
             new_val = None
         return loma_ir.Declare(\
             dec.target,
-            dec.t,
+            t,
             new_val,
             lineno = dec.lineno)
 
