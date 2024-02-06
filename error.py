@@ -19,6 +19,45 @@ class UndeclaredVariable(UserError):
     # line number where the variable is assigned
     lineno : int
 
+@attrs.define(frozen=True)
+class BinaryOpTypeMismatch(UserError):
+    # line number where the binary op happens
+    lineno : int
+
+@attrs.define(frozen=True)
+class CallTypeMismatch(UserError):
+    # The function ID of the call
+    call_id : str
+    # line number where the call op happens
+    lineno : int
+
+@attrs.define(frozen=True)
+class ReturnTypeMismatch(UserError):
+    # line number where the return op happens
+    lineno : int
+
+@attrs.define(frozen=True)
+class AssignTypeMismatch(UserError):
+    # line number where the assign op happens
+    lineno : int
+
+@attrs.define(frozen=True)
+class DeclareTypeMismatch(UserError):
+    # line number where the declare op happens
+    lineno : int
+
+@attrs.define(frozen=True)
+class IfElseCondTypeMismatch(UserError):
+    # line number where the IfElse op happens
+    lineno : int
+
+@attrs.define(frozen=True)
+class CallIDNotFound(UserError):
+    # The function ID of the call
+    call_id : str
+    # line number where the call op happens
+    lineno : int
+
 class InternalError(Exception):
     pass
 

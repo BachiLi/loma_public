@@ -1,0 +1,269 @@
+import ir
+ir.generate_asdl_file()
+import _asdl.loma as loma_ir
+import error
+import irmutator
+
+class TypeInferencer(irmutator.IRMutator):
+    def __init__(self, structs, funcs):
+        self.var_types = {}
+        self.structs = structs
+        self.funcs = funcs
+
+    def lookup_ref_type(self, ref):
+        ret_type = None
+        match ref:
+            case loma_ir.RefName():
+                ret_type = self.var_types[ref.id]
+            case loma_ir.RefArray():
+                parent_type = self.lookup_ref_type(ref.array)
+                ret_type = parent_type.t
+            case loma_ir.RefStruct():
+                parent_type = self.lookup_ref_type(ref.struct)
+                for m in parent_type.members:
+                    if m.id == ref.member:
+                        ret_type = m.t
+                        break
+                if ret_type is None:
+                    assert False, f'member {ref.member} not found in Struct {parent_type.id}'
+        if isinstance(ret_type, loma_ir.Struct) and len(ret_type.members) == 0:
+            ret_type = self.structs[ret_type.id]
+        return ret_type
+
+    def mutate_function_def(self, node):
+        # Go over the arguments and record their types
+        self.current_func_args = list(node.args)
+        for i, arg in enumerate(node.args):
+            t = arg.t
+            if isinstance(t, loma_ir.Struct) and len(t.members) == 0:
+                t = self.structs[t.id]
+            self.var_types[arg.id] = t
+            self.current_func_args[i] = loma_ir.Arg(arg.id, t, arg.i)
+        new_args = self.current_func_args
+        
+        new_ret_type = node.ret_type
+        if isinstance(new_ret_type, loma_ir.Struct) and len(new_ret_type.members) == 0:
+            new_ret_type = self.structs[new_ret_type.id]
+        self.current_func_ret = new_ret_type
+
+        new_body = [self.mutate_stmt(stmt) for stmt in node.body]
+        # Important: mutate_stmt can return a list of statements. We need to flatten the list.
+        new_body = irmutator.flatten(new_body)
+        return loma_ir.FunctionDef(\
+            node.id,
+            new_args,
+            new_body,
+            node.is_simd,
+            new_ret_type,
+            lineno = node.lineno)
+
+    def mutate_return(self, ret):
+        new_val = self.mutate_expr(ret.val)
+        if new_val.t == loma_ir.Int() and self.current_func_ret == loma_ir.Float():
+            new_val = loma_ir.Call('int2float',
+                [new_val], lineno = new_val.lineno, t = loma_ir.Float())
+        elif new_val.t == loma_ir.Float() and self.current_func_ret == loma_ir.Int():
+            new_val = loma_ir.Call('float2int',
+                [new_val], lineno = new_val.lineno, t = loma_ir.Int())
+        if new_val.t != self.current_func_ret:
+            raise error.ReturnTypeMismatch(new_val.lineno)
+        return loma_ir.Return(\
+            new_val,
+            lineno = ret.lineno)
+
+    def mutate_declare(self, dec):
+        t = dec.t
+        if isinstance(t, loma_ir.Struct) and len(t.members) == 0:
+            t = self.structs[t.id]
+        self.var_types[dec.target] = t
+        if dec.val is not None:
+            new_val = self.mutate_expr(dec.val)
+            if new_val is not None:
+                if new_val.t == loma_ir.Int() and t == loma_ir.Float():
+                    new_val = loma_ir.Call('int2float',
+                        [new_val], lineno = new_val.lineno, t = loma_ir.Float())
+                elif new_val.t == loma_ir.Float() and t == loma_ir.Int():
+                    new_val = loma_ir.Call('float2int',
+                        [new_val], lineno = new_val.lineno, t = loma_ir.Int())
+                if new_val.t != t:
+                    raise error.DeclareTypeMismatch(dec.lineno)
+        else:
+            new_val = None
+        return loma_ir.Declare(\
+            dec.target,
+            dec.t,
+            new_val,
+            lineno = dec.lineno)
+
+    def mutate_assign(self, ass):
+        new_val = self.mutate_expr(ass.val)
+        ref = ass.target
+        ref_type = self.lookup_ref_type(ref)
+        val_type = new_val.t
+
+        if val_type == loma_ir.Int() and ref_type == loma_ir.Float():
+            new_val = loma_ir.Call('int2float',
+                [new_val], lineno = new_val.lineno, t = loma_ir.Float())
+        elif val_type == loma_ir.Float() and ref_type == loma_ir.Int():
+            new_val = loma_ir.Call('float2int',
+                [new_val], lineno = new_val.lineno, t = loma_ir.Int())
+        if new_val.t != ref_type:
+            raise error.AssignTypeMismatch(new_val.lineno)
+        return loma_ir.Assign(\
+            self.mutate_ref(ass.target),
+            new_val,
+            lineno = ass.lineno)
+
+    def mutate_ifelse(self, ifelse):
+        new_ifelse = super().mutate_ifelse(ifelse)
+        if new_ifelse.cond.t != loma_ir.Int() and \
+                new_ifelse.cond.t != loma_ir.Float():
+            raise error.IfElseCondTypeMismatch(new_ifelse.cond.lineno)
+        return new_ifelse
+
+    def mutate_var(self, var):
+        new_var = loma_ir.Var(\
+            var.id,
+            lineno = var.lineno,
+            t = self.var_types[var.id])
+        return new_var
+
+    def mutate_array_access(self, acc):
+        ref = self.mutate_ref(acc.array)
+        ref_type = self.lookup_ref_type(ref)
+        assert isinstance(ref_type, loma_ir.Array)
+        return loma_ir.ArrayAccess(\
+            ref,
+            self.mutate_expr(acc.index),
+            lineno = acc.lineno,
+            t = ref_type.t)
+
+    def mutate_struct_access(self, s):
+        ref = self.mutate_ref(s.struct)
+        ref_type = self.lookup_ref_type(ref)
+        assert isinstance(ref_type, loma_ir.Struct)
+        found = False
+        for m in ref_type.members:
+            if m.id == s.member_id:
+                ref_type = m.t
+                found = True
+                break
+        if not found:
+            assert False, f'member {ref.member} not found in Struct {parent_type.id}'
+        return loma_ir.StructAccess(\
+            ref,
+            s.member_id,
+            lineno = s.lineno,
+            t = ref_type)
+
+    def mutate_const_float(self, con):
+        return loma_ir.ConstFloat(\
+            con.val,
+            lineno = con.lineno,
+            t = loma_ir.Float())
+
+    def mutate_const_int(self, con):
+        return loma_ir.ConstInt(\
+            con.val,
+            lineno = con.lineno,
+            t = loma_ir.Int())
+
+    def mutate_binary_op(self, expr):
+        left = self.mutate_expr(expr.left)
+        right = self.mutate_expr(expr.right)
+        # Casting rule:
+        # int, int -> int
+        # int, float / float, int -> float
+        # float, float -> float
+        if left.t == loma_ir.Int() and right.t == loma_ir.Int():
+            inferred_type = loma_ir.Int()
+        elif left.t == loma_ir.Int() and right.t == loma_ir.Float():
+            inferred_type = loma_ir.Float()
+            left = loma_ir.Call('int2float',
+                [left], lineno = left.lineno, t = loma_ir.Float())
+        elif left.t == loma_ir.Float() and right.t == loma_ir.Int():
+            inferred_type = loma_ir.Float()
+            right = loma_ir.Call('int2float',
+                [right], lineno = right.lineno, t = loma_ir.Float())
+        elif left.t == loma_ir.Float() and right.t == loma_ir.Float():
+            inferred_type = loma_ir.Float()
+        else:
+            raise error.BinaryOpTypeMismatch(expr.lineno)
+
+        return loma_ir.BinaryOp(\
+            expr.op,
+            left,
+            right,
+            lineno = expr.lineno,
+            t = inferred_type)
+
+    def mutate_call(self, call):
+        args = [self.mutate_expr(arg) for arg in call.args]
+        inf_type = None
+
+        # Check for intrinsic functions
+        if call.id == 'sin' or \
+                call.id == 'cos' or \
+                call.id == 'sqrt' or \
+                call.id == 'exp' or \
+                call.id == 'log':
+            if len(args) != 1:
+                raise error.CallTypeMismatch(call.id, call.lineno)
+            if args[0].t == loma_ir.Int():
+                args[0] = loma_ir.Call('int2float',
+                    [args[0]], lineno = args[0].lineno, t = loma_ir.Float())
+            if args[0].t != loma_ir.Float():
+                raise error.CallTypeMismatch(call.id, call.lineno)
+            inf_type = loma_ir.Float()
+        elif call.id == 'int2float':
+            if len(args) != 1 or args[0].t != loma_ir.Int():
+                raise error.CallTypeMismatch(call.id, call.lineno)
+            inf_type = loma_ir.Float()
+        elif call.id == 'float2int':
+            if len(args) != 1 or args[0].t != loma_ir.Float():
+                raise error.CallTypeMismatch(call.id, call.lineno)
+            inf_type = loma_ir.Int()
+        elif call.id == 'pow':
+            if len(args) != 2:
+                raise error.CallTypeMismatch(call.id, call.lineno)
+            for i in range(2):
+                if args[i].t == loma_ir.Int():
+                    args[i] = loma_ir.Call('int2float',
+                        [args[i]], lineno = args[i].lineno, t = loma_ir.Float())
+                if args[i].t != loma_ir.Float():
+                    raise error.CallTypeMismatch(call.id, call.lineno)
+            inf_type = loma_ir.Float()
+        elif call.id == 'thread_id':
+            if len(args) != 0:
+                raise error.CallTypeMismatch(call.id, call.lineno)
+            inf_type = loma_ir.Int()
+        else:
+            if call.id not in self.funcs:
+                raise error.CallIDNotFound(call.id, call.lineno)
+            f = self.funcs[call.id]
+            if len(args) != len(f.args):
+                raise error.CallTypeMismatch(call.id, call.lineno)
+            for i, (call_arg, f_arg) in enumerate(zip(args, f.args)):
+                if call_arg.t == loma_ir.Int() and f_arg.t == loma_ir.Float():
+                    args[i] = loma_ir.Call('int2float',
+                        [args[i]], lineno = args[i].lineno, t = loma_ir.Float())
+                    call_arg = args[i]
+                elif call_arg.t == loma_ir.Float() and f_arg.t == loma_ir.Int():
+                    args[i] = loma_ir.Call('float2int',
+                        [args[i]], lineno = args[i].lineno, t = loma_ir.Int())
+                    call_arg = args[i]
+
+                if call_arg.t != f_arg.t:
+                    raise error.CallTypeMismatch(call.id, call.lineno)
+            inf_type = f.ret_type
+
+        return loma_ir.Call(\
+            call.id,
+            args,
+            lineno = call.lineno,
+            t = inf_type)
+
+def check_and_infer_types(structs, funcs):
+    for id, f in funcs.items():
+        ti = TypeInferencer(structs, funcs)
+        funcs[id] = ti.mutate_function(f)

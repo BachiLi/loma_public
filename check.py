@@ -3,6 +3,7 @@ ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 import error
 import irvisitor
+import type_inference
 
 # TODO: add scope
 def check_duplicate_declare(node):
@@ -61,3 +62,5 @@ def check_ir(structs, funcs, check_diff):
             check_unhandled_differentiation(f)
         check_duplicate_declare(f)
         check_undeclared_vars(f)
+
+    type_inference.check_and_infer_types(structs, funcs)

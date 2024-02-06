@@ -66,7 +66,7 @@ class IRMutator:
 
     def mutate_assign(self, ass):
         return loma_ir.Assign(\
-            ass.target,
+            self.mutate_ref(ass.target),
             self.mutate_expr(ass.val),
             lineno = ass.lineno)
 

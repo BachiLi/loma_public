@@ -158,6 +158,10 @@ class CCodegenVisitor(irvisitor.IRVisitor):
                     func_id = 'expf'
                 elif func_id == 'log':
                     func_id = 'logf'
+                elif func_id == 'int2float':
+                    func_id = '(float)'
+                elif func_id == 'float2int':
+                    func_id = '(int)'
 
                 ret = f'{func_id}('
                 ret += ','.join([self.visit_expr(arg) for arg in expr.args])
