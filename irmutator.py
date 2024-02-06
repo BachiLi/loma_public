@@ -117,14 +117,14 @@ class IRMutator:
 
     def mutate_array_access(self, acc):
         return loma_ir.ArrayAccess(\
-            self.mutate_ref(acc.array),
+            self.mutate_expr(acc.array),
             self.mutate_expr(acc.index),
             lineno = acc.lineno,
             t = acc.t)
 
     def mutate_struct_access(self, s):
         return loma_ir.StructAccess(\
-            self.mutate_ref(s.struct),
+            self.mutate_expr(s.struct),
             s.member_id,
             lineno = s.lineno,
             t = s.t)

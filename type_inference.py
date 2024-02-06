@@ -1,6 +1,7 @@
 import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
+import attrs
 import error
 import irmutator
 
@@ -129,32 +130,35 @@ class TypeInferencer(irmutator.IRMutator):
         return new_var
 
     def mutate_array_access(self, acc):
-        ref = self.mutate_ref(acc.array)
-        ref_type = self.lookup_ref_type(ref)
-        assert isinstance(ref_type, loma_ir.Array)
+        arr = self.mutate_expr(acc.array)
+        if not isinstance(arr.t, loma_ir.Array):
+            raise error.ArrayAccessTypeMismatch(arr.lineno)
         return loma_ir.ArrayAccess(\
-            ref,
+            arr,
             self.mutate_expr(acc.index),
             lineno = acc.lineno,
-            t = ref_type.t)
+            t = arr.t.t)
 
     def mutate_struct_access(self, s):
-        ref = self.mutate_ref(s.struct)
-        ref_type = self.lookup_ref_type(ref)
-        assert isinstance(ref_type, loma_ir.Struct)
-        found = False
-        for m in ref_type.members:
+        struct = self.mutate_expr(s.struct)
+        if not isinstance(struct.t, loma_ir.Struct):
+            raise error.StructAccessTypeMismatch(struct.lineno)
+        if len(struct.t.members) == 0:
+            # fill in struct information
+            struct = attrs.evolve(struct, t=self.structs[struct.t.id])
+
+        member_type = None
+        for m in struct.t.members:
             if m.id == s.member_id:
-                ref_type = m.t
-                found = True
+                member_type = m.t
                 break
-        if not found:
-            assert False, f'member {ref.member} not found in Struct {parent_type.id}'
+        if member_type is None:
+            raise error.StructMemberNotFound(s.lineno)
         return loma_ir.StructAccess(\
-            ref,
+            struct,
             s.member_id,
             lineno = s.lineno,
-            t = ref_type)
+            t = member_type)
 
     def mutate_const_float(self, con):
         return loma_ir.ConstFloat(\

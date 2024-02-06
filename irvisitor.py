@@ -84,11 +84,11 @@ class IRVisitor:
         pass
 
     def visit_array_access(self, acc):
-        self.visit_ref(acc.array)
+        self.visit_expr(acc.array)
         self.visit_expr(acc.index)
 
     def visit_struct_access(self, s):
-        self.visit_ref(s.struct)
+        self.visit_expr(s.struct)
         pass
 
     def visit_const_float(self, con):

@@ -201,9 +201,9 @@ def visit_expr(node):
                 case _:
                     assert False, f'Unknown BinOp {type(node.op).__name__}'
         case ast.Subscript():
-            return loma_ir.ArrayAccess(parse_ref(node.value), visit_expr(node.slice))
+            return loma_ir.ArrayAccess(visit_expr(node.value), visit_expr(node.slice))
         case ast.Attribute():
-            return loma_ir.StructAccess(parse_ref(node.value), node.attr)
+            return loma_ir.StructAccess(visit_expr(node.value), node.attr)
         case ast.Compare():
             assert len(node.ops) == 1
             assert len(node.comparators) == 1

@@ -16,8 +16,8 @@ def generate_asdl_file():
            attributes   ( int? lineno )
 
       expr = Var          ( string id )
-           | ArrayAccess  ( ref array, expr index )
-           | StructAccess ( ref struct, string member_id )
+           | ArrayAccess  ( expr array, expr index )
+           | StructAccess ( expr struct, string member_id )
            | ConstFloat   ( float val )
            | ConstInt     ( int val )
            | BinaryOp     ( bin_op op, expr left, expr right )

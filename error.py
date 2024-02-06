@@ -20,6 +20,21 @@ class UndeclaredVariable(UserError):
     lineno : int
 
 @attrs.define(frozen=True)
+class ArrayAccessTypeMismatch(UserError):
+    # line number where the array access happens
+    lineno : int
+
+@attrs.define(frozen=True)
+class StructAccessTypeMismatch(UserError):
+    # line number where the struct access happens
+    lineno : int
+
+@attrs.define(frozen=True)
+class StructMemberNotFound(UserError):
+    # line number where the struct access happens
+    lineno : int
+
+@attrs.define(frozen=True)
 class BinaryOpTypeMismatch(UserError):
     # line number where the binary op happens
     lineno : int

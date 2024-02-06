@@ -108,9 +108,9 @@ class CCodegenVisitor(irvisitor.IRVisitor):
             case loma_ir.Var():
                 return expr.id
             case loma_ir.ArrayAccess():
-                return f'({self.visit_ref(expr.array)})[{self.visit_expr(expr.index)}]'
+                return f'({self.visit_expr(expr.array)})[{self.visit_expr(expr.index)}]'
             case loma_ir.StructAccess():
-                return f'({self.visit_ref(expr.struct)}).{expr.member_id}'
+                return f'({self.visit_expr(expr.struct)}).{expr.member_id}'
             case loma_ir.ConstFloat():
                 return f'(float)({expr.val})'
             case loma_ir.ConstInt():
