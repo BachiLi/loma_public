@@ -244,6 +244,26 @@ def test_struct_output():
            abs(out.b.val - int(y.val - x.val)) < epsilon and \
            abs(out.a.dval - (x.dval + y.val * x.dval)) < epsilon
 
+def test_nested_struct_output():
+    with open('loma_code/nested_struct_output.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/nested_struct_output.so')
+
+    _dfloat = structs['_dfloat']
+    _dBar = structs['_dBar']
+    a = _dfloat(1.23, 4.56)
+    bar = _dBar()
+    f = lib.d_nested_struct_output(a, ctypes.pointer(bar))
+    assert abs(f.x.val - 2 * a.val) < epsilon and \
+           f.y.z.val == 5 and \
+           abs(f.y.w.val - f.x.val) < epsilon and \
+           bar.z.val == 3 and \
+           abs(bar.w.val - (bar.z.val * a.val)) and \
+           abs(f.x.dval - 2 * a.dval) < epsilon and \
+           abs(f.y.w.dval - f.x.dval) < epsilon and \
+           abs(bar.w.dval - (bar.z.val * a.dval)) < epsilon
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
@@ -262,3 +282,4 @@ if __name__ == '__main__':
     test_struct_input()
     test_nested_struct_input()
     test_struct_output()
+    test_nested_struct_output()
