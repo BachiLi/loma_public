@@ -245,7 +245,7 @@ def test_struct_output():
            abs(out.a.dval - (x.dval + y.val * x.dval)) < epsilon
 
 def test_nested_struct_output():
-    with open('loma_code/nested_struct_output.py') as f:
+    with open('loma_code/test_nested_struct_output.py') as f:
         structs, lib = compiler.compile(f.read(),
                                         target = 'c',
                                         output_filename = '_code/nested_struct_output.so')
@@ -259,7 +259,7 @@ def test_nested_struct_output():
            f.y.z.val == 5 and \
            abs(f.y.w.val - f.x.val) < epsilon and \
            bar.z.val == 3 and \
-           abs(bar.w.val - (bar.z.val * a.val)) and \
+           abs(bar.w.val - (bar.z.val * a.val)) < epsilon and \
            abs(f.x.dval - 2 * a.dval) < epsilon and \
            abs(f.y.w.dval - f.x.dval) < epsilon and \
            abs(bar.w.dval - (bar.z.val * a.dval)) < epsilon
