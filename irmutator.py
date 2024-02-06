@@ -126,7 +126,7 @@ class IRMutator:
         return loma_ir.StructAccess(\
             self.mutate_ref(s.struct),
             s.member_id,
-            lineno = acc.lineno,
+            lineno = s.lineno,
             t = s.t)
 
     def mutate_const_float(self, con):
