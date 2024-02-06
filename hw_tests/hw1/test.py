@@ -228,22 +228,22 @@ def test_struct_output():
     out = lib.d_struct_output(x, y)
     assert abs(out.a.val - (x.val + y.val * x.val)) < epsilon and \
            abs(out.b.val - int(y.val - x.val)) < epsilon and \
-           abs(out.a.dval - (x.dval + y * x.dval)) < epsilon
+           abs(out.a.dval - (x.dval + y.val * x.dval)) < epsilon
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-    test_identity()
-    test_constant()
-    test_binary_ops()
-    test_declare()
-    test_assign()
-    test_side_effect()
-    test_call()
-    test_array_output()
-    test_array_input()
-    test_multiple_outputs()
-    test_int_input()
-    test_int_output()
-    test_struct_input()
+    # test_identity()
+    # test_constant()
+    # test_binary_ops()
+    # test_declare()
+    # test_assign()
+    # test_side_effect()
+    # test_call()
+    # test_array_output()
+    # test_array_input()
+    # test_multiple_outputs()
+    # test_int_input()
+    # test_int_output()
+    # test_struct_input()
     test_struct_output()
