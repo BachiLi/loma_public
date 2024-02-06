@@ -337,9 +337,9 @@ def test_array_in_struct():
     _dint = structs['_dint']
     int_arr = _dint(3)
     float_arr = _dfloat(5.0, 7.0)
-    Foo = structs['Foo']
-    foo = Foo(int_arr=ctypes.pointer(int_arr), float_arr=ctypes.pointer(float_arr))
-    out = lib.d_array_in_struct(foo)
+    _dFoo = structs['_dFoo']
+    f = _dFoo(int_arr=ctypes.pointer(int_arr), float_arr=ctypes.pointer(float_arr))
+    out = lib.d_array_in_struct(f)
     assert out.val - (int_arr.val + float_arr.val) < epsilon and \
            out.dval - float_arr.dval < epsilon
 
