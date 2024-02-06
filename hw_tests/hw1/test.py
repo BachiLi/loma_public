@@ -184,6 +184,27 @@ def test_array_input():
     assert abs(out.val - (0.7 + 0.3)) < epsilon and \
            abs(out.dval - (0.8 + 0.5)) < epsilon
 
+def test_array_input_indexing():
+    with open('loma_code/array_input_indexing.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/array_input_indexing.so')
+    _dfloat = structs['_dfloat']
+    _dint = structs['_dint']
+    py_x = [_dfloat(0.1, 0.9),
+            _dfloat(0.2, 0.8),
+            _dfloat(0.3, 0.7),
+            _dfloat(0.4, 0.6),
+            _dfloat(0.5, 0.5),
+            _dfloat(0.6, 0.4),
+            _dfloat(0.7, 0.3)]
+    x = (_dfloat * len(py_x))(*py_x)
+    i = _dint(1)
+    j = _dfloat(3.5, 0.5)
+    out = lib.d_array_input_indexing(x, i, j)
+    assert abs(out.val - (x[1].val + x[3].val + x[2].val + x[6].val)) < epsilon and \
+           abs(out.dval - (x[1].dval + x[3].dval + x[2].dval + x[6].dval)) < epsilon
+
 def test_multiple_outputs():
     with open('loma_code/multiple_outputs.py') as f:
         structs, lib = compiler.compile(f.read(),
@@ -278,6 +299,7 @@ if __name__ == '__main__':
     test_int_output()
     test_array_output()
     test_array_input()
+    test_array_input_indexing()
     test_multiple_outputs()
     test_struct_input()
     test_nested_struct_input()
