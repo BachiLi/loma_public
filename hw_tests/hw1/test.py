@@ -361,6 +361,17 @@ def test_struct_in_array():
            out_f.y.val - (x.val + y.val) < epsilon and \
            out_f.y.dval - y.dval < epsilon
 
+def test_poly():
+    with open('loma_code/poly.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/poly.so')
+    x = 0.6
+    out = lib.d_poly(x)
+    # poly is 3x^4 + 5x^2 + 10
+    # the derivative is 12 x^3 + 10 x
+    assert out - (12 * x * x * x + 10 * x) < epsilon
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
@@ -385,3 +396,4 @@ if __name__ == '__main__':
     test_nested_struct_output()
     test_array_in_struct()
     test_struct_in_array()
+    test_poly()
