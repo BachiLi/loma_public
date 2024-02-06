@@ -184,6 +184,21 @@ def test_array_input():
     assert abs(out.val - (0.7 + 0.3)) < epsilon and \
            abs(out.dval - (0.8 + 0.5)) < epsilon
 
+def test_int_array_input():
+    with open('loma_code/int_array_input.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/int_array_input.so')
+    _dfloat = structs['_dfloat']
+    _dint = structs['_dint']
+    py_x = [_dfloat(0.7, 0.8), _dfloat(0.3, 0.5)]
+    x = (_dfloat * len(py_x))(*py_x)
+    py_y = [_dint(5)]
+    y = (_dint * len(py_y))(*py_y)
+    out = lib.d_int_array_input(x, y)
+    assert abs(out.val - (0.7 + 0.3 + 5)) < epsilon and \
+           abs(out.dval - (0.8 + 0.5)) < epsilon
+
 def test_array_input_indexing():
     with open('loma_code/array_input_indexing.py') as f:
         structs, lib = compiler.compile(f.read(),
@@ -204,6 +219,34 @@ def test_array_input_indexing():
     out = lib.d_array_input_indexing(x, i, j)
     assert abs(out.val - (x[1].val + x[3].val + x[2].val + x[6].val)) < epsilon and \
            abs(out.dval - (x[1].dval + x[3].dval + x[2].dval + x[6].dval)) < epsilon
+
+def test_array_output_indexing():
+    with open('loma_code/array_output_indexing.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/array_output_indexing.so')
+    _dfloat = structs['_dfloat']
+    _dint = structs['_dint']
+    x = _dfloat(0.3, 0.4)
+    i = _dint(1)
+    j = _dfloat(3.5, 0.5)
+    py_y = [_dfloat(0, 0)] * 7
+    y = (_dfloat * len(py_y))(*py_y)
+    lib.d_array_output_indexing(x, i, j, y)
+    assert abs(y[0].val - 0) < epsilon and \
+           abs(y[0].dval - 0) < epsilon
+    assert abs(y[1].val - x.val) < epsilon and \
+           abs(y[1].dval - x.dval) < epsilon
+    assert abs(y[2].val - 3 * x.val) < epsilon and \
+           abs(y[2].dval - 3 * x.dval) < epsilon
+    assert abs(y[3].val - 2 * x.val) < epsilon and \
+           abs(y[3].dval - 2 * x.dval) < epsilon
+    assert abs(y[4].val - 0) < epsilon and \
+           abs(y[4].dval - 0) < epsilon
+    assert abs(y[5].val - 0) < epsilon and \
+           abs(y[5].dval - 0) < epsilon
+    assert abs(y[6].val - 4 * x.val) < epsilon and \
+           abs(y[6].dval - 4 * x.dval) < epsilon
 
 def test_multiple_outputs():
     with open('loma_code/multiple_outputs.py') as f:
@@ -299,7 +342,9 @@ if __name__ == '__main__':
     test_int_output()
     test_array_output()
     test_array_input()
+    test_int_array_input()
     test_array_input_indexing()
+    test_array_output_indexing()
     test_multiple_outputs()
     test_struct_input()
     test_nested_struct_input()
