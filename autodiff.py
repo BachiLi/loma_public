@@ -2,8 +2,8 @@ import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 
-def type_to_diff_type(diff_structs : dict[str, loma.Struct],
-                      t : loma.type):
+def type_to_diff_type(diff_structs : dict[str, loma_ir.Struct],
+                      t : loma_ir.type):
     """ Given a loma type t, look up diff_structs for the differential type.
     For example, for float, we will generate a class "_dfloat" to represent
     both the primal value and the differential:
@@ -34,8 +34,8 @@ def type_to_diff_type(diff_structs : dict[str, loma.Struct],
         case _:
             assert False, f'Unhandled type {t}'
 
-def replace_diff_types(diff_structs : dict[str, loma.Struct],
-                       func : loma.FunctionDef):
+def replace_diff_types(diff_structs : dict[str, loma_ir.Struct],
+                       func : loma_ir.FunctionDef):
     """ Given a loma function func, find all function arguments and
         declarations with type Diff[...] and turn them into the 
         corresponding differential type by looking up diff_structs.
