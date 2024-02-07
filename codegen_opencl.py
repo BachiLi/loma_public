@@ -4,6 +4,9 @@ ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 
 class OpenCLCodegenVisitor(codegen_c.CCodegenVisitor):
+    """ Generates OpenCL code from loma IR.
+    """
+
     def visit_function_def(self, node):
         if node.is_simd:
             self.code += f'__kernel void {node.id}('
@@ -40,7 +43,18 @@ class OpenCLCodegenVisitor(codegen_c.CCodegenVisitor):
 
 
 
-def codegen_opencl(structs, funcs):
+def codegen_opencl(structs : dict[str, loma_ir.Struct],
+                   funcs : dict[str, loma_ir.func]) -> str:
+    """ Given loma Structs (structs) and loma functions (funcs),
+        return a string that represents the equivalent OpenCL code.
+
+        Parameters:
+        structs - a dictionary that maps the ID of a Struct to 
+                the corresponding Struct
+        funcs - a dictionary that maps the ID of a function to 
+                the corresponding func
+    """
+
     # Sort the struct topologically
     sorted_structs_list = []
     traversed_struct = set()

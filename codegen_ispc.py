@@ -1,6 +1,10 @@
 import codegen_c
 
 class ISPCCodegenVisitor(codegen_c.CCodegenVisitor):
+    """ Generates ISPC code from loma IR.
+        See https://ispc.github.io/index.html for more details about ispc.
+    """
+
     def visit_function_def(self, node):
         if node.is_simd:
             self.code += f'task void __{node.id}_task('
@@ -70,7 +74,18 @@ class ISPCCodegenVisitor(codegen_c.CCodegenVisitor):
             self.tab_count -= 1
             self.code += '}\n'
 
-def codegen_ispc(structs, funcs):
+def codegen_ispc(structs : dict[str, loma_ir.Struct],
+                 funcs : dict[str, loma_ir.func]) -> str:
+    """ Given loma Structs (structs) and loma functions (funcs),
+        return a string that represents the equivalent ISPC code.
+
+        Parameters:
+        structs - a dictionary that maps the ID of a Struct to 
+                the corresponding Struct
+        funcs - a dictionary that maps the ID of a function to 
+                the corresponding func
+    """
+
     # Sort the struct topologically
     sorted_structs_list = []
     traversed_struct = set()
