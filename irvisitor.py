@@ -3,6 +3,13 @@ ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 
 class IRVisitor:
+    """ Visitor pattern: we use IRVisitor to traverse loma IR code,
+        and visit its children.
+        To use this class, you should inherit IRVisitor, and define
+        your own visit functions to decide what to do.
+        By default the class does nothing to the IR code.
+    """
+
     def visit_function(self, node):
         match node:
             case loma_ir.FunctionDef():
@@ -24,169 +31,169 @@ class IRVisitor:
     def visit_reverse_diff(self, node):
         pass
 
-    def visit_stmt(self, stmt):
-        match stmt:
+    def visit_stmt(self, node):
+        match node:
             case loma_ir.Return():
-                self.visit_return(stmt)
+                self.visit_return(node)
             case loma_ir.Declare():
-                self.visit_declare(stmt)
+                self.visit_declare(node)
             case loma_ir.Assign():
-                self.visit_assign(stmt)
+                self.visit_assign(node)
             case loma_ir.IfElse():
-                self.visit_ifelse(stmt)
+                self.visit_ifelse(node)
             case loma_ir.While():
-                self.visit_while(stmt)
+                self.visit_while(node)
             case _:
-                assert False, f'Visitor error: unhandled statement {stmt}'
+                assert False, f'Visitor error: unhandled statement {node}'
 
-    def visit_return(self, ret):
-        self.visit_expr(ret.val)
+    def visit_return(self, node):
+        self.visit_expr(node.val)
 
-    def visit_declare(self, dec):
-        if dec.val is not None:
-            self.visit_expr(dec.val)
+    def visit_declare(self, node):
+        if node.val is not None:
+            self.visit_expr(node.val)
 
-    def visit_assign(self, ass):
-        self.visit_expr(ass.val)
+    def visit_assign(self, node):
+        self.visit_expr(node.val)
 
-    def visit_ifelse(self, ifelse):
-        self.visit_expr(ifelse.cond)
-        for stmt in ifelse.then_stmts:
+    def visit_ifelse(self, node):
+        self.visit_expr(node.cond)
+        for stmt in node.then_stmts:
             self.visit_stmt(stmt)
-        for stmt in ifelse.else_stmts:
-            self.visit_stmt(stmt)
-
-    def visit_while(self, while_loop):
-        self.visit_expr(while_loop.cond)
-        for stmt in while_loop.body:
+        for stmt in node.else_stmts:
             self.visit_stmt(stmt)
 
-    def visit_expr(self, expr):
-        match expr:
+    def visit_while(self, node):
+        self.visit_expr(node.cond)
+        for stmt in node.body:
+            self.visit_stmt(stmt)
+
+    def visit_expr(self, node):
+        match node:
             case loma_ir.Var():
-                self.visit_var(expr)
+                self.visit_var(node)
             case loma_ir.ArrayAccess():
-                self.visit_array_access(expr)
+                self.visit_array_access(node)
             case loma_ir.StructAccess():
-                self.visit_struct_access(expr)
+                self.visit_struct_access(node)
             case loma_ir.ConstFloat():
-                self.visit_const_float(expr)
+                self.visit_const_float(node)
             case loma_ir.ConstInt():
-                self.visit_const_int(expr)
+                self.visit_const_int(node)
             case loma_ir.BinaryOp():
-                self.visit_binary_op(expr)
+                self.visit_binary_op(node)
             case loma_ir.Call():
-                self.visit_call(expr)
+                self.visit_call(node)
             case _:
-                assert False, f'Visitor error: unhandled expression {expr}'
+                assert False, f'Visitor error: unhandled expression {node}'
 
-    def visit_var(self, var):
+    def visit_var(self, node):
         pass
 
-    def visit_array_access(self, acc):
-        self.visit_expr(acc.array)
-        self.visit_expr(acc.index)
+    def visit_array_access(self, node):
+        self.visit_expr(node.array)
+        self.visit_expr(node.index)
 
-    def visit_struct_access(self, s):
-        self.visit_expr(s.struct)
+    def visit_struct_access(self, node):
+        self.visit_expr(node.struct)
         pass
 
-    def visit_const_float(self, con):
+    def visit_const_float(self, node):
         pass
 
-    def visit_const_int(self, con):
+    def visit_const_int(self, node):
         pass
 
-    def visit_binary_op(self, expr):
-        match expr.op:
+    def visit_binary_op(self, node):
+        match node.op:
             case loma_ir.Add():
-                self.visit_add(expr)
+                self.visit_add(node)
             case loma_ir.Sub():
-                self.visit_sub(expr)
+                self.visit_sub(node)
             case loma_ir.Mul():
-                self.visit_mul(expr)
+                self.visit_mul(node)
             case loma_ir.Div():
-                self.visit_div(expr)
+                self.visit_div(node)
             case loma_ir.Less():
-                self.visit_less(expr)
+                self.visit_less(node)
             case loma_ir.LessEqual():
-                self.visit_less_equal(expr)
+                self.visit_less_equal(node)
             case loma_ir.Greater():
-                self.visit_greater(expr)
+                self.visit_greater(node)
             case loma_ir.GreaterEqual():
-                self.visit_greater_equal(expr)
+                self.visit_greater_equal(node)
             case loma_ir.Equal():
-                self.visit_equal(expr)
+                self.visit_equal(node)
             case loma_ir.And():
-                self.visit_and(expr)
+                self.visit_and(node)
             case loma_ir.Or():
-                self.visit_or(expr)
+                self.visit_or(node)
 
-    def visit_add(self, expr):
-        self.visit_expr(expr.left)
-        self.visit_expr(expr.right)
+    def visit_add(self, node):
+        self.visit_expr(node.left)
+        self.visit_expr(node.right)
 
-    def visit_sub(self, expr):
-        self.visit_expr(expr.left)
-        self.visit_expr(expr.right)
+    def visit_sub(self, node):
+        self.visit_expr(node.left)
+        self.visit_expr(node.right)
 
-    def visit_mul(self, expr):
-        self.visit_expr(expr.left)
-        self.visit_expr(expr.right)
+    def visit_mul(self, node):
+        self.visit_expr(node.left)
+        self.visit_expr(node.right)
 
-    def visit_div(self, expr):
-        self.visit_expr(expr.left)
-        self.visit_expr(expr.right)
+    def visit_div(self, node):
+        self.visit_expr(node.left)
+        self.visit_expr(node.right)
 
-    def visit_less(self, expr):
-        self.visit_expr(expr.left)
-        self.visit_expr(expr.right)
+    def visit_less(self, node):
+        self.visit_expr(node.left)
+        self.visit_expr(node.right)
 
-    def visit_less_equal(self, expr):
-        self.visit_expr(expr.left)
-        self.visit_expr(expr.right)
+    def visit_less_equal(self, node):
+        self.visit_expr(node.left)
+        self.visit_expr(node.right)
 
-    def visit_greater(self, expr):
-        self.visit_expr(expr.left)
-        self.visit_expr(expr.right)
+    def visit_greater(self, node):
+        self.visit_expr(node.left)
+        self.visit_expr(node.right)
 
-    def visit_greater_equal(self, expr):
-        self.visit_expr(expr.left)
-        self.visit_expr(expr.right)
+    def visit_greater_equal(self, node):
+        self.visit_expr(node.left)
+        self.visit_expr(node.right)
 
-    def visit_equal(self, expr):
-        self.visit_expr(expr.left)
-        self.visit_expr(expr.right)
+    def visit_equal(self, node):
+        self.visit_expr(node.left)
+        self.visit_expr(node.right)
 
-    def visit_and(self, expr):
-        self.visit_expr(expr.left)
-        self.visit_expr(expr.right)
+    def visit_and(self, node):
+        self.visit_expr(node.left)
+        self.visit_expr(node.right)
 
-    def visit_or(self, expr):
-        self.visit_expr(expr.left)
-        self.visit_expr(expr.right)
+    def visit_or(self, node):
+        self.visit_expr(node.left)
+        self.visit_expr(node.right)
 
-    def visit_call(self, call):
-        for arg in call.args:
+    def visit_call(self, node):
+        for arg in node.args:
             self.visit_expr(arg)
 
-    def visit_ref(self, ref):
-        match ref:
+    def visit_ref(self, node):
+        match node:
             case loma_ir.RefName():
-                self.visit_ref_name(ref)
+                self.visit_ref_name(node)
             case loma_ir.RefArray():
-                self.visit_ref_array(ref)
+                self.visit_ref_array(node)
             case loma_ir.RefStruct():
-                self.visit_ref_struct(ref)
+                self.visit_ref_struct(node)
             case _:
-                assert False, f'Visitor error: unhandled ref {ref}'
+                assert False, f'Visitor error: unhandled ref {node}'
 
-    def visit_ref_name(self, ref):
+    def visit_ref_name(self, node):
         pass
 
-    def visit_ref_array(self, ref):
-        self.visit_ref(ref.array)
-        self.visit_expr(ref.index)
+    def visit_ref_array(self, node):
+        self.visit_ref(node.array)
+        self.visit_expr(node.index)
 
-    def visit_ref_struct(self, ref):
-        self.visit_ref(ref.struct)
+    def visit_ref_struct(self, node):
+        self.visit_ref(node.struct)
