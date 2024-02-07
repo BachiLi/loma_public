@@ -3,7 +3,7 @@ ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 import itertools
 
-def flatten(nested_list):
+def flatten(nested_list : list):
     # recursively flatten a nested list
     if len(nested_list) == 0:
         return nested_list
@@ -13,6 +13,13 @@ def flatten(nested_list):
         return nested_list[:1] + flatten(nested_list[1:])
 
 class IRMutator:
+    """ Visitor pattern: we use IRMutator to take a loma IR code,
+        and mutate the code into something else. 
+        To use this class, you should inherit IRMutator, and define
+        your own mutate functions to do the transform.
+        By default the class does nothing to the IR code.
+    """
+
     def mutate_function(self, node):
         match node:
             case loma_ir.FunctionDef():
@@ -37,43 +44,43 @@ class IRMutator:
     def mutate_reverse_diff(self, node):
         return node
 
-    def mutate_stmt(self, stmt):
-        match stmt:
+    def mutate_stmt(self, node):
+        match node:
             case loma_ir.Return():
-                return self.mutate_return(stmt)
+                return self.mutate_return(node)
             case loma_ir.Declare():
-                return self.mutate_declare(stmt)
+                return self.mutate_declare(node)
             case loma_ir.Assign():
-                return self.mutate_assign(stmt)
+                return self.mutate_assign(node)
             case loma_ir.IfElse():
-                return self.mutate_ifelse(stmt)
+                return self.mutate_ifelse(node)
             case loma_ir.While():
-                return self.mutate_while(stmt)
+                return self.mutate_while(node)
             case _:
-                assert False, f'Visitor error: unhandled statement {stmt}'
+                assert False, f'Visitor error: unhandled statement {node}'
 
-    def mutate_return(self, ret):
+    def mutate_return(self, node):
         return loma_ir.Return(\
-            self.mutate_expr(ret.val),
-            lineno = ret.lineno)
+            self.mutate_expr(node.val),
+            lineno = node.lineno)
 
-    def mutate_declare(self, dec):
+    def mutate_declare(self, node):
         return loma_ir.Declare(\
-            dec.target,
-            dec.t,
-            self.mutate_expr(dec.val) if dec.val is not None else None,
-            lineno = dec.lineno)
+            node.target,
+            node.t,
+            self.mutate_expr(node.val) if node.val is not None else None,
+            lineno = node.lineno)
 
-    def mutate_assign(self, ass):
+    def mutate_assign(self, node):
         return loma_ir.Assign(\
-            self.mutate_ref(ass.target),
-            self.mutate_expr(ass.val),
-            lineno = ass.lineno)
+            self.mutate_ref(node.target),
+            self.mutate_expr(node.val),
+            lineno = node.lineno)
 
-    def mutate_ifelse(self, ifelse):
-        new_cond = self.mutate_expr(ifelse.cond)
-        new_then_stmts = [self.mutate_stmt(stmt) for stmt in ifelse.then_stmts]
-        new_else_stmts = [self.mutate_stmt(stmt) for stmt in ifelse.else_stmts]
+    def mutate_ifelse(self, node):
+        new_cond = self.mutate_expr(node.cond)
+        new_then_stmts = [self.mutate_stmt(stmt) for stmt in node.then_stmts]
+        new_else_stmts = [self.mutate_stmt(stmt) for stmt in node.else_stmts]
         # Important: mutate_stmt can return a list of statements. We need to flatten the lists.
         new_then_stmts = flatten(new_then_stmts)
         new_else_stmts = flatten(new_else_stmts)
@@ -81,201 +88,201 @@ class IRMutator:
             new_cond,
             new_then_stmts,
             new_else_stmts,
-            lineno = ifelse.lineno)
+            lineno = node.lineno)
 
-    def mutate_while(self, while_loop):
-        new_cond = self.mutate_expr(while_loop.cond)
-        new_body = [self.mutate_stmt(stmt) for stmt in while_loop.body]
+    def mutate_while(self, node):
+        new_cond = self.mutate_expr(node.cond)
+        new_body = [self.mutate_stmt(stmt) for stmt in node.body]
         # Important: mutate_stmt can return a list of statements. We need to flatten the list.
         new_body = flatten(new_body)
         return loma_ir.While(\
             new_cond,
             new_body,
-            lineno = while_loop.lineno)
+            lineno = node.lineno)
 
-    def mutate_expr(self, expr):
-        match expr:
+    def mutate_expr(self, node):
+        match node:
             case loma_ir.Var():
-                return self.mutate_var(expr)
+                return self.mutate_var(node)
             case loma_ir.ArrayAccess():
-                return self.mutate_array_access(expr)
+                return self.mutate_array_access(node)
             case loma_ir.StructAccess():
-                return self.mutate_struct_access(expr)
+                return self.mutate_struct_access(node)
             case loma_ir.ConstFloat():
-                return self.mutate_const_float(expr)
+                return self.mutate_const_float(node)
             case loma_ir.ConstInt():
-                return self.mutate_const_int(expr)
+                return self.mutate_const_int(node)
             case loma_ir.BinaryOp():
-                return self.mutate_binary_op(expr)
+                return self.mutate_binary_op(node)
             case loma_ir.Call():
-                return self.mutate_call(expr)
+                return self.mutate_call(node)
             case _:
-                assert False, f'Visitor error: unhandled expression {expr}'
+                assert False, f'Visitor error: unhandled expression {node}'
 
-    def mutate_var(self, var):
-        return var
+    def mutate_var(self, node):
+        return node
 
-    def mutate_array_access(self, acc):
+    def mutate_array_access(self, node):
         return loma_ir.ArrayAccess(\
-            self.mutate_expr(acc.array),
-            self.mutate_expr(acc.index),
-            lineno = acc.lineno,
-            t = acc.t)
+            self.mutate_expr(node.array),
+            self.mutate_expr(node.index),
+            lineno = node.lineno,
+            t = node.t)
 
-    def mutate_struct_access(self, s):
+    def mutate_struct_access(self, node):
         return loma_ir.StructAccess(\
-            self.mutate_expr(s.struct),
-            s.member_id,
-            lineno = s.lineno,
-            t = s.t)
+            self.mutate_expr(node.struct),
+            node.member_id,
+            lineno = node.lineno,
+            t = node.t)
 
-    def mutate_const_float(self, con):
-        return con
+    def mutate_const_float(self, node):
+        return node
 
-    def mutate_const_int(self, con):
-        return con
+    def mutate_const_int(self, node):
+        return node
 
-    def mutate_binary_op(self, expr):
-        match expr.op:
+    def mutate_binary_op(self, node):
+        match node.op:
             case loma_ir.Add():
-                return self.mutate_add(expr)
+                return self.mutate_add(node)
             case loma_ir.Sub():
-                return self.mutate_sub(expr)
+                return self.mutate_sub(node)
             case loma_ir.Mul():
-                return self.mutate_mul(expr)
+                return self.mutate_mul(node)
             case loma_ir.Div():
-                return self.mutate_div(expr)
+                return self.mutate_div(node)
             case loma_ir.Less():
-                return self.mutate_less(expr)
+                return self.mutate_less(node)
             case loma_ir.LessEqual():
-                return self.mutate_less_equal(expr)
+                return self.mutate_less_equal(node)
             case loma_ir.Greater():
-                return self.mutate_greater(expr)
+                return self.mutate_greater(node)
             case loma_ir.GreaterEqual():
-                return self.mutate_greater_equal(expr)
+                return self.mutate_greater_equal(node)
             case loma_ir.Equal():
-                return self.mutate_equal(expr)
+                return self.mutate_equal(node)
             case loma_ir.And():
-                return self.mutate_and(expr)
+                return self.mutate_and(node)
             case loma_ir.Or():
-                return self.mutate_or(expr)
+                return self.mutate_or(node)
 
-    def mutate_add(self, expr):
+    def mutate_add(self, node):
         return loma_ir.BinaryOp(\
             loma_ir.Add(),
-            self.mutate_expr(expr.left),
-            self.mutate_expr(expr.right),
-            lineno = expr.lineno,
-            t = expr.t)
+            self.mutate_expr(node.left),
+            self.mutate_expr(node.right),
+            lineno = node.lineno,
+            t = node.t)
 
-    def mutate_sub(self, expr):
+    def mutate_sub(self, node):
         return loma_ir.BinaryOp(\
             loma_ir.Sub(),
-            self.mutate_expr(expr.left),
-            self.mutate_expr(expr.right),
-            lineno = expr.lineno,
-            t = expr.t)
+            self.mutate_expr(node.left),
+            self.mutate_expr(node.right),
+            lineno = node.lineno,
+            t = node.t)
 
-    def mutate_mul(self, expr):
+    def mutate_mul(self, node):
         return loma_ir.BinaryOp(\
             loma_ir.Mul(),
-            self.mutate_expr(expr.left),
-            self.mutate_expr(expr.right),
-            lineno = expr.lineno,
-            t = expr.t)
+            self.mutate_expr(node.left),
+            self.mutate_expr(node.right),
+            lineno = node.lineno,
+            t = node.t)
 
-    def mutate_div(self, expr):
+    def mutate_div(self, node):
         return loma_ir.BinaryOp(\
             loma_ir.Div(),
-            self.mutate_expr(expr.left),
-            self.mutate_expr(expr.right),
-            lineno = expr.lineno,
-            t = expr.t)
+            self.mutate_expr(node.left),
+            self.mutate_expr(node.right),
+            lineno = node.lineno,
+            t = node.t)
 
-    def mutate_less(self, expr):
+    def mutate_less(self, node):
         return loma_ir.BinaryOp(\
             loma_ir.Less(),
-            self.mutate_expr(expr.left),
-            self.mutate_expr(expr.right),
-            lineno = expr.lineno,
-            t = expr.t)
+            self.mutate_expr(node.left),
+            self.mutate_expr(node.right),
+            lineno = node.lineno,
+            t = node.t)
 
-    def mutate_less_equal(self, expr):
+    def mutate_less_equal(self, node):
         return loma_ir.BinaryOp(\
             loma_ir.LessEqual(),
-            self.mutate_expr(expr.left),
-            self.mutate_expr(expr.right),
-            lineno = expr.lineno,
-            t = expr.t)
+            self.mutate_expr(node.left),
+            self.mutate_expr(node.right),
+            lineno = node.lineno,
+            t = node.t)
 
-    def mutate_greater(self, expr):
+    def mutate_greater(self, node):
         return loma_ir.BinaryOp(\
             loma_ir.Greater(),
-            self.mutate_expr(expr.left),
-            self.mutate_expr(expr.right),
-            lineno = expr.lineno,
-            t = expr.t)
+            self.mutate_expr(node.left),
+            self.mutate_expr(node.right),
+            lineno = node.lineno,
+            t = node.t)
 
-    def mutate_greater_equal(self, expr):
+    def mutate_greater_equal(self, node):
         return loma_ir.BinaryOp(\
             loma_ir.GreaterEqual(),
-            self.mutate_expr(expr.left),
-            self.mutate_expr(expr.right),
-            lineno = expr.lineno,
-            t = expr.t)
+            self.mutate_expr(node.left),
+            self.mutate_expr(node.right),
+            lineno = node.lineno,
+            t = node.t)
 
-    def mutate_equal(self, expr):
+    def mutate_equal(self, node):
         return loma_ir.BinaryOp(\
             loma_ir.Equal(),
-            self.mutate_expr(expr.left),
-            self.mutate_expr(expr.right),
-            lineno = expr.lineno,
-            t = expr.t)
+            self.mutate_expr(node.left),
+            self.mutate_expr(node.right),
+            lineno = node.lineno,
+            t = node.t)
 
-    def mutate_and(self, expr):
+    def mutate_and(self, node):
         return loma_ir.BinaryOp(\
             loma_ir.And(),
-            self.mutate_expr(expr.left),
-            self.mutate_expr(expr.right),
-            lineno = expr.lineno,
-            t = expr.t)
+            self.mutate_expr(node.left),
+            self.mutate_expr(node.right),
+            lineno = node.lineno,
+            t = node.t)
 
-    def mutate_or(self, expr):
+    def mutate_or(self, node):
         return loma_ir.BinaryOp(\
             loma_ir.Or(),
-            self.mutate_expr(expr.left),
-            self.mutate_expr(expr.right),
-            lineno = expr.lineno,
-            t = expr.t)
+            self.mutate_expr(node.left),
+            self.mutate_expr(node.right),
+            lineno = node.lineno,
+            t = node.t)
 
-    def mutate_call(self, call):
+    def mutate_call(self, node):
         return loma_ir.Call(\
-            call.id,
-            [self.mutate_expr(arg) for arg in call.args],
-            lineno = call.lineno,
-            t = call.t)
+            node.id,
+            [self.mutate_expr(arg) for arg in node.args],
+            lineno = node.lineno,
+            t = node.t)
 
-    def mutate_ref(self, ref):
-        match ref:
+    def mutate_ref(self, node):
+        match node:
             case loma_ir.RefName():
-                return self.mutate_ref_name(ref)
+                return self.mutate_ref_name(node)
             case loma_ir.RefArray():
-                return self.mutate_ref_array(ref)
+                return self.mutate_ref_array(node)
             case loma_ir.RefStruct():
-                return self.mutate_ref_struct(ref)
+                return self.mutate_ref_struct(node)
             case _:
-                assert False, f'Visitor error: unhandled ref {ref}'
+                assert False, f'Visitor error: unhandled ref {node}'
 
-    def mutate_ref_name(self, ref):
-        return ref
+    def mutate_ref_name(self, node):
+        return node
 
-    def mutate_ref_array(self, ref):
+    def mutate_ref_array(self, node):
         return loma_ir.RefArray(\
-            self.mutate_ref(ref.array),
-            self.mutate_expr(ref.index))
+            self.mutate_ref(node.array),
+            self.mutate_expr(node.index))
 
-    def mutate_ref_struct(self, ref):
+    def mutate_ref_struct(self, node):
         return loma_ir.RefStruct(\
-            self.mutate_ref(ref.struct),
-            ref.member)
+            self.mutate_ref(node.struct),
+            node.member)
         

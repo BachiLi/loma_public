@@ -1,6 +1,7 @@
 import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
+import irmutator
 
 def type_to_diff_type(diff_structs : dict[str, loma_ir.Struct],
                       t : loma_ir.type):

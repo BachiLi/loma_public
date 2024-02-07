@@ -1,4 +1,7 @@
 import codegen_c
+import ir
+ir.generate_asdl_file()
+import _asdl.loma as loma_ir
 
 class ISPCCodegenVisitor(codegen_c.CCodegenVisitor):
     """ Generates ISPC code from loma IR.
