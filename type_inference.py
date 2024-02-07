@@ -269,10 +269,10 @@ class TypeInferencer(irmutator.IRMutator):
             elif isinstance(f, loma_ir.ForwardDiff):
                 primal_f = self.funcs[f.primal_func]
                 f_args = list(primal_f.args)
-                ret_type = autodiff.type_to_diff_type(primal_f.ret_type, self.diff_structs)
+                ret_type = autodiff.type_to_diff_type(self.diff_structs, primal_f.ret_type)
                 for i, f_arg in enumerate(f_args):
                     f_args[i] = attrs.evolve(f_args[i],
-                        t=autodiff.type_to_diff_type(f_arg.t, self.diff_structs))
+                        t=autodiff.type_to_diff_type(self.diff_structs, f_arg.t))
             elif isinstance(f, loma_ir.ReverseDiff):
                 assert False # TODO
             if len(args) != len(f_args):

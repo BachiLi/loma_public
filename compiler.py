@@ -42,7 +42,7 @@ def compile(loma_code,
     structs, funcs = parser.parse(loma_code)
     structs, diff_structs, funcs = autodiff.resolve_diff_types(structs, funcs)
     check.check_ir(structs, diff_structs, funcs, check_diff = False)
-    structs, funcs = autodiff.differentiate(structs, diff_structs, funcs)
+    funcs = autodiff.differentiate(structs, diff_structs, funcs)
     check.check_ir(structs, diff_structs, funcs, check_diff = True)
     
     # Sort the struct topologically
