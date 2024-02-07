@@ -4,7 +4,11 @@ import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 
-def annotation_to_type(node):
+def annotation_to_type(node) -> loma_ir.type:
+    """ Given a Python AST node, returns the corresponding
+        loma type
+    """
+
     match node:
         case ast.Name():
             if node.id == 'int':
@@ -37,7 +41,15 @@ def annotation_to_type(node):
         case _:
             assert False
 
-def annotation_to_inout(node):
+def annotation_to_inout(node) -> loma_ir.inout:
+    """ Determine whether the function argument
+        is input or output.
+
+        In[float] -> input
+        Out[int] -> output
+    """
+
+    # TODO: error messages
     assert type(node) == ast.Subscript
     assert type(node.value) == ast.Name
     if node.value.id == 'In':
@@ -45,9 +57,15 @@ def annotation_to_inout(node):
     elif node.value.id == 'Out':
         return loma_ir.Out()
     else:
+        # TODO: error message
         assert False
 
-def ast_cmp_op_convert(node):
+def ast_cmp_op_convert(node) -> loma_ir.bin_op:
+    """ Given a Python AST node representing
+        a comparison operator,
+        convert to the corresponding loma
+        comparison operator.
+    """
     match node:
         case ast.Lt():
             return loma_ir.Less()
@@ -64,9 +82,16 @@ def ast_cmp_op_convert(node):
         case ast.Or():
             return loma_ir.Or()
         case _:
+            # TODO: error message
             assert False
 
-def parse_ref(node):
+def parse_ref(node) -> loma_ir.ref:
+    """ Given a Python AST node representing
+        a LHS reference,
+        convert to the corresponding loma
+        ref.
+    """
+
     match node:
         case ast.Name():
             return loma_ir.RefName(node.id)
@@ -77,9 +102,16 @@ def parse_ref(node):
             return loma_ir.RefStruct(parse_ref(node.value),
                                      node.attr)
         case _:
+            # TODO: error message
             assert False
 
-def visit_FunctionDef(node):
+def visit_FunctionDef(node) -> loma_ir.FunctionDef:
+    """ Given a Python AST node representing
+        a function definition,
+        convert to the corresponding loma
+        FunctionDef.
+    """
+
     node_args = node.args
     assert node_args.vararg is None
     assert node_args.kwarg is None
@@ -104,7 +136,18 @@ def visit_FunctionDef(node):
                                ret_type = ret_type,
                                lineno = node.lineno)
 
-def visit_Differentiate(node):
+def visit_Differentiate(node) -> loma_ir.func:
+    """ Given a Python AST node representing
+        a global assignment,
+        convert to the corresponding loma
+        derivative function declaration.
+
+        For example, the following Python code
+        d_foo = fwd_diff(foo)
+        converts to
+        loma_ir.ForwardDiff('d_foo', 'foo')
+    """
+
     assert isinstance(node, ast.Assign)
     assert len(node.targets) == 1
     func_id = node.targets[0].id
@@ -123,7 +166,16 @@ def visit_Differentiate(node):
     else:
         assert False, f'Unknown function transform operation {call_name}'
 
-def visit_ClassDef(node):
+def visit_ClassDef(node) -> loma_ir.Struct:
+    """ Given a Python AST node representing a class definition,
+        convert to a loma Struct.
+
+        e.g.,
+        class Foo:
+            x : int
+            y : float
+    """
+
     members = []
     for member in node.body:
         match member:
@@ -135,7 +187,11 @@ def visit_ClassDef(node):
                 assert False, f'Unknown class member statement {type(member).__name__}'
     return loma_ir.Struct(node.name, members, lineno = node.lineno)
 
-def visit_stmt(node):
+def visit_stmt(node) -> loma_ir.stmt:
+    """ Given a Python AST node representing a statement,
+        converts to a loma IR statement.
+    """
+
     match node:
         case ast.Return():
             return loma_ir.Return(visit_expr(node.value), lineno = node.lineno)
@@ -166,7 +222,11 @@ def visit_stmt(node):
         case _:
             assert False, f'Unknown statement {type(node).__name__}'
 
-def visit_expr(node):
+def visit_expr(node) -> loma_ir.expr:
+    """ Given a Python AST node representing an expression,
+        converts to a loma IR expression.
+    """
+
     match node:
         case ast.Name():
             return loma_ir.Var(node.id, lineno = node.lineno)
@@ -231,7 +291,12 @@ def visit_expr(node):
         case _:
             assert False, f'Unknown expr {type(node).__name__}'
 
-def parse(code):
+def parse(code : str) -> tuple[dict[str, loma_ir.Struct], dict[str, loma_ir.func]]:
+    """ Given a loma frontend code represented as a string,
+        convert the code to loma IR.
+        Returns both the parsed loma Structs and functions.
+    """
+
     module = ast.parse(code)
 
     structs = {}
