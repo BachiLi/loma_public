@@ -18,7 +18,12 @@ import numpy as np
 import cl_utils
 import pathlib
 
-def loma_to_ctypes_type(t, ctypes_structs):
+def loma_to_ctypes_type(t : loma_ir.type,
+                        ctypes_structs : dict[str, ctypes.Structure]) -> ctypes.Structure:
+    """ Given a loma type, maps to the corresponding ctypes type by
+        looking up ctypes_structs
+    """
+
     match t:
         case loma_ir.Int():
             return ctypes.c_int
@@ -33,16 +38,36 @@ def loma_to_ctypes_type(t, ctypes_structs):
         case _:
             assert False
 
-def compile(loma_code,
-            target = 'c',
-            output_filename = None,
+def compile(loma_code : str,
+            target : str = 'c',
+            output_filename : str = None,
             opencl_context = None,
             opencl_device = None,
             opencl_command_queue = None):
+    """ Given loma frontend code represented as a string,
+        compiles it to either C, ISPC, or OpenCL code.
+        Furthermore, generates a library from the compiled code,
+        and dynamically links the generated library.
+
+        Parameters:
+        loma_code - a string representing loma code to be compiled
+        target - 'c', 'ispc', or 'opencl'
+        output_filename - where to store the generated library for C and ISPC backends.
+                    when target == 'opencl', this argument is ignored.
+        opencl_context, opencl_device, opencl_command_queue - see cl_utils.create_context()
+                    only used by the opencl backend
+    """
+
+    # The compiler passes
+    # first parse the frontend code
     structs, funcs = parser.parse(loma_code)
+    # next figure out the types related to differentiation
     structs, diff_structs, funcs = autodiff.resolve_diff_types(structs, funcs)
+    # next check if the resulting code is valid, barring from the derivative code
     check.check_ir(structs, diff_structs, funcs, check_diff = False)
+    # next actually differentiate the functions
     funcs = autodiff.differentiate(structs, diff_structs, funcs)
+    # next check if the derivative code is valid
     check.check_ir(structs, diff_structs, funcs, check_diff = True)
     
     # Sort the struct topologically
