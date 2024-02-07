@@ -6,7 +6,14 @@ import attrs
 import error
 import irmutator
 
-def fill_in_struct_info(t, structs):
+def fill_in_struct_info(t : loma_ir.type,
+                        structs : dict[str, loma_ir.Struct]) -> loma_ir.type:
+    """ During parsing, we sometimes leave the struct member information empty.
+        Given a loma type where some of the struct member information is missing,
+        this function looks up from the provided struct dictionary and fill
+        in the missing information.
+    """
+
     match t:
         case loma_ir.Int():
             return t
@@ -23,6 +30,13 @@ def fill_in_struct_info(t, structs):
             assert False
 
 class TypeInferencer(irmutator.IRMutator):
+    """ The TypeInferencer does three things:
+        1) It infers the types of all expressions.
+        2) It fills in the missing information of struct members during type inference.
+        3) It checks if the types match between expressions.
+           If not, it raises errors.
+    """
+
     def __init__(self, structs, diff_structs, funcs):
         self.var_types = {}
         self.structs = structs
@@ -297,7 +311,9 @@ class TypeInferencer(irmutator.IRMutator):
             lineno = call.lineno,
             t = inf_type)
 
-def check_and_infer_types(structs, diff_structs, funcs):
+def check_and_infer_types(structs : dict[str, loma_ir.Struct],
+                          diff_structs : dict[str, loma_ir.Struct],
+                          funcs : dict[str, loma_ir.func]):
     for id, f in funcs.items():
         ti = TypeInferencer(structs, diff_structs, funcs)
         funcs[id] = ti.mutate_function(f)

@@ -4,7 +4,7 @@ import _asdl.loma as loma_ir
 import irmutator
 
 def type_to_diff_type(diff_structs : dict[str, loma_ir.Struct],
-                      t : loma_ir.type):
+                      t : loma_ir.type) -> loma_ir.type:
     """ Given a loma type t, look up diff_structs for the differential type.
     For example, for float, we will generate a class "_dfloat" to represent
     both the primal value and the differential:
@@ -36,7 +36,7 @@ def type_to_diff_type(diff_structs : dict[str, loma_ir.Struct],
             assert False, f'Unhandled type {t}'
 
 def replace_diff_types(diff_structs : dict[str, loma_ir.Struct],
-                       func : loma_ir.FunctionDef):
+                       func : loma_ir.FunctionDef) -> loma_ir.FunctionDef:
     """ Given a loma function func, find all function arguments and
         declarations with type Diff[...] and turn them into the 
         corresponding differential type by looking up diff_structs.
@@ -111,7 +111,7 @@ def forward_diff(diff_func_id : str,
                  structs : dict[str, loma_ir.Struct],
                  funcs : dict[str, loma_ir.func],
                  diff_structs : dict[str, loma_ir.Struct],
-                 func : loma_ir.FunctionDef):
+                 func : loma_ir.FunctionDef) -> loma_ir.FunctionDef:
     """ Given a primal loma function func, apply forward differentiation
         and return a function that computes the total derivative of func.
 
@@ -219,7 +219,8 @@ def forward_diff(diff_func_id : str,
     return FwdDiffMutator().mutate_function_def(func)
 
 def resolve_diff_types(structs : dict[str, loma_ir.Struct],
-                       funcs : dict[str, loma_ir.func]):
+                       funcs : dict[str, loma_ir.func]) -> \
+        tuple[dict[str, loma_ir.Struct], dict[str, loma_ir.Struct], dict[str, loma_ir.func]]:
     """ Given a list of primal loma Struct (structs) and functions (funcs),
         generate a list of the corresponding differential Structs,
         and resolve all the Diff[] types in the functions.
@@ -308,7 +309,7 @@ def resolve_diff_types(structs : dict[str, loma_ir.Struct],
 
 def differentiate(structs : dict[str, loma_ir.Struct],
                   diff_structs : dict[str, loma_ir.Struct],
-                  funcs : dict[str, loma_ir.func]):
+                  funcs : dict[str, loma_ir.func]) -> dict[str, loma_ir.func]:
     """ Given a list loma functions (funcs), replace all functions 
         that are marked as ForwardDiff and ReverseDiff with 
         FunctionDef and the actual implementations.
