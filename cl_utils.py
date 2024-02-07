@@ -1,8 +1,70 @@
+""" This file implements a thin wrapper of OpenCL API, 
+mostly using the awesome library "gpuctypes"
+from Geohot https://github.com/tinygrad/gpuctypes
+
+To use the API, first you need to call the create_context function.
+This will give you an OpenCL context, an OpenCL device, and an OpenCL command queue
+    
+    import cl_utils
+    cl_ctx, cl_device, cl_cmd_queue = cl_utils.create_context()
+
+Next, you can create an OpenCLLibrary using cl_compile
+
+    code = ... # some OpenCL code as string
+    kernel_names = [...] # names of kernels in the code you want to expose 
+    lib = cl_utils.cl_compile(cl_ctx,
+                              cl_device,
+                              cl_cmd_queue,
+                              code,
+                              kernel_names)
+
+Next, you allocate OpenCL memory buffers using clCreateBuffer
+
+    import gpuctypes.opencl as cl
+    import ctypes
+    status = ctypes.c_int32()
+    py_x = [0, 0, 0]
+    x = (ctypes.c_int * len(py_x))(*py_x)
+    bufx = cl.clCreateBuffer(cl_ctx,
+                             cl.CL_MEM_WRITE_ONLY,
+                             ctypes.sizeof(x),
+                             ctypes.byref(x),
+                             ctypes.byref(status))
+    cl_utils.cl_check(status.value)
+
+Calling lib.[function_name] gives you an OpenCLKernel object
+
+    # f is an OpenCLKernel
+    f = lib.opencl_func
+
+Calling f(...) launches the OpenCL kernel.
+You can use clFinish to wait for the kernel to complete.
+
+    f(bufx)
+    cl.clFinish(cl_cmd_queue)
+
+Finally, use clEnqueueReadBuffer to read from the buffer
+
+    cl.clEnqueueReadBuffer(cl_cmd_queue,
+                           bufx,
+                           cl.CL_TRUE,
+                           0,
+                           ctypes.sizeof(x),
+                           ctypes.byref(x),
+                           0,
+                           None,
+                           None)
+"""
+
 import gpuctypes.opencl as cl
 import ctypes
 import os
 
 class OpenCLKernel:
+    """ An OpenCLKernel wraps around a 1D OpenCL kernel.
+        See the file-level comment for how it's used.
+    """
+
     def __init__(self,
                  program,
                  func_name,
@@ -34,6 +96,10 @@ class OpenCLKernel:
                                   None)
 
 class OpenCLLibrary:
+    """ An OpenCLLibrary contains many OpenCL kernels.
+        See the file-level comment for how it's used.
+    """
+
     def __init__(self,
                  program,
                  cmd_queue,
@@ -82,6 +148,14 @@ def cl_get_device_name(device_id):
     return device_str.value
 
 def create_context():
+    """ Returns an OpenCL context, an OpenCL device, and an OpenCL command queue.
+        It reads from the "OPENCL_CTX" environment variable to make choices.
+        If the environment variable does not exist, then it interactively asks
+        the user.
+
+        See the file-level comment for how to use this.
+    """
+
     # Some of the code is inspired from PyOpenCL https://github.com/inducer/pyopencl/
 
     answers = None
@@ -199,6 +273,11 @@ def cl_compile(context,
                cmd_queue,
                code,
                func_names):
+    """ Compiles OpenCL programs represented as strings.
+        Returns an OpenCLLibrary.
+        See the file-level comment for how to use this.
+    """
+
     num_programs = 1
     sizes = (ctypes.c_size_t * num_programs)()
     sizes[0] = len(code)
