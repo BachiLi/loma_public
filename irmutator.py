@@ -18,6 +18,11 @@ class IRMutator:
         To use this class, you should inherit IRMutator, and define
         your own mutate functions to do the transform.
         By default the class does nothing to the IR code.
+
+        Note that during mutations of a statement,
+        you can return multiple statements as a list.
+        The other part of the code should handle the case
+        when the returned statement is a list.
     """
 
     def mutate_function(self, node):
