@@ -4,7 +4,11 @@ ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 import irvisitor
 
-def type_to_string(node):
+def type_to_string(node : loma_ir.type) -> str:
+    """ Given a loma type, return a string that represents
+        the type in C.
+    """
+
     match node:
         case loma_ir.Int():
             return 'int'
@@ -21,6 +25,9 @@ def type_to_string(node):
 
 @attrs.define()
 class CCodegenVisitor(irvisitor.IRVisitor):
+    """ Generates C code from loma IR.
+    """
+
     code = ''
     tab_count = 0
 
@@ -52,99 +59,99 @@ class CCodegenVisitor(irvisitor.IRVisitor):
         self.tab_count -= 1
         self.code += '}\n'
 
-    def visit_return(self, ret):
+    def visit_return(self, node):
         self.emit_tabs()
-        self.code += f'return {self.visit_expr(ret.val)};\n'
+        self.code += f'return {self.visit_expr(node.val)};\n'
 
-    def visit_declare(self, dec):
+    def visit_declare(self, node):
         self.emit_tabs()
-        if not isinstance(dec.t, loma_ir.Array):
-            self.code += f'{type_to_string(dec.t)} {dec.target}'
+        if not isinstance(node.t, loma_ir.Array):
+            self.code += f'{type_to_string(node.t)} {node.target}'
         else:
             # Special rule for arrays
-            assert dec.t.static_size != None
-            self.code += f'{type_to_string(dec.t.t)} {dec.target}[{dec.t.static_size}]'
-        expr_str = self.visit_expr(dec.val)
+            assert node.t.static_size != None
+            self.code += f'{type_to_string(node.t.t)} {node.target}[{node.t.static_size}]'
+        expr_str = self.visit_expr(node.val)
         if expr_str != '':
             self.code += f' = {expr_str}'
         self.code += ';\n'
 
-    def visit_assign(self, ass):
+    def visit_assign(self, node):
         self.emit_tabs()
-        self.code += self.visit_ref(ass.target)
-        expr_str = self.visit_expr(ass.val)
+        self.code += self.visit_ref(node.target)
+        expr_str = self.visit_expr(node.val)
         if expr_str != '':
             self.code += f' = {expr_str}'
         self.code += ';\n'
 
-    def visit_ifelse(self, ifelse):
+    def visit_ifelse(self, node):
         self.emit_tabs()
-        self.code += f'if ({self.visit_expr(ifelse.cond)}) {{\n'
+        self.code += f'if ({self.visit_expr(node.cond)}) {{\n'
         self.tab_count += 1
-        for stmt in ifelse.then_stmts:
+        for stmt in node.then_stmts:
             self.visit_stmt(stmt)
         self.tab_count -= 1
         self.emit_tabs()
         self.code += f'}} else {{\n'
         self.tab_count += 1
-        for stmt in ifelse.else_stmts:
+        for stmt in node.else_stmts:
             self.visit_stmt(stmt)
         self.tab_count -= 1
         self.emit_tabs()
         self.code += '}\n'
 
-    def visit_while(self, loop):
+    def visit_while(self, node):
         self.emit_tabs()
-        self.code += f'while ({self.visit_expr(loop.cond)}) {{\n'
+        self.code += f'while ({self.visit_expr(node.cond)}) {{\n'
         self.tab_count += 1
-        for stmt in loop.body:
+        for stmt in node.body:
             self.visit_stmt(stmt)
         self.tab_count -= 1
         self.emit_tabs()
         self.code += '}\n'
 
-    def visit_expr(self, expr):
-        match expr:
+    def visit_expr(self, node):
+        match node:
             case loma_ir.Var():
-                return expr.id
+                return node.id
             case loma_ir.ArrayAccess():
-                return f'({self.visit_expr(expr.array)})[{self.visit_expr(expr.index)}]'
+                return f'({self.visit_expr(node.array)})[{self.visit_expr(node.index)}]'
             case loma_ir.StructAccess():
-                return f'({self.visit_expr(expr.struct)}).{expr.member_id}'
+                return f'({self.visit_expr(node.struct)}).{node.member_id}'
             case loma_ir.ConstFloat():
-                return f'(float)({expr.val})'
+                return f'(float)({node.val})'
             case loma_ir.ConstInt():
-                return f'(int)({expr.val})'
+                return f'(int)({node.val})'
             case loma_ir.BinaryOp():
-                match expr.op:
+                match node.op:
                     case loma_ir.Add():
-                        return f'({self.visit_expr(expr.left)}) + ({self.visit_expr(expr.right)})'
+                        return f'({self.visit_expr(node.left)}) + ({self.visit_expr(node.right)})'
                     case loma_ir.Sub():
-                        return f'({self.visit_expr(expr.left)}) - ({self.visit_expr(expr.right)})'
+                        return f'({self.visit_expr(node.left)}) - ({self.visit_expr(node.right)})'
                     case loma_ir.Mul():
-                        return f'({self.visit_expr(expr.left)}) * ({self.visit_expr(expr.right)})'
+                        return f'({self.visit_expr(node.left)}) * ({self.visit_expr(node.right)})'
                     case loma_ir.Div():
-                        return f'({self.visit_expr(expr.left)}) / ({self.visit_expr(expr.right)})'
+                        return f'({self.visit_expr(node.left)}) / ({self.visit_expr(node.right)})'
                     case loma_ir.Less():
-                        return f'({self.visit_expr(expr.left)}) < ({self.visit_expr(expr.right)})'
+                        return f'({self.visit_expr(node.left)}) < ({self.visit_expr(node.right)})'
                     case loma_ir.LessEqual():
-                        return f'({self.visit_expr(expr.left)}) <= ({self.visit_expr(expr.right)})'
+                        return f'({self.visit_expr(node.left)}) <= ({self.visit_expr(node.right)})'
                     case loma_ir.Greater():
-                        return f'({self.visit_expr(expr.left)}) > ({self.visit_expr(expr.right)})'
+                        return f'({self.visit_expr(node.left)}) > ({self.visit_expr(node.right)})'
                     case loma_ir.GreaterEqual():
-                        return f'({self.visit_expr(expr.left)}) >= ({self.visit_expr(expr.right)})'
+                        return f'({self.visit_expr(node.left)}) >= ({self.visit_expr(node.right)})'
                     case loma_ir.Equal():
-                        return f'({self.visit_expr(expr.left)}) == ({self.visit_expr(expr.right)})'
+                        return f'({self.visit_expr(node.left)}) == ({self.visit_expr(node.right)})'
                     case loma_ir.And():
-                        return f'({self.visit_expr(expr.left)}) && ({self.visit_expr(expr.right)})'
+                        return f'({self.visit_expr(node.left)}) && ({self.visit_expr(node.right)})'
                     case loma_ir.Or():
-                        return f'({self.visit_expr(expr.left)}) || ({self.visit_expr(expr.right)})'
+                        return f'({self.visit_expr(node.left)}) || ({self.visit_expr(node.right)})'
                     case _:
                         assert False
             case loma_ir.Call():
-                if expr.id == 'thread_id':
+                if node.id == 'thread_id':
                     return '__work_id'
-                func_id = expr.id
+                func_id = node.id
                 # call the single precision versions of the intrinsic functions
                 if func_id == 'sin':
                     func_id = 'sinf'
@@ -164,7 +171,7 @@ class CCodegenVisitor(irvisitor.IRVisitor):
                     func_id = '(int)'
 
                 ret = f'{func_id}('
-                ret += ','.join([self.visit_expr(arg) for arg in expr.args])
+                ret += ','.join([self.visit_expr(arg) for arg in node.args])
                 ret += ')'
                 return ret
             case None:
@@ -172,19 +179,30 @@ class CCodegenVisitor(irvisitor.IRVisitor):
             case _:
                 assert False, f'Visitor error: unhandled expression {expr}'
 
-    def visit_ref(self, ref):
-        match ref:
+    def visit_ref(self, node):
+        match node:
             case loma_ir.RefName():
-                return ref.id
+                return node.id
             case loma_ir.RefArray():
-                return self.visit_ref(ref.array) + f'[{self.visit_expr(ref.index)}]'
+                return self.visit_ref(node.array) + f'[{self.visit_expr(node.index)}]'
             case loma_ir.RefStruct():
-                return self.visit_ref(ref.struct) + f'.{ref.member}'
+                return self.visit_ref(node.struct) + f'.{node.member}'
             case _:
-                assert False, f'Visitor error: unhandled ref {ref}'
+                assert False, f'Visitor error: unhandled ref {node}'
 
 
-def codegen_c(structs, funcs):
+def codegen_c(structs : dict[str, loma_ir.Struct],
+              funcs : dict[str, loma_ir.func]) -> str:
+    """ Given loma Structs (structs) and loma functions (funcs),
+        return a string that represents the equivalent C code.
+
+        Parameters:
+        structs - a dictionary that maps the ID of a Struct to 
+                the corresponding Struct
+        funcs - a dictionary that maps the ID of a function to 
+                the corresponding func
+    """
+
     # Sort the struct topologically
     sorted_structs_list = []
     traversed_struct = set()
