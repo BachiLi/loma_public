@@ -61,7 +61,7 @@ class IRMutator:
         return loma_ir.Declare(\
             dec.target,
             dec.t,
-            self.mutate_expr(dec.val),
+            self.mutate_expr(dec.val) if dec.val is not None else None,
             lineno = dec.lineno)
 
     def mutate_assign(self, ass):

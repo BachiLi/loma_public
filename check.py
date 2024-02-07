@@ -56,11 +56,11 @@ def check_unhandled_differentiation(node):
 
     UnhandledDiffChecker().visit_function(node)
 
-def check_ir(structs, funcs, check_diff):
+def check_ir(structs, diff_structs, funcs, check_diff):
     for f in funcs.values():
         if check_diff:
             check_unhandled_differentiation(f)
         check_duplicate_declare(f)
         check_undeclared_vars(f)
 
-    type_inference.check_and_infer_types(structs, funcs)
+    type_inference.check_and_infer_types(structs, diff_structs, funcs)

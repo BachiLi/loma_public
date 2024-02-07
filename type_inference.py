@@ -1,6 +1,7 @@
 import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
+import autodiff
 import attrs
 import error
 import irmutator
@@ -22,9 +23,10 @@ def fill_in_struct_info(t, structs):
             assert False
 
 class TypeInferencer(irmutator.IRMutator):
-    def __init__(self, structs, funcs):
+    def __init__(self, structs, diff_structs, funcs):
         self.var_types = {}
         self.structs = structs
+        self.diff_structs = diff_structs
         self.funcs = funcs
 
     def lookup_ref_type(self, ref):
@@ -43,6 +45,8 @@ class TypeInferencer(irmutator.IRMutator):
                         break
                 if ret_type is None:
                     assert False, f'member {ref.member} not found in Struct {parent_type.id}'
+            case _:
+                assert False
         if isinstance(ret_type, loma_ir.Struct) and len(ret_type.members) == 0:
             ret_type = self.structs[ret_type.id]
         return ret_type
@@ -259,9 +263,21 @@ class TypeInferencer(irmutator.IRMutator):
             if call.id not in self.funcs:
                 raise error.CallIDNotFound(call.id, call.lineno)
             f = self.funcs[call.id]
-            if len(args) != len(f.args):
+            if isinstance(f, loma_ir.FunctionDef):
+                f_args = f.args
+                ret_type = f.ret_type
+            elif isinstance(f, loma_ir.ForwardDiff):
+                primal_f = self.funcs[f.primal_func]
+                f_args = list(primal_f.args)
+                ret_type = autodiff.type_to_diff_type(primal_f.ret_type, self.diff_structs)
+                for i, f_arg in enumerate(f_args):
+                    f_args[i] = attrs.evolve(f_args[i],
+                        t=autodiff.type_to_diff_type(f_arg.t, self.diff_structs))
+            elif isinstance(f, loma_ir.ReverseDiff):
+                assert False # TODO
+            if len(args) != len(f_args):
                 raise error.CallTypeMismatch(call.id, call.lineno)
-            for i, (call_arg, f_arg) in enumerate(zip(args, f.args)):
+            for i, (call_arg, f_arg) in enumerate(zip(args, f_args)):
                 if call_arg.t == loma_ir.Int() and f_arg.t == loma_ir.Float():
                     args[i] = loma_ir.Call('int2float',
                         [args[i]], lineno = args[i].lineno, t = loma_ir.Float())
@@ -273,7 +289,7 @@ class TypeInferencer(irmutator.IRMutator):
 
                 if call_arg.t != f_arg.t:
                     raise error.CallTypeMismatch(call.id, call.lineno)
-            inf_type = f.ret_type
+            inf_type = ret_type
 
         return loma_ir.Call(\
             call.id,
@@ -281,7 +297,7 @@ class TypeInferencer(irmutator.IRMutator):
             lineno = call.lineno,
             t = inf_type)
 
-def check_and_infer_types(structs, funcs):
+def check_and_infer_types(structs, diff_structs, funcs):
     for id, f in funcs.items():
-        ti = TypeInferencer(structs, funcs)
+        ti = TypeInferencer(structs, diff_structs, funcs)
         funcs[id] = ti.mutate_function(f)

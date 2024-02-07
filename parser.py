@@ -19,15 +19,21 @@ def annotation_to_type(node):
             if node.value.id == 'In' or node.value.id == 'Out':
                 # Ignore input/output qualifiers
                 return annotation_to_type(node.slice)
-            assert node.value.id == 'Array'
-            array_type = node.slice
-            static_size = None
-            if isinstance(array_type, ast.Tuple):
-                assert len(array_type.elts) == 2 # TODO: error message
-                assert isinstance(array_type.elts[1], ast.Constant)
-                static_size = int(array_type.elts[1].value)
-                array_type = array_type.elts[0]
-            return loma_ir.Array(annotation_to_type(array_type), static_size)
+            elif node.value.id == 'Array':
+                array_type = node.slice
+                static_size = None
+                if isinstance(array_type, ast.Tuple):
+                    assert len(array_type.elts) == 2 # TODO: error message
+                    assert isinstance(array_type.elts[1], ast.Constant)
+                    static_size = int(array_type.elts[1].value)
+                    array_type = array_type.elts[0]
+                return loma_ir.Array(annotation_to_type(array_type), static_size)
+            elif node.value.id == 'Diff':
+                # This is a "differential type" -- we'll resolve this in autodiff
+                return loma_ir.Diff(annotation_to_type(node.slice))
+            else:
+                # TODO: error message
+                assert False
         case _:
             assert False
 
