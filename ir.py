@@ -1,6 +1,14 @@
+""" We use the very cool library asdl_gen to convert a 
+    string ASDL definition to a hierarchy of classes.
+"""
+
 from asdl_gen import ADT
 
 def generate_asdl_file():
+    # TODO: detect if the generated file already exists
+    # and if it has an earlier modification date compared to ir.py
+    # if so, don't bother to generate the file
+
     ADT("""
     module loma {
       func = FunctionDef ( string id, arg* args, stmt* body, bool is_simd, type? ret_type )
