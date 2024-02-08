@@ -38,6 +38,23 @@ def loma_to_ctypes_type(t : loma_ir.type,
         case _:
             assert False
 
+def topo_sort_structs(structs : dict[str, loma_ir.Struct]):
+    sorted_structs_list = []
+    traversed_struct = set()
+    def traverse_structs(s):
+        if s in traversed_struct:
+            return
+        for m in s.members:
+            if isinstance(m.t, loma_ir.Struct) or isinstance(m.t, loma_ir.Array):
+                next_s = m.t if isinstance(m.t, loma_ir.Struct) else m.t.t
+                if isinstance(next_s, loma_ir.Struct):
+                    traverse_structs(structs[next_s.id])
+        sorted_structs_list.append(s)
+        traversed_struct.add(s)
+    for s in structs.values():
+        traverse_structs(s)
+    return sorted_structs_list
+
 def compile(loma_code : str,
             target : str = 'c',
             output_filename : str = None,
@@ -70,23 +87,6 @@ def compile(loma_code : str,
     # next check if the derivative code is valid
     check.check_ir(structs, diff_structs, funcs, check_diff = True)
     
-    # Sort the struct topologically
-    # TODO: maybe extract this as a common function
-    sorted_structs_list = []
-    traversed_struct = set()
-    def traverse_structs(s):
-        if s in traversed_struct:
-            return
-        for m in s.members:
-            if isinstance(m.t, loma_ir.Struct) or isinstance(m.t, loma_ir.Array):
-                next_s = m.t if isinstance(m.t, loma_ir.Struct) else m.t.t
-                if isinstance(next_s, loma_ir.Struct):
-                    traverse_structs(structs[next_s.id])
-        sorted_structs_list.append(s)
-        traversed_struct.add(s)
-    for s in structs.values():
-        traverse_structs(s)
-
     if output_filename is not None:
         pathlib.Path(os.path.dirname(output_filename)).mkdir(parents=True, exist_ok=True)
 
@@ -149,6 +149,9 @@ def compile(loma_code : str,
                                   kernel_names)
     else:
         assert False, f'unrecognized compilation target {target}'
+
+    # Sort the struct topologically
+    sorted_structs_list = topo_sort_structs(structs)
 
     # build ctypes structs/classes
     ctypes_structs = {}

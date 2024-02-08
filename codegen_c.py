@@ -3,6 +3,7 @@ import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 import irvisitor
+import compiler
 
 def type_to_string(node : loma_ir.type) -> str:
     """ Given a loma type, return a string that represents
@@ -203,21 +204,7 @@ def codegen_c(structs : dict[str, loma_ir.Struct],
                 the corresponding func
     """
 
-    # Sort the struct topologically
-    sorted_structs_list = []
-    traversed_struct = set()
-    def traverse_structs(s):
-        if s in traversed_struct:
-            return
-        for m in s.members:
-            if isinstance(m.t, loma_ir.Struct) or isinstance(m.t, loma_ir.Array):
-                next_s = m.t if isinstance(m.t, loma_ir.Struct) else m.t.t
-                if isinstance(next_s, loma_ir.Struct):
-                    traverse_structs(structs[next_s.id])
-        sorted_structs_list.append(s)
-        traversed_struct.add(s)
-    for s in structs.values():
-        traverse_structs(s)
+    sorted_structs_list = compiler.topo_sort_structs(structs)
 
     # Definition of structs
     code = ''
