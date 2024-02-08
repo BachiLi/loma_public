@@ -216,9 +216,21 @@ def visit_stmt(node) -> loma_ir.stmt:
                                   else_stmts,
                                   lineno = node.lineno)
         case ast.While():
-            cond = visit_expr(node.test)
+            # node.test needs to be a two items tuple 
+            # (condition, max_iter := ...)
+            # where condition is an expression, and max_iter is an assignemt
+            # of a compile-time static integer
+            # TODO: error messages
+            assert isinstance(node.test, ast.Tuple) 
+            assert len(node.test.elts) == 2 
+            cond = visit_expr(node.test.elts[0])
+            max_iter_assign = node.test.elts[1]
+            assert isinstance(max_iter_assign, ast.NamedExpr)
+            assert max_iter_assign.target.id == 'max_iter'
+            assert isinstance(max_iter_assign.value, ast.Constant)
+            max_iter = int(max_iter_assign.value.value)
             body = [visit_stmt(s) for s in node.body]
-            return loma_ir.While(cond, body, lineno = node.lineno)
+            return loma_ir.While(cond, max_iter, body, lineno = node.lineno)
         case _:
             assert False, f'Unknown statement {type(node).__name__}'
 

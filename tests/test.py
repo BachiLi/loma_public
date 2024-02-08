@@ -69,13 +69,6 @@ def test_array_write():
     lib.array_write(arr)
     assert arr[0] == 2.0
 
-def test_local_static_array():
-    with open('loma_code/local_static_array.py') as f:
-        _, lib = compiler.compile(f.read(),
-                                  target = 'c',
-                                  output_filename = '_code/local_static_array.so')
-    assert lib.local_static_array() == 55
-
 def test_compare():
     with open('loma_code/compare.py') as f:
         _, lib = compiler.compile(f.read(),
@@ -124,6 +117,13 @@ def test_while_loop():
                                   target = 'c',
                                   output_filename = '_code/while_loop.so')
     assert lib.while_loop() == 45
+
+def test_local_static_array():
+    with open('loma_code/local_static_array.py') as f:
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/local_static_array.so')
+    assert lib.local_static_array() == 55
 
 def test_intrinsic_func_call():
     with open('loma_code/intrinsic_func_call.py') as f:
@@ -389,10 +389,10 @@ if __name__ == '__main__':
     test_mutation()
     test_array_read()
     test_array_write()
-    test_local_static_array()
     test_compare()
     test_if_else()
     test_while_loop()
+    test_local_static_array()
     test_intrinsic_func_call()
     test_func_decl()
     test_struct_access()

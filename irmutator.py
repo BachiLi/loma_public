@@ -102,6 +102,7 @@ class IRMutator:
         new_body = flatten(new_body)
         return loma_ir.While(\
             new_cond,
+            node.max_iter,
             new_body,
             lineno = node.lineno)
 
