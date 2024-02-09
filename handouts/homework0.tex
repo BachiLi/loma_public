@@ -19,13 +19,13 @@ The design principles of loma are:
 
 \section{Hello, loma}
 
-An example loma program looks like this:
+An example loma program looks like this (the file is located in \lstinline{xamples/loma_code/sum_array.py}):
 \begin{lstlisting}[language=python]
 # sum_array.py
 def sum_array(arr : In[Array[float]], arr_size : In[int]) -> float:
     i : int = 0
     s : float = 0.0
-    while i < arr_size:
+    while (i < arr_size, max_iter := 1000):
         s = s + arr[i]
         i = i + 1
     s_relu : float = 0.0
@@ -33,7 +33,7 @@ def sum_array(arr : In[Array[float]], arr_size : In[int]) -> float:
         s_relu = s
     return s_relu
 \end{lstlisting}
-Hopefully the code explains itself: it sums over an array, and returns the sum if the sum if larger than zero, otherwise it returns zero. Note that despite the Python syntax, all variables have an explicit static type.
+Hopefully the code explains itself: it sums over an array, and returns the sum if the sum if larger than zero, otherwise it returns zero. A slightly peculiar syntax is that all while loops in loma needs to have an upper bound on the maximum iterations (\lstinline{max_iter}). We abused Python's named expression feature (recently added in Python 3.8!) for this annotation. The reason of the need for this annotation will be clearer when we get to the implementation of reverse-mode automatic differentiation for control flows in Homework 3. If we don't have the upper bound, then the differentiation requires us to have dynamic allocations, which is expensive on GPUs. Note that the maximum iteration is only an upper bound. The loop itself can still terminate before the maximum iteration count. Also note that despite the Python syntax, all variables have an explicit static type.
 
 When you feed this program to the loma compiler and specifies C as a backend (currently, the two other available backends are ISPC and OpenCL, we will get to them later), the compiler will emit the following C code:
 \begin{lstlisting}[language=c]
@@ -68,25 +68,29 @@ py_arr = [1.0, 2.0, 3.0, 4.0, 5.0]
 arr = (ctypes.c_float * len(py_arr))(*py_arr)
 assert abs(lib.sum_array(arr, len(py_arr)) - 15.0) < 1e-6
 \end{lstlisting}
+The host code is located in \lstinline{examples/sum_array_host.py}.
 
 \section{Intermediate Representation}
 \label{sec:IR}
 
-The most important component of a programming language is its intermediate representation (IR). They are the data structures we use for representing a program and store important information. An IR is usually a directed graph. In our case, we further limit the graph to have no cycles (i.e. a directed acyclic graph, DAG). It's probably easiest to look at the IR to understand it. 
+The most important component of a programming language is its intermediate representation (IR). They are the data structures we use for representing a program and store important information. An IR is usually a directed graph. In our case, we further limit the graph to have no cycles (i.e., a directed acyclic graph, DAG). It's probably easiest to look at the IR to understand it. 
 The IR of loma in the \href{https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form}{Backus-Naur Form} is:
 \begin{grammar}
-<func> ::= 'FunctionDef' <string> <arg>* <stmt>* <is_simd> <type>?
+<func> ::= ('FunctionDef' <string> <arg>* <stmt>* <is_simd> <type>?
+\alt 'ForwardDiff' <string> <string>
+\alt 'ReverseDiff' <string> <string>) \\
+'attributes' <int>?
 
 <stmt> ::= ('Assign' <ref> <expr>
 \alt 'Declare' <string> <type> [<expr>]? 
 \alt 'Return' <expr>
 \alt 'IfElse' <expr> <stmt>* <stmt>*
-\alt 'While' <expr> <stmt>*) \\
+\alt 'While' <expr> <int> <stmt>*) \\
 'attributes' <int>?
 
 <expr> ::= ('Var' <string>
-\alt 'ArrayAccess' <ref> <expr>
-\alt 'StructAccess' <ref> <string>
+\alt 'ArrayAccess' <expr> <expr>
+\alt 'StructAccess' <expr> <string>
 \alt 'ConstFloat' <float>
 \alt 'ConstInt' <int>
 \alt 'BinaryOp' <bin_op> <expr> <expr>
@@ -103,6 +107,7 @@ The IR of loma in the \href{https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_fo
 \alt 'Float'
 \alt 'Array' <type> <int>?
 \alt 'Struct' <string> <struct_member>* <int>?
+\alt 'Diff' <type>
 
 <struct_member> ::= 'MemberDef' <string> <type>
 
@@ -132,18 +137,20 @@ To implement the IR above, we represent it using ASDL (Abstract Syntax Definitio
 \begin{lstlisting}
     module loma {
       func = FunctionDef ( string id, arg* args, stmt* body, bool is_simd, type? ret_type )
+           | ForwardDiff ( string id, string primal_func )
+           | ReverseDiff ( string id, string primal_func )
              attributes  ( int? lineno )
 
       stmt = Assign     ( ref target, expr val )
            | Declare    ( string target, type t, expr? val )
            | Return     ( expr val )
            | IfElse     ( expr cond, stmt* then_stmts, stmt* else_stmts )
-           | While      ( expr cond, stmt* body )
+           | While      ( expr cond, int max_iter, stmt* body )
            attributes   ( int? lineno )
 
       expr = Var          ( string id )
-           | ArrayAccess  ( ref array, expr index )
-           | StructAccess ( ref struct, string member_id )
+           | ArrayAccess  ( expr array, expr index )
+           | StructAccess ( expr struct, string member_id )
            | ConstFloat   ( float val )
            | ConstInt     ( int val )
            | BinaryOp     ( bin_op op, expr left, expr right )
@@ -160,6 +167,7 @@ To implement the IR above, we represent it using ASDL (Abstract Syntax Definitio
            | Float  ( )
            | Array  ( type t, int? static_size )
            | Struct ( string id, struct_member* members, int? lineno )
+           | Diff   ( type t )
 
       struct_member = MemberDef ( string id, type t )
 
@@ -237,11 +245,17 @@ int plus(int x, int y, float* z) {
 
 Each function argument needs to be tagged either as an input (\lstinline{In()}) or an output (\lstinline{Out()}), and its type \lstinline{t} needs to be specified. If a function returns a value, the type of the returned value must also be specified. If a function does not return a value, then it's \lstinline{ret_type} is \lstinline{None}.
 
+A function can take inputs and outputs that are of array types. You can have a struct of arrays or array of structs (or structs of arrays of structs). An important assumption we make is that the arrays of function arguments do not have \href{https://en.wikipedia.org/wiki/Aliasing_(computing)}{aliasing} (Fortran compilers make the same assumption and this is why Fortran is sometimes faster than C). We have not implemented a compile time check for this, so the users would have to be extra careful when passing array arguments.
+
 We will explain the \lstinline{is_simd} flag later when we talk about parallelization.
+
+\lstinline{ForwardDiff} and \lstinline{ReverseDiff} are for the differentiation of the functions, and will be discussed in the later homework when we bump into them. 
 
 \subsection{Types}
 
 The type system of loma is similar to C except it's even simpler. The \lstinline{<type>} rule set above defines all the possible types in loma. There are only two primitive types: \lstinline{Int} and \lstinline{Float}. We can also define an \lstinline{Array} that is a list of the same type (the optional integer represents a fixed-size array). Finally, loma also supports \lstinline{Struct} (product types if you're a functional guru). We do not support sum types (e.g., unions in C) to make differentiation easy.
+
+The \lstinline{Diff} type is for representing the differential of the type for automatic differentiation. We will explain it in the first homework.
 
 \subsection{Statements}
 
@@ -286,7 +300,7 @@ a[1] = 6;
 b.c = 7;
 \end{lstlisting}
 
-The type of the target should match the right hand side \TODO{add explicit type casting}, and the final type cannot be an array.
+The type of the target should match the right hand side, and the type cannot be an array or Struct (it can be access to the members of the array or the Struct). If the types of left hand side and right hand side are \lstinline{int} and \lstinline{float} respectively, our type checker automatically inserts a type casting operation \lstinline{float2int} or \lstinline{int2float} for the conversion.
 
 \paragraph{Return.}
 The following \lstinline{Return} statement in loma IR
@@ -324,6 +338,7 @@ The following \lstinline{While} statement in loma IR
 \begin{lstlisting}
 While(cond=BinaryOp(op=Less(), left=Var(id='i'),
       right=ConstInt(val=10)),
+      max_iter=20,
       body=(Assign(target=RefName(id='i'), val=BinaryOp(op=Add(), left=Var(id='i'), right=ConstInt(val=1)),))
 \end{lstlisting}
 has the same meaning as the following C code
@@ -332,10 +347,17 @@ while (i < 10) {
     i = i + 1;
 }
 \end{lstlisting}
+Notice that there is a \lstinline{max_iter} attribute in the loma while statement. It is an extra annotation of the while loop that specifies an upper bound of the number of iterations. This is a crucial information for the reverse-mode automatic differentiation we will implement in the homeworks. If we do not have the maximum iteration bounds, we will need dynamic memory allocations in reverse mode, leading to worse efficiency. Note that the upper bound can be loose -- like here, the loop always end in 10 steps, but we set the upper bound to be 20. If the upper bound is smaller than the actual loop iterations, the behavior of the program is undefined (it will likely crash when you perform reverse mode autodiff).
 
-\TODO{implement loop upper bound and explain it}
+\paragraph{Call expressions.}
+We will omit most of the specifications of expressions since it's very standard. Except for \lstinline{Call} which we provide a list of intrinsic functions. We have the follow list of intrinsic functions:
 
-We will omit the specification of expressions.
+\begin{itemize}
+\item \lstinline{sin(x : float) -> float}, \lstinline{cos(x : float) -> float}, \lstinline{exp(x: float) -> float}, \lstinline{log(x : float)}, \lstinline{pow(x : float, y : float) -> float}: standard math functions that takes \lstinline{float}(s) and returns a \lstinline{float}.
+\item \lstinline{int2float(x : int) -> float}: type cast an integer to a float.
+\item \lstinline{float2int(x : float) -> int}: type cast a float to an integer. The effect is the same as C typecasting, i.e., it will take the floor of the float.
+\item \lstinline{thread_id() -> int}: for SIMD parallelism. Will be explained later.
+\end{itemize}
 
 \section{Frontend and Parsing}
 As hinted at the beginning, loma is embedded in Python. That is, we borrow the Python syntax (but not the semantics), so that we can reuse Python's parser, and we can exploit on people's familiarity of Python's syntax. 
@@ -422,18 +444,19 @@ Our frontend does not support \lstinline{elif} in Python.
 
 \paragraph{While loops.} This code
 \begin{lstlisting}[language=python]
-while i < 10:
+while (i < 10, max_iter := 20):
     i = i + 1
 \end{lstlisting}
 will be translated to
 \begin{lstlisting}
 While(cond=BinaryOp(op=Less(), left=Var(id='i'),
       right=ConstInt(val=10)),
+      max_iter=20,
       body=(Assign(target=RefName(id='i'), val=BinaryOp(op=Add(), left=Var(id='i'), right=ConstInt(val=1)),))
 \end{lstlisting}
 
 \subsection{Struct definitions}
-Following class definition in Python
+Following class definitions in Python
 \begin{lstlisting}[language=Python]
 class Foo:
     x : int
@@ -455,7 +478,12 @@ To implement the translation above, we use the \lstinline{ast} package in Python
 
 For example, in the Python frontend, the top level definition can either be a \lstinline{ast.ClassDef} or a \lstinline{ast.FunctionDef}. So we parse them using the following code:
 \begin{lstlisting}[language=Python]
-def parse(code):
+def parse(code : str) -> tuple[dict[str, loma_ir.Struct], dict[str, loma_ir.func]]:
+    """ Given a loma frontend code represented as a string,
+        convert the code to loma IR.
+        Returns both the parsed loma Structs and functions.
+    """
+
     module = ast.parse(code)
     structs = {}
     for d in module.body:
@@ -468,13 +496,25 @@ def parse(code):
         if isinstance(d, ast.FunctionDef):
             f = visit_FunctionDef(d)
             funcs[f.id] = f
+        elif isinstance(d, ast.Assign):
+            f = visit_Differentiate(d)
+            funcs[f.id] = f
 
     return structs, funcs
 \end{lstlisting}
 
 The \lstinline{parse} function then relies on \lstinline{visit_ClassDef} and \lstinline{visit_FunctionDef}:
 \begin{lstlisting}[language=Python]
-def visit_ClassDef(node):
+def visit_ClassDef(node) -> loma_ir.Struct:
+    """ Given a Python AST node representing a class definition,
+        convert to a loma Struct.
+
+        e.g.,
+        class Foo:
+            x : int
+            y : float
+    """
+
     members = []
     for member in node.body:
         match member:
@@ -486,7 +526,13 @@ def visit_ClassDef(node):
                 assert False, f'Unknown class member statement {type(member).__name__}'
     return loma_ir.Struct(node.name, members, lineno = node.lineno)
 
-def visit_FunctionDef(node):
+def visit_FunctionDef(node) -> loma_ir.FunctionDef:
+    """ Given a Python AST node representing
+        a function definition,
+        convert to the corresponding loma
+        FunctionDef.
+    """
+
     node_args = node.args
     assert node_args.vararg is None
     assert node_args.kwarg is None
@@ -513,11 +559,75 @@ def visit_FunctionDef(node):
 \end{lstlisting}
 
 \section{Type and semantic checks}
-\TODO{talk about IRVisitor and the checking phase}
+After the parsing, the compiler will go through a type and semantic analysis phase. The code is mostly in \lstinline{check.py} and \lstinline{type_inference.py}. The entry point is the \lstinline{check_ir} function in \lstinline{check.py}:
+
+\todo{update this code snippet after we implement more checking.}
+\begin{lstlisting}
+def check_ir(structs : dict[str, loma_ir.Struct],
+             diff_structs : dict[str, loma_ir.Struct],
+             funcs : dict[str, loma_ir.func],
+             check_diff : bool):
+    """ Performs checks and type inferences on the loma functions (funcs).
+        Fill in the type information of expressions.
+        Raise errors when we see illegal code.
+
+        Parameters:
+        structs - a dictionary that maps the ID of a Struct to 
+                the corresponding Struct
+        diff_structs - a dictionary that maps the ID of the primal
+                Struct to the corresponding differential Struct
+                e.g., diff_structs['float'] returns _dfloat
+        funcs - a dictionary that maps the ID of a function to 
+                the corresponding func
+        check_diff - whether we perform check_unhandled_differentiation
+                     or not.
+    """
+
+    for f in funcs.values():
+        if check_diff:
+            check_unhandled_differentiation(f)
+        check_duplicate_declare(f)
+        check_undeclared_vars(f)
+
+    type_inference.check_and_infer_types(structs, diff_structs, funcs)
+\end{lstlisting}
+
+The most important part is the type inference and checking phase: \lstinline{type_inference.check_and_infer_types}. The rest mostly just checking obvious erros like duplicate variables declaration.
+
+The type inferencer and checker go through all functions, fill in the type information, and check if the types match in each statement:
+\begin{lstlisting}
+def check_and_infer_types(structs : dict[str, loma_ir.Struct],
+                          diff_structs : dict[str, loma_ir.Struct],
+                          funcs : dict[str, loma_ir.func]):
+    for id, f in funcs.items():
+        ti = TypeInferencer(structs, diff_structs, funcs)
+        funcs[id] = ti.mutate_function(f)
+\end{lstlisting}
+
+The \lstinline{TypeInferencer} class inherits from an \lstinline{IRMutator} class that we use to trasnform code:
+\begin{lstlisting}
+class TypeInferencer(irmutator.IRMutator):
+    # ...
+\end{lstlisting}
+
+The \lstinline{IRMutator} class is the base class that we will also use repeatedly through the class. It essentially implements the ``Visitor pattern'' where we can visit an IR node and all its children recursively. For example, the \lstinline{mutate_function_def} function in \lstinline{IRMutator} looks like this:
+\begin{lstlisting}
+def mutate_function_def(self, node):
+    new_body = [self.mutate_stmt(stmt) for stmt in node.body]
+    # Important: mutate_stmt can return a list of statements. We need to flatten the list.
+    new_body = flatten(new_body)
+    return loma_ir.FunctionDef(\
+        node.id, node.args, new_body, node.is_simd, node.ret_type, lineno = node.lineno)
+\end{lstlisting}
+It recursively calls the \lstinline{mutate_stmt} function and assemble a new \lstinline{FunctionDef} that accounts for the new mutations. Note that, as commented, \lstinline{mutate_stmt} can sometimes return a list of statement, thus we need to unpack the list.
+
+The \lstinline{TypeInferencer} then overrides the all the mutations to infer the types, check them, and throw errors when types do not match.
 
 \section{C Backend}
 
 Given a loma program, we will ``lower'' it to a target language in the backends. Currently loma supports three backends: C, \href{https://ispc.github.io/index.html}{ispc}, and OpenCL. Let's talk about the C backend here, and we will discuss ispc and OpenCL backends after we discuss the parallelization model of loma.
+
+Similar to \lstinline{IRMutator}, we also have an \lstinline{IRVisitor} that simply recursively visits the IR nodes without mutating them.
 
 To transform a program, we recursively visit the IR nodes using an \lstinline{IRVisitor}:
 \begin{lstlisting}[language=python]
@@ -604,7 +714,7 @@ __kernel void parallel_add(__global int* x, __global int* y, __global int* z) {
 
 The only differences are the two extra keywords: \lstinline{__kernel}, \lstinline{__global} and the function for getting thread id: \lstinline{get_global_id()}. 
 
-In OpenCL, \lstinline{__kernel} marks a function as a SIMD function (similar to the \lstinline{@simd} decorator in loma). This allows a host program outside of OpenCL to call the kernel. Functions not marked as kernel can only be called by functions inside the same OpenCL program. The \lstinline{__global} keyword marks an argument to be pointing to a global memory pool (e.g. the GPU global memory). The \lstinline{get_global_id} function, expectedly, get the ID of the current thread, and the argument \lstinline{0} specifies the dimension of the workers, which in our case is irrelevant since we always launch threads in a single dimension. 
+In OpenCL, \lstinline{__kernel} marks a function as a SIMD function (similar to the \lstinline{@simd} decorator in loma). This allows a host program outside of OpenCL to call the kernel. Functions not marked as kernel can only be called by functions inside the same OpenCL program. The \lstinline{__global} keyword marks an argument to be pointing to a global memory pool (e.g., the GPU global memory). The \lstinline{get_global_id} function, expectedly, get the ID of the current thread, and the argument \lstinline{0} specifies the dimension of the workers, which in our case is irrelevant since we always launch threads in a single dimension. 
 
 As you can see, the generation of a OpenCL kernel is basically the same as a C code, so we can inherit most of our C generation code. See \lstinline{codegen_opencl.py} for reference.
 
@@ -660,7 +770,7 @@ cl.clEnqueueReadBuffer(cl_cmd_queue,
 
 assert z[0] == 9 and z[1] == 14 and z[2] == 18
 \end{lstlisting}
-We're using the wonderful library \href{https://github.com/tinygrad/gpuctypes}{gpuctypes} from geohot for wrapping OpenCL APIs in Python. We then abstract some of the OpenCL functions in \lstinline{cl_utils.py}. Let's look at the code line by line:
+We use the wonderful library \href{https://github.com/tinygrad/gpuctypes}{gpuctypes} from geohot for wrapping OpenCL APIs in Python. We then abstract some of the OpenCL functions in \lstinline{cl_utils.py}. Let's look at the code line by line:
 \begin{lstlisting}[language=python]
 cl_ctx, cl_device, cl_cmd_queue = cl_utils.create_context()
 \end{lstlisting}
