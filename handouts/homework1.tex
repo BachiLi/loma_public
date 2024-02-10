@@ -15,7 +15,7 @@ The total derivative $df(\mathbf{x}, \mathbf{dx})$ (noticed that it takes two in
 \end{equation}
 where $df(\mathbf{x}, \mathbf{dx})$ is linear over the $\mathbf{dx}$ argument (but not necessarily linear over the $x$ argument).
 
-We can get the partial or directional derivatives that we are more used to from the total derivative function $df$. For example, we can apply a ``one-hot'' vector $\mathbf{v}_i$ 
+We can get the partial or directional derivatives that we are more used to from the total derivative function $df$. For example, we can apply a ``one-hot'' vector $\mathbf{v}_i$ for computing the partial derivative of the $i$-th component of the input:
 \begin{equation}
 \frac{\partial}{\partial x_i} f(\mathbf{x}) = df(\mathbf{x}, \mathbf{v}_i), v_{i,j} = \begin{cases}
 1 & \text{ if } i = j, \\
