@@ -125,6 +125,13 @@ def test_local_static_array():
                                   output_filename = '_code/local_static_array.so')
     assert lib.local_static_array() == 55
 
+def test_local_array_init_zero():
+    with open('loma_code/local_array_init_zero.py') as f:
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/local_array_init_zero.so')
+    assert lib.local_array_init_zero() == 13
+
 def test_intrinsic_func_call():
     with open('loma_code/intrinsic_func_call.py') as f:
         _, lib = compiler.compile(f.read(),
@@ -201,6 +208,13 @@ def test_struct_in_array_in_struct():
     foo_py_arr = [Foo(x=1,b=bar_arr_0), Foo(x=3,b=bar_arr_1)]
     foo_arr = (Foo * len(foo_py_arr))(*foo_py_arr)
     assert lib.struct_in_array_in_struct(foo_arr) == 5
+
+def test_struct_init_zero():
+    with open('loma_code/struct_init_zero.py') as f:
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/struct_init_zero.so')
+    assert lib.struct_init_zero() == 0
 
 def test_parallel_add():
     with open('loma_code/parallel_add.py') as f:
@@ -393,6 +407,7 @@ if __name__ == '__main__':
     test_if_else()
     test_while_loop()
     test_local_static_array()
+    test_local_array_init_zero()
     test_intrinsic_func_call()
     test_func_decl()
     test_struct_access()
@@ -401,6 +416,7 @@ if __name__ == '__main__':
     test_array_in_struct()
     test_struct_in_array()
     test_struct_in_array_in_struct()
+    test_struct_init_zero()
     test_parallel_add()
     test_simd_local_func()
 

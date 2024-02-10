@@ -3,6 +3,7 @@ import ast
 import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
+import attrs
 
 def annotation_to_type(node) -> loma_ir.type:
     """ Given a Python AST node, returns the corresponding
@@ -309,6 +310,41 @@ def visit_expr(node) -> loma_ir.expr:
         case _:
             assert False, f'Unknown expr {type(node).__name__}'
 
+def check_struct(t : loma_ir.type):
+    # check if the struct has zero length member, recursively
+    if isinstance(t, loma_ir.Int) or isinstance(t, loma_ir.Float):
+        return False
+    if isinstance(t, loma_ir.Array):
+        return check_struct(t.t)
+    if len(t.members) == 0:
+        return True
+    for m in t.members:
+        if isinstance(m.t, loma_ir.Struct) or \
+           isinstance(m.t, loma_ir.Array):
+            if check_struct(m.t):
+                return True
+    return False
+
+def check_structs(structs : dict[str, loma_ir.Struct]):
+    for s in structs.values():
+        if check_struct(s):
+            return True
+    return False
+
+def fill_structs(s : loma_ir.Struct,
+                 structs : dict[str, loma_ir.Struct]):
+    assert isinstance(s, loma_ir.Struct)
+    new_members = []
+    for m in s.members:
+        new_m = m
+        if isinstance(m.t, loma_ir.Struct):
+            new_m = attrs.evolve(m, t=structs[m.t.id])
+        elif isinstance(m.t, loma_ir.Array):
+            new_m = attrs.evolve(m,
+                t=loma_ir.Array(structs[m.t.t.id], m.t.static_size))
+        new_members.append(new_m)
+    return attrs.evolve(s, members=new_members)
+
 def parse(code : str) -> tuple[dict[str, loma_ir.Struct], dict[str, loma_ir.func]]:
     """ Given a loma frontend code represented as a string,
         convert the code to loma IR.
@@ -322,6 +358,11 @@ def parse(code : str) -> tuple[dict[str, loma_ir.Struct], dict[str, loma_ir.func
         if isinstance(d, ast.ClassDef):
             s = visit_ClassDef(d)
             structs[s.id] = s
+
+    # Fill in struct information, run until converge
+    while check_structs(structs):
+        for k, s in structs.items():
+            structs[k] = fill_structs(s, structs)
 
     funcs = {}
     for d in module.body:

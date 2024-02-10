@@ -64,6 +64,28 @@ class CCodegenVisitor(irvisitor.IRVisitor):
         self.emit_tabs()
         self.code += f'return {self.visit_expr(node.val)};\n'
 
+    def init_zero(self, id, t, depth = 0):
+        # Initiailize the declared variable to zero
+        if isinstance(t, loma_ir.Int) or isinstance(t, loma_ir.Float):
+            self.emit_tabs()
+            self.code += f'{id} = 0;\n'
+        elif isinstance(t, loma_ir.Struct):
+            for m in t.members:
+                self.init_zero(id + '.' + m.id, m.t, depth)
+        elif isinstance(t, loma_ir.Array):
+            self.emit_tabs()
+            iter_var_name = 'i'
+            self.code += f'for (int _{iter_var_name * (depth + 1)} = 0;' + \
+                         f' _{iter_var_name * (depth + 1)} < {t.static_size};' + \
+                         f'_{iter_var_name * (depth + 1)}++) {{\n'
+
+            self.tab_count += 1
+            self.init_zero(id + f'[_{iter_var_name * (depth + 1)}]', t.t, depth + 1)
+            self.tab_count -= 1
+            
+            self.emit_tabs()
+            self.code += '}\n'
+
     def visit_declare(self, node):
         self.emit_tabs()
         if not isinstance(node.t, loma_ir.Array):
@@ -72,10 +94,11 @@ class CCodegenVisitor(irvisitor.IRVisitor):
             # Special rule for arrays
             assert node.t.static_size != None
             self.code += f'{type_to_string(node.t.t)} {node.target}[{node.t.static_size}]'
-        expr_str = self.visit_expr(node.val)
-        if expr_str != '':
-            self.code += f' = {expr_str}'
-        self.code += ';\n'
+        if node.val is not None:
+            self.code += f' = {self.visit_expr(node.val)};\n'
+        else:
+            self.code += ';\n'
+            self.init_zero(node.target, node.t)
 
     def visit_assign(self, node):
         self.emit_tabs()
@@ -209,10 +232,14 @@ def codegen_c(structs : dict[str, loma_ir.Struct],
     # Definition of structs
     code = ''
     for s in sorted_structs_list:
-        code += f'struct {s.id} {{\n'
+        code += f'typedef struct {{\n'
         for m in s.members:
-            code += f'\t{type_to_string(m.t)} {m.id};\n'
-        code += f'}};\n'
+            # Special rule for arrays
+            if isinstance(m.t, loma_ir.Array) and m.t.static_size is not None:
+                code += f'\t{type_to_string(m.t.t)} {m.id}[{m.t.static_size}];\n'
+            else:
+                code += f'\t{type_to_string(m.t)} {m.id};\n'
+        code += f'}} {s.id};\n'
 
     # Forward declaration of functions
     for f in funcs.values():
