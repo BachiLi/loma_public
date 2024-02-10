@@ -13,37 +13,28 @@ class Ray:
     org : Vec3
     dir : Vec3
 
-def add(a : In[Vec3], b : In[Vec3]) -> Vec3:
+def make_vec3(x : In[float], y : In[float], z : In[float]) -> Vec3:
     ret : Vec3
-    ret.x = a.x + b.x
-    ret.y = a.y + b.y
-    ret.z = a.z + b.z
+    ret.x = x
+    ret.y = y
+    ret.z = z
     return ret
+
+def add(a : In[Vec3], b : In[Vec3]) -> Vec3:
+    return make_vec3(a.x + b.x, a.y + b.y, a.z + b.z)
 
 def sub(a : In[Vec3], b : In[Vec3]) -> Vec3:
-    ret : Vec3
-    ret.x = a.x - b.x
-    ret.y = a.y - b.y
-    ret.z = a.z - b.z
-    return ret
+    return make_vec3(a.x - b.x, a.y - b.y, a.z - b.z)
 
 def mul(a : In[float], b : In[Vec3]) -> Vec3:
-    ret : Vec3
-    ret.x = a * b.x
-    ret.y = a * b.y
-    ret.z = a * b.z
-    return ret    
+    return make_vec3(a * b.x, a * b.y, a * b.z)
 
 def dot(a : In[Vec3], b : In[Vec3]) -> float:
     return a.x * b.x + a.y * b.y + a.z * b.z
 
 def normalize(v : In[Vec3]) -> Vec3:
     l : float = sqrt(dot(v, v))
-    ret : Vec3
-    ret.x = v.x / l
-    ret.y = v.y / l
-    ret.z = v.z / l
-    return ret
+    return make_vec3(v.x / l, v.y / l, v.z / l)
 
 # Returns distance. If distance is zero or negative, the hit misses
 def sphere_isect(sph : In[Sphere], ray : In[Ray]) -> float:
@@ -61,28 +52,18 @@ def sphere_isect(sph : In[Sphere], ray : In[Ray]) -> float:
 
 def ray_color(ray : In[Ray]) -> Vec3:
     sph : Sphere
-    sph.center.x = 0
-    sph.center.y = 0
-    sph.center.z = -1
+    sph.center = make_vec3(0, 0, -1)
     sph.radius = 0.5
 
     ret_color : Vec3
     t : float = sphere_isect(sph, ray)
     if t > 0:
         N : Vec3 = normalize(sub(add(ray.org, mul(t, ray.dir)), sph.center))
-        ret_color.x = 0.5 * (N.x + 1)
-        ret_color.y = 0.5 * (N.y + 1)
-        ret_color.z = 0.5 * (N.z + 1)
+        ret_color = make_vec3(0.5 * (N.x + 1), 0.5 * (N.y + 1), 0.5 * (N.z + 1))
     else:
         a : float = 0.5 * ray.dir.y + 1
-        white : Vec3
-        white.x = 1
-        white.y = 1
-        white.z = 1
-        blue : Vec3
-        blue.x = 0.5
-        blue.y = 0.7
-        blue.z = 1
+        white : Vec3 = make_vec3(1, 1, 1)
+        blue : Vec3 = make_vec3(0.5, 0.7, 1)
         ret_color = add(mul((1 - a), white), mul(a, blue))
     return ret_color
 
@@ -92,24 +73,16 @@ def raytrace(w : In[int], h : In[int], image : Out[Array[Vec3]]):
     focal_length : float = 1.0
     viewport_height : float = 2.0
     viewport_width : float = viewport_height * aspect_ratio
-    camera_center : Vec3
-    camera_center.x = 0
-    camera_center.y = 0
-    camera_center.z = 0
+    camera_center : Vec3 = make_vec3(0, 0, 0)
     # Calculate the horizontal and vertical delta vectors from pixel to pixel.
-    pixel_delta_u : Vec3
-    pixel_delta_u.x = viewport_width / w
-    pixel_delta_u.y = 0
-    pixel_delta_u.z = 0
-    pixel_delta_v : Vec3
-    pixel_delta_v.x = 0
-    pixel_delta_v.y = -viewport_height / h
-    pixel_delta_v.z = 0
+    pixel_delta_u : Vec3 = make_vec3(viewport_width / w, 0, 0)
+    pixel_delta_v : Vec3 = make_vec3(0, -viewport_height / h, 0)
     # Calculate the location of the upper left pixel.
-    viewport_upper_left : Vec3
-    viewport_upper_left.x = camera_center.x - viewport_width / 2
-    viewport_upper_left.y = camera_center.y + viewport_height / 2
-    viewport_upper_left.z = camera_center.z - focal_length
+    viewport_upper_left : Vec3 = make_vec3(\
+            camera_center.x - viewport_width / 2,
+            camera_center.y + viewport_height / 2,
+            camera_center.z - focal_length
+        )
     pixel00_loc : Vec3 = viewport_upper_left
     pixel00_loc.x = pixel00_loc.x + pixel_delta_u.x / 2
     pixel00_loc.y = pixel00_loc.y - pixel_delta_v.y / 2
