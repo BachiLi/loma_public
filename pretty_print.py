@@ -4,7 +4,32 @@ ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 import irvisitor
 import compiler
-import codegen_c
+
+def type_to_string(node : loma_ir.type) -> str:
+    """ Given a loma type, return a string that represents
+        the type.
+    """
+
+    match node:
+        case loma_ir.Int():
+            return 'int'
+        case loma_ir.Float():
+            return 'float'
+        case loma_ir.Array():
+            t_str = type_to_string(node.t)
+            if node.static_size is not None:
+                t_str += f'[{node.static_size}]'
+            else
+                t_str += '[]'
+            return t_str
+        case loma_ir.Struct():
+            return node.id
+        case loma_ir.Diff():
+            return f'Diff[{type_to_string(node.t)}]'
+        case None:
+            return 'void'
+        case _:
+            assert False
 
 @attrs.define()
 class PrettyPrintVisitor(irvisitor.IRVisitor):
@@ -18,11 +43,11 @@ class PrettyPrintVisitor(irvisitor.IRVisitor):
         self.code += '\t' * self.tab_count
 
     def visit_function_def(self, node):
-        self.code += f'{codegen_c.type_to_string(node.ret_type)} {node.id}('
+        self.code += f'{type_to_string(node.ret_type)} {node.id}('
         for i, arg in enumerate(node.args):
             if i > 0:
                 self.code += ', '
-            self.code += f'{codegen_c.type_to_string(arg.t)} {arg.id}'
+            self.code += f'{type_to_string(arg.t)} {arg.id}'
         if node.is_simd:
             if len(node.args) > 0:
                 self.code += ', '
@@ -42,6 +67,12 @@ class PrettyPrintVisitor(irvisitor.IRVisitor):
         self.tab_count -= 1
         self.code += '}\n'
 
+    def visit_forward_diff(self, node):
+        self.code += f'{node.id} = fwd_diff({node.primal_func})'
+
+    def visit_reverse_diff(self, node):
+        self.code += f'{node.id} = rev_diff({node.primal_func})'
+
     def visit_return(self, node):
         self.emit_tabs()
         self.code += f'return {self.visit_expr(node.val)};\n'
@@ -49,11 +80,11 @@ class PrettyPrintVisitor(irvisitor.IRVisitor):
     def visit_declare(self, node):
         self.emit_tabs()
         if not isinstance(node.t, loma_ir.Array):
-            self.code += f'{codegen_c.type_to_string(node.t)} {node.target}'
+            self.code += f'{type_to_string(node.t)} {node.target}'
         else:
             # Special rule for arrays
             assert node.t.static_size != None
-            self.code += f'{codegen_c.type_to_string(node.t.t)} {node.target}[{node.t.static_size}]'
+            self.code += f'{type_to_string(node.t.t)} {node.target}[{node.t.static_size}]'
         if node.val is not None:
             self.code += f' = {self.visit_expr(node.val)};\n'
         else:
@@ -160,9 +191,9 @@ def struct_to_str(s : loma_ir.Struct) -> str:
     for m in s.members:
         # Special rule for arrays
         if isinstance(m.t, loma_ir.Array) and m.t.static_size is not None:
-            code += f'\t{codegen_c.type_to_string(m.t.t)} {m.id}[{m.t.static_size}];\n'
+            code += f'\t{type_to_string(m.t.t)} {m.id}[{m.t.static_size}];\n'
         else:
-            code += f'\t{codegen_c.type_to_string(m.t)} {m.id};\n'
+            code += f'\t{type_to_string(m.t)} {m.id};\n'
     code += f'}};\n'
     return code
 
