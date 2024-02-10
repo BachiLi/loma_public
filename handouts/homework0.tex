@@ -185,7 +185,7 @@ To implement the IR above, we represent it using ASDL (Abstract Syntax Definitio
 \end{lstlisting}
 This IR is defined in \lstinline{ir.py} in the source code.
 
-We then use a nice library written by Gilbert Bernstein (see \lstinline{asdl_gen.py}) to convert the ASDL into a hierarchy of Python classes. For example, the \lstinline{stmt} ruleset above is converted to the following classes (code simplified a bit):
+We then use a nice library written by \href{https://www.gilbertbernstein.com/}{Gilbert Bernstein} (see \lstinline{asdl_gen.py}) to convert the ASDL into a hierarchy of Python classes. For example, the \lstinline{stmt} ruleset above is converted to the following classes (code simplified a bit):
 \begin{lstlisting}[language=python]
 import attrs
 from typing import Optional
@@ -243,7 +243,9 @@ int plus(int x, int y, float* z) {
 
 Each function argument needs to be tagged either as an input (\lstinline{In()}) or an output (\lstinline{Out()}), and its type \lstinline{t} needs to be specified. If a function returns a value, the type of the returned value must also be specified. If a function does not return a value, then it's \lstinline{ret_type} is \lstinline{None}.
 
-A function can take inputs and outputs that are of array types. You can have a struct of arrays or array of structs (or structs of arrays of structs). An important assumption we make is that the arrays of function arguments do not have \href{https://en.wikipedia.org/wiki/Aliasing_(computing)}{aliasing} (Fortran compilers make the same assumption and this is why Fortran is sometimes faster than C). We have not implemented a compile time check for this, so the users would have to be extra careful when passing array arguments.
+A function can take inputs and outputs that are of \lstinline{Array} types. You can have a struct of arrays or array of structs (or structs of arrays of structs). An important assumption we make is that the arrays of function arguments do not have \href{https://en.wikipedia.org/wiki/Aliasing_(computing)}{aliasing} (Fortran compilers make the same assumption and this is why Fortran is sometimes faster than C). We have not implemented a compile time check for this, so the users would have to be extra careful when passing array arguments.
+
+Only \lstinline{Array} types can be marked as \lstinline{Output} (you can make your variables a size 1 array). If an argument is marked as input, we prohibit writing into the variable (i.e., it cannot be on the left hand side of assignment). If an argument is marked as output, we prohibit reading from the variable. These are all restrictions to simplify the implementation of reverse-mode differentiation. \TODO{implement the check}
 
 We will explain the \lstinline{is_simd} flag later when we talk about parallelization.
 
@@ -269,7 +271,7 @@ has the same meaning as the following C code
 int x = 5;
 \end{lstlisting}
 
-The \lstinline{val} part is optional. If it is \lstinline{None}, the variable is initialized to zero. \TODO{implement the initialization}
+The \lstinline{val} part is optional. If it is \lstinline{None}, the variable is initialized to zero.
 
 All the variable declaration needs to have a static size known at compile time. For example, a declaration of a struct object with an unbounded array member is not a valid loma program. \TODO{implement the check.}
 
@@ -560,7 +562,7 @@ def visit_FunctionDef(node) -> loma_ir.FunctionDef:
 After the parsing, the compiler will go through a type and semantic analysis phase. The code is mostly in \lstinline{check.py} and \lstinline{type_inference.py}. The entry point is the \lstinline{check_ir} function in \lstinline{check.py}:
 
 \TODO{update this code snippet after we implement more checking.}
-\begin{lstlisting}
+\begin{lstlisting}[language=Python]
 def check_ir(structs : dict[str, loma_ir.Struct],
              diff_structs : dict[str, loma_ir.Struct],
              funcs : dict[str, loma_ir.func],
@@ -593,7 +595,7 @@ def check_ir(structs : dict[str, loma_ir.Struct],
 The most important part is the type inference and checking phase: \lstinline{type_inference.check_and_infer_types}. The rest mostly just checking obvious erros like duplicate variables declaration.
 
 The type inferencer and checker go through all functions, fill in the type information, and check if the types match in each statement:
-\begin{lstlisting}
+\begin{lstlisting}[language=Python]
 def check_and_infer_types(structs : dict[str, loma_ir.Struct],
                           diff_structs : dict[str, loma_ir.Struct],
                           funcs : dict[str, loma_ir.func]):
@@ -603,13 +605,13 @@ def check_and_infer_types(structs : dict[str, loma_ir.Struct],
 \end{lstlisting}
 
 The \lstinline{TypeInferencer} class inherits from an \lstinline{IRMutator} class that we use to trasnform code:
-\begin{lstlisting}
+\begin{lstlisting}[language=Python]
 class TypeInferencer(irmutator.IRMutator):
     # ...
 \end{lstlisting}
 
 The \lstinline{IRMutator} class is the base class that we will also use repeatedly through the class. It essentially implements the ``Visitor pattern'' where we can visit an IR node and all its children recursively. For example, the \lstinline{mutate_function_def} function in \lstinline{IRMutator} looks like this:
-\begin{lstlisting}
+\begin{lstlisting}[language=Python]
 def mutate_function_def(self, node):
     new_body = [self.mutate_stmt(stmt) for stmt in node.body]
     # Important: mutate_stmt can return a list of statements. We need to flatten the list.
@@ -852,9 +854,11 @@ assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
 \section{An example of a small ray tracer}
 \begin{figure}
-\includegraphics[width=0.5\linewidth]{imgs/raytrace.png}
-\label{fig:raytrace}
+\centering
+\includegraphics[width=0.8\linewidth]{imgs/raytrace.png}
+\vspace{-20pt}
 \caption{An image generated by a ray tracer implemented using loma.}
+\label{fig:raytrace}
 \end{figure}
 
 \lstinline{examples/raytrace_host.py} and \lstinline{examples/loma_code/raytrace.py} shows the loma implementation of a simple ray tracer (code mostly taken from \href{https://raytracing.github.io/books/RayTracingInOneWeekend.html}{Ray Tracing in One Weekend}). Figure~\ref{fig:raytrace} shows the image rendered by the ray tracer. It also shows how loma interacts with numpy code.
