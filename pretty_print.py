@@ -19,7 +19,7 @@ def type_to_string(node : loma_ir.type) -> str:
             t_str = type_to_string(node.t)
             if node.static_size is not None:
                 t_str += f'[{node.static_size}]'
-            else
+            else:
                 t_str += '[]'
             return t_str
         case loma_ir.Struct():
