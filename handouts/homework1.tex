@@ -4,14 +4,24 @@
 
 \header{1}{Forward mode automatic differentiation}
 
+\section{Total derivatives}
+
 In our first homework, we will implement what is known as the ``forward mode'' automatic differentiation in loma for generating code that computes the derivatives. 
 Specifically, given a (differentiable) function $f: \mathbb{R}^n \rightarrow \mathbb{R}^m$, we will automatically generate its \href{https://en.wikipedia.org/wiki/Total_derivative}{total derivative} $df: \mathbb{R}^n \times \mathbb{R}^n \rightarrow \mathbb{R}^m$. 
 The total derivative $df(\mathbf{x}, \mathbf{dx})$ (noticed that it takes two inputs $\mathbf{x}$ and $\mathbf{dx}$ instead of only one!) is defined as the best linear approximation at point $\mathbf{x}$:
 \begin{equation}
-\lim_{dx \rightarrow 0} \frac{\left\|f(x + dx) - \left(f(x) + df(x, dx)\right)\right\|}{\left\|dx\right\|} = 0,
+\lim_{\mathbf{dx} \rightarrow 0} \frac{\left\|f(\mathbf{x} + \mathbf{dx}) - \left(f(\mathbf{x}) + df(\mathbf{x}, \mathbf{dx})\right)\right\|}{\left\|\mathbf{dx}\right\|} = 0,
 \label{eq:totalderiv}
 \end{equation}
-where $df(x, dx)$ is linear over the $dx$ argument (but not necessarily linear over the $x$ argument).
+where $df(\mathbf{x}, \mathbf{dx})$ is linear over the $\mathbf{dx}$ argument (but not necessarily linear over the $x$ argument).
+
+We can get the partial or directional derivatives that we are more used to from the total derivative function $df$. For example, we can apply a ``one-hot'' vector $\mathbf{v}_i$ 
+\begin{equation}
+\frac{\partial}{\partial x_i} f(\mathbf{x}) = df(\mathbf{x}, \mathbf{v}_i), v_{i,j} = \begin{cases}
+1 & \text{ if } i = j, \\
+0 & \text{ otherwise}.
+\end{cases}
+\end{equation}
 
 For notational convienence, we further define a function $Df: \mathbf{R}^n \times \mathbf{R}^n \rightarrow \mathbb{R}^m \times \mathbb{R}^m$ that combines the outputs of function $f$ and its total derivative $df$:
 \begin{equation}
@@ -67,9 +77,322 @@ Here, we provide the list of terminal cases of the basic operations in loma:
 \text{DPow}(x, y, dx, dy) &= \left(x^y, dx \cdot \left(y \cdot x^{y-1}\right) + dy \cdot \left(x^y \log(x)\right)\right) \\
 \text{DExp}(x, dx) &= \left(\exp{x}, \exp{x} \cdot dx\right) \\
 \text{DLog}(x, dx) &= \left(\log{x}, \frac{dx}{x}\right) \\
+\text{Dfloat2int}(x, dx) &= \left(\text{float2int}(x), 0\right)
 \end{aligned}
 \end{equation}
 
+\section{Forward-mode automatic differentiation in loma}
 
+Our goal is this homework is to transform loma functions to their derivatives. In loma, the total derivative of a function is declared as follows:
+\begin{lstlisting}[language=Python]
+def f(x : float) -> float:
+	# ...
+
+df = fwd_diff(f) # df has type _dfloat -> _dfloat
+\end{lstlisting}
+
+Loma will automatically generate the content of \lstinline{df}, so the programmer does not have to implement it themselves.
+
+The transformation will happen in \lstinline{autodiff.py}. \textbf{Your task is to fill in the blanks in the \lstinline{forward_diff} function. Use \lstinline{hw_tests/test.py} to test your implementation. If you pass all tests, you get full points. Each test is weighted equally.}
+
+\subsection{Transformation of types}
+We (well, I) have implemented most of this part for you, but you should still understand this part for your implementation. We define two basic types for differentiation: \lstinline{_dfloat} and \lstinline{_dint}:
+\begin{lstlisting}[language=Python]
+class _dfloat:
+	val : float
+	dval : float
+
+class _dint:
+	val : int
+\end{lstlisting}
+These types represent the primal values and total derivatives of floats and integers (for integers, the differential is always zero). For a general struct with id \lstinline{X}, we synthesize a new differential struct with id \lstinline{_dX}, where we convert the types of all its members to the differential type. For example, for the following types:
+\begin{lstlisting}[language=Python]
+class Foo:
+	x : int
+	y : float
+	z : Bar
+
+class Bar:
+	a : float
+	b : int
+\end{lstlisting}
+We will generate the following new types to represent the primal values and total derivatives:
+\begin{lstlisting}[language=Python]
+class _dFoo:
+	x : _dint
+	y : _dfloat
+	z : _dBar
+
+class _dBar:
+	a : _dfloat
+	b : _dint
+\end{lstlisting}
+
+For a function definition, we transform all argument types and return type to their \lstinline{_d} counterparts. For example, for the following function \lstinline{f}:
+\begin{lstlisting}[language=Python]
+def f(x : float, y : Foo) -> Bar:
+	# ...
+
+df = fwd_diff(f)
+\end{lstlisting}
+\lstinline{df} would have the type:
+\begin{lstlisting}[language=Python]
+def df(x : _dfloat, y : _dFoo) -> _dBar:
+	# ...
+\end{lstlisting}
+
+Finally, loma introduces a type modifier \lstinline{Diff[]} that allows one to specify the \lstinline{_d} counterpart of a type. For example, \lstinline{Diff[float]} resolves to the type \lstinline{_dfloat}, and \lstinline{Diff[Foo]} resolves to the type \lstinline{_dFoo}. 
+
+We have implemented these transformations except for the function definition part in \lstinline{resolve_diff_types()} in \lstinline{autodiff.py}.
+
+\subsection{Transformation of statements and expressions}
+This is the main thing you will need to figure out for this homework. We will use an \lstinline{IRMutator} to visit a \lstinline{FunctionDef} node that represents the primal function, and transform it to the derivative function. I recommend you to try to pass the tests one-by-one and incrementally build up your implementation. Here, we briefly describe each test and what you need to implement to pass the tests.
+
+\paragraph{test_identity} The test asks you to transform an identity function.
+\begin{lstlisting}[language=Python]
+def identity(x : In[float]) -> float:
+    return x
+
+d_identity = fwd_diff(identity)
+\end{lstlisting}
+\lstinline{d_identity} should be something like:
+\begin{lstlisting}[language=Python]
+def d_identity(x : In[_dfloat]) -> _dfloat:
+	_ret : _dfloat
+	_ret.val = x.val
+	_ret.dval = x.dval
+	return _ret
+\end{lstlisting}
+You will need to implement \lstinline{mutate_function_def}, \lstinline{mutate_return}, and \lstinline{mutate_var} for the transformation. You may find the \lstinline{type_to_diff_type} useful for transforming the function signatures. I also find it useful to use the \lstinline{PrimalMutator} to convert access to \lstinline{x} to \lstinline{x.val} (you will need to implement the primal mutator yourself).
+
+\paragraph{test_constant} This time, you are asked to transform a constant function.
+\begin{lstlisting}[language=Python]
+def constant(x : In[float]) -> float:
+    return 2.0
+
+d_constant = fwd_diff(constant)
+\end{lstlisting}
+\lstinline{d_constant} should be something like:
+\begin{lstlisting}[language=Python]
+def d_constant(x : In[_dfloat]) -> _dfloat:
+	_ret : _dfloat
+	_ret.val = 2.0
+	_ret.dval = 0.0
+	return _ret
+\end{lstlisting}
+You will need to implement \lstinline{mutate_const_float} to pass this test.
+
+\paragraph{test_binary_ops} This test asks you to implement the derivatives of some binary operations:
+\begin{lstlisting}[language=Python]
+def plus(x : In[float], y : In[float]) -> float:
+    return x + y
+
+def subtract(x : In[float], y : In[float]) -> float:
+    return x - y
+
+def multiply(x : In[float], y : In[float]) -> float:
+    return x * y
+
+def divide(x : In[float], y : In[float]) -> float:
+    return x / y
+
+d_plus = fwd_diff(plus)
+d_subtract = fwd_diff(subtract)
+d_multiply = fwd_diff(multiply)
+d_divide = fwd_diff(divide)
+\end{lstlisting}
+To pass this test, implement \lstinline{mutate_add}, \lstinline{mutate_sub}, \lstinline{mutate_mul} and \lstinline{mutate_div}. From here, the \lstinline{PrimalMutator} will become more useful. You will need it to convert access to \lstinline{x} and \lstinline{y} to \lstinline{x.val} and \lstinline{y.val}.
+
+\paragraph{test_declare} Now we will start to have variable declaration:
+\begin{lstlisting}[language=Python]
+def declare(x : In[float], y : In[float]) -> float:
+    z0 : float = x + y
+    z1 : float = z0 + 5.0
+    z2 : float = z1 * z0
+    return z2
+
+d_declare = fwd_diff(declare)
+\end{lstlisting}
+You'll need to implement \lstinline{mutate_declare} to pass this test.
+
+\paragraph{test_assign and test_side_effect} Next, we test variable assignment.
+\begin{lstlisting}[language=Python]
+def assign(x : In[float], y : In[float]) -> float:
+    z : float
+    z = x + y
+    return z
+
+d_assign = fwd_diff(assign)
+\end{lstlisting}
+
+\begin{lstlisting}[language=Python]
+def side_effect(x : In[float], y : In[float]) -> float:
+    z : float
+    z = x + y
+    z = 0.0
+    z = x * y
+    return z
+
+d_side_effect = fwd_diff(side_effect)
+\end{lstlisting}
+
+You'll need to implement \lstinline{mutate_assign} to pass these tests.
+
+\paragraph{test_call} Next, we test intrinsic function calls (you don't need to consider calls to other loma functions yet).
+\begin{lstlisting}[language=Python]
+def call(x : In[float]) -> float:
+    z0 : float = sin(x)
+    z1 : float = cos(z0) + 1.0
+    z2 : float = sqrt(z1)
+    z3 : float = pow(z2, z1)
+    z4 : float = exp(z3)
+    z5 : float = log(z3 + z4)
+    return z5
+
+d_call = fwd_diff(call)
+\end{lstlisting}
+You'll need to implement \lstinline{mutate_call} to pass this test.
+
+\paragraph{test_int_input and test_int_input} Next, we test the handling of integers.
+\begin{lstlisting}[language=Python]
+def int_input(x : In[float], y : In[int]) -> float:
+    z : int = 5
+    return z * x + y - 1
+
+d_int_input = fwd_diff(int_input)
+\end{lstlisting}
+\begin{lstlisting}[language=Python]
+def int_output(x : In[float], y : In[int]) -> int:
+    z : int = 5
+    return z * x + y - 1
+
+d_int_output = fwd_diff(int_output)
+\end{lstlisting}
+You'll need to go back to your previous code, and make sure that you handle integers correctly. In particular, \lstinline{_dint} does not have a \lstinline{dval} member, so you need to handle this.
+
+\paragraph{test_array_output, test_array_input, test_int_array_input, test_array_input_indexing, test_array_output_indexing, multiple_outputs} Next, we test the handling of arrays.
+\begin{lstlisting}[language=Python]
+def array_output(x : In[float], y : Out[Array[float]]):
+    y[0] = x * x
+    y[1] = x * x * x
+
+d_array_output = fwd_diff(array_output)
+\end{lstlisting}
+\begin{lstlisting}[language=Python]
+def array_input(x : In[Array[float]]) -> float:
+    return x[0] + x[1]
+
+d_array_input = fwd_diff(array_input)
+\end{lstlisting}
+\begin{lstlisting}[language=Python]
+def int_array_input(x : In[Array[float]], y : In[Array[int]]) -> float:
+    return x[0] + x[1] + y[0]
+
+d_int_array_input = fwd_diff(int_array_input)
+\end{lstlisting}
+\begin{lstlisting}[language=Python]
+def array_input_indexing(x : In[Array[float]], i : In[int], j : In[float]) -> float:
+    return x[i] + x[float2int(j)] + x[2 * i] + x[2 * float2int(j)]
+
+d_array_input_indexing = fwd_diff(array_input_indexing)
+\end{lstlisting}
+\begin{lstlisting}[language=Python]
+def array_output_indexing(x : In[float], i : In[int], j : In[float], y : Out[Array[float]]):
+    y[i] = x
+    y[float2int(j)] = 2 * x
+    y[2 * i] = 3 * x
+    y[2 * float2int(j)] = 4 * x
+
+d_array_output_indexing = fwd_diff(array_output_indexing)
+\end{lstlisting}
+\begin{lstlisting}[language=Python]
+def multiple_outputs(x : In[float], y : Out[Array[float]], z : Out[Array[float]]):
+    y[0] = x * x
+    y[1] = x * x * x
+    z[0] = y[0] * y[1]
+
+d_multiple_outputs = fwd_diff(multiple_outputs)
+\end{lstlisting}
+You'll need to implement \lstinline{mutate_array}, and go back to your previous code to make sure you handle array types properly. You also need to handle the \lstinline{float2int} function call.
+
+\paragraph{test_struct_input, test_nested_struct_input, test_struct_output, test_nested_struct_output, test_array_in_struct, test_struct_in_array} Next, we test the differentiation with Structs.
+\begin{lstlisting}[language=Python]
+class Foo:
+    x : float
+    y : int
+
+def struct_input(foo : In[Foo]) -> float:
+    z : int = 5
+    return z * foo.x + foo.y - 1
+
+d_struct_input = fwd_diff(struct_input)
+\end{lstlisting}
+\begin{lstlisting}[language=Python]
+class Foo:
+    x : float
+    y : Bar
+
+class Bar:
+    z : int
+    w : float
+
+def nested_struct_input(foo : In[Foo]) -> float:
+    b : Bar
+    b.z = 5
+    b.w = 3
+    return (foo.x + foo.y.z + foo.y.w + b.z) * b.w
+
+d_nested_struct_input = fwd_diff(nested_struct_input)
+\end{lstlisting}
+\begin{lstlisting}[language=Python]
+class Foo:
+    a : float
+    b : int
+
+def struct_output(x : In[float], y : In[int]) -> Foo:
+    foo : Foo
+    foo.a = x + y * x
+    foo.b = y - x
+    return foo
+
+d_struct_output = fwd_diff(struct_output)
+\end{lstlisting}
+\begin{lstlisting}[language=Python]
+class Foo:
+    int_arr : Array[int]
+    float_arr : Array[float]
+
+def array_in_struct(f : In[Foo]) -> float:
+    return f.int_arr[0] + f.float_arr[0]
+
+d_array_in_struct = fwd_diff(array_in_struct)
+\end{lstlisting}
+\begin{lstlisting}[language=Python]
+class Foo:
+    x : int
+    y : float
+
+def struct_in_array(in_f : In[Array[Foo]], out_f : Out[Array[Foo]]):
+    out_f[0].x = in_f[0].x * in_f[0].y
+    out_f[0].y = in_f[0].x + in_f[0].y
+
+d_struct_in_array = fwd_diff(struct_in_array)
+\end{lstlisting}
+You will need to implement \lstinline{mutate_struct_access}, and revisit other part of your code to make sure you have handled Struct correctly.
+
+\paragraph{test_poly} The last test shows how differentiated code can be used in loma code:
+\begin{lstlisting}[language=Python]
+def poly(x : In[float]) -> float:
+    return 3 * x * x * x * x + 5 * x * x + 10
+
+d_poly = fwd_diff(poly)
+
+def d_poly_dx(x : In[float]) -> float:
+    d_x : Diff[float]
+    d_x.val = x
+    d_x.dval = 1.0
+    return d_poly(d_x).dval
+\end{lstlisting}
+You probably don't need to implement anything extra to pass this test.
 
 \end{document}
