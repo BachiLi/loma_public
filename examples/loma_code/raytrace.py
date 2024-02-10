@@ -122,11 +122,6 @@ def raytrace(w : In[int], h : In[int], image : Out[Array[Vec3]]):
             ray : Ray
             ray.org = camera_center
             ray.dir = normalize(sub(pixel_center, camera_center))
-
-            # rgb : Vec3
-            # rgb.x = j / int2float(w)
-            # rgb.y = i / int2float(h)
-            # rgb.z = 0
             image[w * y + x] = ray_color(ray)
 
             x = x + 1
