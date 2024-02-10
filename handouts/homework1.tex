@@ -38,7 +38,7 @@ Then,
 \begin{equation}
 	Df(x, dx) = Dg(Dh(x, dx)).
 \end{equation}
-(Try proving this using the definition ot total derivative!)
+(Try proving this using the definition of total derivative!)
 
 Therefore, if we have a straight-line code of a function \lstinline{f}
 \begin{lstlisting}[language=Python]
@@ -47,15 +47,15 @@ def f(x : in[float], y : in[float]) -> float:
 	z1 : float = g(z0)
 	return z1
 \end{lstlisting}
-We can automatically synthesize its \lstinline{Df} by 1) replacing all datatypes \lstinline{float} with a new struct \lstinline{DFloat} that stores both the primal value and the total derivative, and 2) replacing all function calls with their own ``Df'':
+We can automatically synthesize its \lstinline{Df} by 1) replacing all datatypes \lstinline{float} with a new struct \lstinline{_dfloat} that stores both the primal value and the total derivative, and 2) replacing all function calls with their own ``Df'':
 \begin{lstlisting}[language=Python]
-class DFloat:
+class _dfloat:
 	val : float
 	dval : float
 
-def Df(x : in[DFloat], y : in[DFloat]) -> DFloat:
-	z0 : DFloat = Dh(x, y)
-	z1 : DFloat = Dg(z0)
+def Df(x : in[_dfloat], y : in[_dfloat]) -> _dfloat:
+	z0 : _dfloat = Dh(x, y)
+	z1 : _dfloat = Dg(z0)
 	return z1
 \end{lstlisting}
 We can recursively perform this transformation to function \lstinline{h} and \lstinline{g}, then we are done!
