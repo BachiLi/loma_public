@@ -279,25 +279,31 @@ def visit_expr(node) -> loma_ir.expr:
                 case _:
                     assert False, f'Unknown BinOp {type(node.op).__name__}'
         case ast.Subscript():
-            return loma_ir.ArrayAccess(visit_expr(node.value), visit_expr(node.slice))
+            return loma_ir.ArrayAccess(visit_expr(node.value),
+                                       visit_expr(node.slice),
+                                       lineno = node.lineno)
         case ast.Attribute():
-            return loma_ir.StructAccess(visit_expr(node.value), node.attr)
+            return loma_ir.StructAccess(visit_expr(node.value),
+                                        node.attr,
+                                        lineno = node.lineno)
         case ast.Compare():
             assert len(node.ops) == 1
             assert len(node.comparators) == 1
             op = ast_cmp_op_convert(node.ops[0])
             left = visit_expr(node.left)
             right = visit_expr(node.comparators[0])
-            return loma_ir.BinaryOp(op, left, right)
+            return loma_ir.BinaryOp(op, left, right, lineno = node.lineno)
         case ast.BoolOp():
             op = ast_cmp_op_convert(node.op)
             assert len(node.values) == 2
             left = visit_expr(node.values[0])
             right = visit_expr(node.values[1])
-            return loma_ir.BinaryOp(op, left, right)
+            return loma_ir.BinaryOp(op, left, right, lineno = node.lineno)
         case ast.Call():
             assert type(node.func) == ast.Name
-            return loma_ir.Call(node.func.id, [visit_expr(arg) for arg in node.args])
+            return loma_ir.Call(node.func.id,
+                                [visit_expr(arg) for arg in node.args],
+                                lineno = node.lineno)
         case None:
             return None
         case _:

@@ -186,6 +186,11 @@ class TypeInferencer(irmutator.IRMutator):
                 break
         if member_type is None:
             raise error.StructMemberNotFound(s.lineno)
+        if isinstance(member_type, loma_ir.Struct):
+            if len(member_type.members) == 0:
+                # fill in struct information
+                member_type = self.structs[member_type.id]
+
         return loma_ir.StructAccess(\
             struct,
             s.member_id,
