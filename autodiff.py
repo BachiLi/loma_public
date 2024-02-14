@@ -144,20 +144,6 @@ def forward_diff(diff_func_id : str,
     # HW1 happens here. Modify the following IR mutators to perform
     # forward differentiation.
 
-    # Turn all primal access to a primitive type (int or float) into '.val'
-    class PrimalMutator(irmutator.IRMutator):
-        def mutate_var(self, node):
-            # HW1: TODO
-            return super().mutate_var(node)
-
-        def mutate_array_access(self, node):
-            # HW1: TODO
-            return super().mutate_array_access(node)
-
-        def mutate_struct_access(self, node):
-            # HW1: TODO
-            return super().mutate_struct_access(node)
-
     # Apply the differentiation. Use PrimalMutator when appropriate.
     class FwdDiffMutator(irmutator.IRMutator):
         def mutate_function_def(self, node):

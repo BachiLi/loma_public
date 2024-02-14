@@ -163,7 +163,7 @@ def d_identity(x : _dfloat) -> _dfloat:
 	_ret.dval = x.dval
 	return _ret
 \end{lstlisting}
-You will need to implement \lstinline{mutate_function_def}, \lstinline{mutate_return}, and \lstinline{mutate_var} for the transformation. You may find the \lstinline{type_to_diff_type} useful for transforming the function signatures. I also find it useful to use the \lstinline{PrimalMutator} to convert access to \lstinline{x} to \lstinline{x.val} (you will need to implement the primal mutator yourself).
+You will need to implement \lstinline{mutate_function_def}, \lstinline{mutate_return}, and \lstinline{mutate_var} for the transformation. You may find the \lstinline{type_to_diff_type} useful for transforming the function signatures. 
 
 \paragraph{test_constant} This time, you are asked to transform a constant function.
 \begin{lstlisting}[language=Python]
@@ -201,7 +201,7 @@ d_subtract = fwd_diff(subtract)
 d_multiply = fwd_diff(multiply)
 d_divide = fwd_diff(divide)
 \end{lstlisting}
-To pass this test, implement \lstinline{mutate_add}, \lstinline{mutate_sub}, \lstinline{mutate_mul} and \lstinline{mutate_div}. From here, the \lstinline{PrimalMutator} will become more useful. You will need it to convert access to \lstinline{x} and \lstinline{y} to \lstinline{x.val} and \lstinline{y.val}.
+To pass this test, implement \lstinline{mutate_add}, \lstinline{mutate_sub}, \lstinline{mutate_mul} and \lstinline{mutate_div}.
 
 \paragraph{test_declare} Now we will start to have variable declaration:
 \begin{lstlisting}[language=Python]
@@ -378,7 +378,7 @@ def struct_in_array(in_f : Array[Foo], out_f : Array[Foo]):
 
 d_struct_in_array = fwd_diff(struct_in_array)
 \end{lstlisting}
-You will need to implement \lstinline{mutate_struct_access}, and revisit other part of your code to make sure you have handled Struct correctly.
+You will need to implement \lstinline{mutate_struct_access}, and revisit other part of your code to make sure you have handled Struct correctly. When considering struct access as a left hand side in \lstinline{mutate_assign}, you can use the type of the right hand side (\lstinline{node.val.t}) to infer the type of the access.
 
 \paragraph{test_poly} The last test shows how differentiated code can be used in loma code:
 \begin{lstlisting}[language=Python]
