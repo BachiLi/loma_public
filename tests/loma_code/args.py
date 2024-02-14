@@ -1,3 +1,3 @@
-def args(x : In[float], y : In[int]) -> int:
+def args(x : float, y : int) -> int:
     z : int = x
     return z + y

@@ -1,4 +1,4 @@
-def side_effect(x : In[float], y : In[float]) -> float:
+def side_effect(x : float, y : float) -> float:
     z : float
     z = x + y
     z = 0.0

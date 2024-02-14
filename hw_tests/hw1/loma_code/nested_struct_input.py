@@ -6,7 +6,7 @@ class Bar:
     z : int
     w : float
 
-def nested_struct_input(foo : In[Foo]) -> float:
+def nested_struct_input(foo : Foo) -> float:
     b : Bar
     b.z = 5
     b.w = 3

@@ -6,7 +6,7 @@ class Bar:
     z : int
     w : float
 
-def nested_struct_output(a : In[float], bar : Out[Array[Bar]]) -> Foo:
+def nested_struct_output(a : float, bar : Array[Bar]) -> Foo:
     f : Foo
     f.x = 2 * a
     f.y.z = 5

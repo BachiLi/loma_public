@@ -1,13 +1,13 @@
-def plus(x : In[float], y : In[float]) -> float:
+def plus(x : float, y : float) -> float:
     return x + y
 
-def subtract(x : In[float], y : In[float]) -> float:
+def subtract(x : float, y : float) -> float:
     return x - y
 
-def multiply(x : In[float], y : In[float]) -> float:
+def multiply(x : float, y : float) -> float:
     return x * y
 
-def divide(x : In[float], y : In[float]) -> float:
+def divide(x : float, y : float) -> float:
     return x / y
 
 d_plus = fwd_diff(plus)

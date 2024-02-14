@@ -1,4 +1,4 @@
-def array_output(x : In[float], y : Out[Array[float]]):
+def array_output(x : float, y : Array[float]):
     y[0] = x * x
     y[1] = x * x * x
 

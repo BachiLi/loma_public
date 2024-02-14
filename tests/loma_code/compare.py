@@ -1,5 +1,5 @@
-def compare(x : In[int], y : In[int],
-            out : Out[Array[int]]):
+def compare(x : int, y : int,
+            out : Array[int]):
     out[0] = x < y
     out[1] = x <= y
     out[2] = x > y

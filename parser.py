@@ -42,25 +42,6 @@ def annotation_to_type(node) -> loma_ir.type:
         case _:
             assert False
 
-def annotation_to_inout(node) -> loma_ir.inout:
-    """ Determine whether the function argument
-        is input or output.
-
-        In[float] -> input
-        Out[int] -> output
-    """
-
-    # TODO: error messages
-    assert type(node) == ast.Subscript
-    assert type(node.value) == ast.Name
-    if node.value.id == 'In':
-        return loma_ir.In()
-    elif node.value.id == 'Out':
-        return loma_ir.Out()
-    else:
-        # TODO: error message
-        assert False
-
 def ast_cmp_op_convert(node) -> loma_ir.bin_op:
     """ Given a Python AST node representing
         a comparison operator,
@@ -117,8 +98,7 @@ def visit_FunctionDef(node) -> loma_ir.FunctionDef:
     assert node_args.vararg is None
     assert node_args.kwarg is None
     args = [loma_ir.Arg(arg.arg,
-                        annotation_to_type(arg.annotation),
-                        annotation_to_inout(arg.annotation)) for arg in node_args.args]
+                        annotation_to_type(arg.annotation)) for arg in node_args.args]
     body = [visit_stmt(b) for b in node.body]
     ret_type = None
     if node.returns:

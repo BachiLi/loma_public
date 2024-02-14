@@ -1,4 +1,4 @@
-def int_output(x : In[float], y : In[int]) -> int:
+def int_output(x : float, y : int) -> int:
     z : int = 5
     return z * x + y - 1
 

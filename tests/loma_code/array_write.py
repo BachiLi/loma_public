@@ -1,2 +1,2 @@
-def array_write(x : Out[Array[float]]):
+def array_write(x : Array[float]):
     x[0] = 2.0

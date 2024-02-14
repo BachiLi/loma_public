@@ -1,4 +1,4 @@
-def assign(x : In[float], y : In[float]) -> float:
+def assign(x : float, y : float) -> float:
     z : float
     z = x + y
     return z

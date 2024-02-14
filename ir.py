@@ -36,7 +36,7 @@ def generate_asdl_file():
           | RefArray  ( ref array, expr index )
           | RefStruct ( ref struct, string member )
 
-      arg  = Arg ( string id, type t, inout i )
+      arg  = Arg ( string id, type t )
 
       type = Int    ( )
            | Float  ( )
@@ -57,8 +57,6 @@ def generate_asdl_file():
              | Equal()
              | And()
              | Or()
-
-      inout = In() | Out()
     }
     """,
     header= '',
