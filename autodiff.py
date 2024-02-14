@@ -144,7 +144,7 @@ def forward_diff(diff_func_id : str,
     # HW1 happens here. Modify the following IR mutators to perform
     # forward differentiation.
 
-    # Apply the differentiation. Use PrimalMutator when appropriate.
+    # Apply the differentiation.
     class FwdDiffMutator(irmutator.IRMutator):
         def mutate_function_def(self, node):
             # HW1: TODO
