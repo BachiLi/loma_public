@@ -216,6 +216,42 @@ def test_struct_init_zero():
                                   output_filename = '_code/struct_init_zero.so')
     assert lib.struct_init_zero() == 0
 
+def test_pass_by_ref_lhs():
+    with open('loma_code/pass_by_ref_lhs.py') as f:
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/pass_by_ref_lhs.so')
+    x = ctypes.c_int32(100)
+    lib.pass_by_ref_lhs(ctypes.byref(x))
+    assert x.value == 5
+
+def test_pass_by_ref_rhs():
+    with open('loma_code/pass_by_ref_rhs.py') as f:
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/pass_by_ref_rhs.so')
+    x = ctypes.c_int32(100)
+    assert lib.pass_by_ref_rhs(ctypes.byref(x)) == 100
+
+def test_pass_by_ref_lhs_struct():
+    with open('loma_code/pass_by_ref_lhs_struct.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/pass_by_ref_lhs_struct.so')
+    Foo = structs['Foo']
+    f = Foo(x=0, y=0.0)
+    lib.pass_by_ref_lhs_struct(ctypes.byref(f))
+    assert f.x == 5
+
+def test_pass_by_ref_rhs_struct():
+    with open('loma_code/pass_by_ref_rhs_struct.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/pass_by_ref_rhs_struct.so')
+    Foo = structs['Foo']
+    f = Foo(x=5, y=6.0)
+    assert lib.pass_by_ref_rhs_struct(ctypes.byref(f)) == 5
+
 def test_parallel_add():
     with open('loma_code/parallel_add.py') as f:
         structs, lib = compiler.compile(f.read(),
@@ -417,6 +453,10 @@ if __name__ == '__main__':
     test_struct_in_array()
     test_struct_in_array_in_struct()
     test_struct_init_zero()
+    test_pass_by_ref_lhs()
+    test_pass_by_ref_rhs()
+    test_pass_by_ref_lhs_struct()
+    test_pass_by_ref_rhs_struct()
     test_parallel_add()
     test_simd_local_func()
 

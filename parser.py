@@ -21,7 +21,10 @@ def annotation_to_type(node) -> loma_ir.type:
                 return loma_ir.Struct(node.id, [])
         case ast.Subscript():
             assert isinstance(node.value, ast.Name)
-            if node.value.id == 'Array':
+            if node.value.id == 'Ref':
+                # Ignore input/output qualifiers
+                return annotation_to_type(node.slice)
+            elif node.value.id == 'Array':
                 array_type = node.slice
                 static_size = None
                 if isinstance(array_type, ast.Tuple):
@@ -38,6 +41,13 @@ def annotation_to_type(node) -> loma_ir.type:
                 assert False
         case _:
             assert False
+
+def is_byref(node) -> bool:
+    if type(node) == ast.Subscript:
+        if type(node.value) == ast.Name:
+            if node.value.id == 'Ref':
+                return True
+    return False
 
 def ast_cmp_op_convert(node) -> loma_ir.bin_op:
     """ Given a Python AST node representing
@@ -95,7 +105,8 @@ def visit_FunctionDef(node) -> loma_ir.FunctionDef:
     assert node_args.vararg is None
     assert node_args.kwarg is None
     args = [loma_ir.Arg(arg.arg,
-                        annotation_to_type(arg.annotation)) for arg in node_args.args]
+                        annotation_to_type(arg.annotation),
+                        is_byref(arg.annotation)) for arg in node_args.args]
     body = [visit_stmt(b) for b in node.body]
     ret_type = None
     if node.returns:

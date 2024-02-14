@@ -71,7 +71,7 @@ class TypeInferencer(irmutator.IRMutator):
         for i, arg in enumerate(node.args):
             t = fill_in_struct_info(arg.t, self.structs)
             self.var_types[arg.id] = t
-            self.current_func_args[i] = loma_ir.Arg(arg.id, t)
+            self.current_func_args[i] = loma_ir.Arg(arg.id, t, arg.is_byref)
         new_args = self.current_func_args
         
         new_ret_type = node.ret_type

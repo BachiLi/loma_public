@@ -18,13 +18,18 @@ import numpy as np
 import cl_utils
 import pathlib
 
-def loma_to_ctypes_type(t : loma_ir.type,
+def loma_to_ctypes_type(t : loma_ir.type | loma_ir.arg,
                         ctypes_structs : dict[str, ctypes.Structure]) -> ctypes.Structure:
     """ Given a loma type, maps to the corresponding ctypes type by
         looking up ctypes_structs
     """
 
     match t:
+        case loma_ir.Arg():
+            if isinstance(t.t, loma_ir.Array):
+                return type_to_string(t.t)
+            else:
+                return ctypes.POINTER(loma_to_ctypes_type(t.t, ctypes_structs))
         case loma_ir.Int():
             return ctypes.c_int
         case loma_ir.Float():
@@ -166,7 +171,7 @@ def compile(loma_code : str,
         for f in funcs.values():
             c_func = getattr(lib, f.id)
             c_func.argtypes = \
-                [loma_to_ctypes_type(arg.t, ctypes_structs) for arg in f.args]
+                [loma_to_ctypes_type(arg, ctypes_structs) for arg in f.args]
             c_func.restype = loma_to_ctypes_type(f.ret_type, ctypes_structs)
 
     return ctypes_structs, lib

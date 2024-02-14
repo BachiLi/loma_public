@@ -5,12 +5,17 @@ import _asdl.loma as loma_ir
 import irvisitor
 import compiler
 
-def type_to_string(node : loma_ir.type) -> str:
+def type_to_string(node : loma_ir.type | loma_ir.arg) -> str:
     """ Given a loma type, return a string that represents
         the type in C.
     """
 
     match node:
+        case loma_ir.Arg():
+            if isinstance(node.t, loma_ir.Array):
+                return type_to_string(node.t)
+            else:
+                return type_to_string(node.t) + ('*' if node.is_byref else '')
         case loma_ir.Int():
             return 'int'
         case loma_ir.Float():
@@ -40,12 +45,15 @@ class CCodegenVisitor(irvisitor.IRVisitor):
         for i, arg in enumerate(node.args):
             if i > 0:
                 self.code += ', '
-            self.code += f'{type_to_string(arg.t)} {arg.id}'
+            self.code += f'{type_to_string(arg)} {arg.id}'
         if node.is_simd:
             if len(node.args) > 0:
                 self.code += ', '
             self.code += 'int __total_work'
         self.code += ') {\n'
+
+        self.byref_args = set([arg.id for arg in node.args if arg.is_byref])
+
         self.tab_count += 1
         if node.is_simd:
             self.emit_tabs()
@@ -137,7 +145,10 @@ class CCodegenVisitor(irvisitor.IRVisitor):
     def visit_expr(self, node):
         match node:
             case loma_ir.Var():
-                return node.id
+                if node.id in self.byref_args:
+                    return '(*' + node.id + ')'
+                else:
+                    return node.id
             case loma_ir.ArrayAccess():
                 return f'({self.visit_expr(node.array)})[{self.visit_expr(node.index)}]'
             case loma_ir.StructAccess():
@@ -206,7 +217,10 @@ class CCodegenVisitor(irvisitor.IRVisitor):
     def visit_ref(self, node):
         match node:
             case loma_ir.RefName():
-                return node.id
+                if node.id in self.byref_args:
+                    return '(*' + node.id + ')'
+                else:
+                    return node.id
             case loma_ir.RefArray():
                 return self.visit_ref(node.array) + f'[{self.visit_expr(node.index)}]'
             case loma_ir.RefStruct():
@@ -247,7 +261,7 @@ def codegen_c(structs : dict[str, loma_ir.Struct],
         for i, arg in enumerate(f.args):
             if i > 0:
                 code += ', '
-            code += f'{type_to_string(arg.t)} {arg.id}'
+            code += f'{type_to_string(arg)} {arg.id}'
         if f.is_simd:
             if len(f.args) > 0:
                 code += ', '

@@ -14,14 +14,14 @@ class OpenCLCodegenVisitor(codegen_c.CCodegenVisitor):
             for i, arg in enumerate(node.args):
                 if i > 0:
                     self.code += ', '
-                self.code += f'__global {codegen_c.type_to_string(arg.t)} {arg.id}'
+                self.code += f'__global {codegen_c.type_to_string(arg)} {arg.id}'
             self.code += ') {\n'
         else:
             self.code += f'{codegen_c.type_to_string(node.ret_type)} {node.id}('
             for i, arg in enumerate(node.args):
                 if i > 0:
                     self.code += ', '
-                self.code += f'{codegen_c.type_to_string(arg.t)} {arg.id}'
+                self.code += f'{codegen_c.type_to_string(arg)} {arg.id}'
             self.code += ') {\n'
 
         self.tab_count += 1
@@ -76,7 +76,7 @@ def codegen_opencl(structs : dict[str, loma_ir.Struct],
                 code += ', '
             if f.is_simd:
                 code += '__global '
-            code += f'{codegen_c.type_to_string(arg.t)}'
+            code += f'{codegen_c.type_to_string(arg)}'
             code += f' {arg.id}'
         code += ');\n'
 

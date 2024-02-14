@@ -15,7 +15,7 @@ class ISPCCodegenVisitor(codegen_c.CCodegenVisitor):
             for i, arg in enumerate(node.args):
                 if i > 0:
                     self.code += ', '
-                self.code += f'uniform {codegen_c.type_to_string(arg.t)} uniform {arg.id}'
+                self.code += f'uniform {codegen_c.type_to_string(arg)} uniform {arg.id}'
             if len(node.args) > 0:
                 self.code += ', '
             self.code += 'uniform int total_work'
@@ -47,7 +47,7 @@ class ISPCCodegenVisitor(codegen_c.CCodegenVisitor):
             for i, arg in enumerate(node.args):
                 if i > 0:
                     self.code += ', '
-                self.code += f'uniform {codegen_c.type_to_string(arg.t)} uniform {arg.id}'
+                self.code += f'uniform {codegen_c.type_to_string(arg)} uniform {arg.id}'
             if len(node.args) > 0:
                 self.code += ', '
             self.code += 'uniform int total_work'
@@ -70,7 +70,7 @@ class ISPCCodegenVisitor(codegen_c.CCodegenVisitor):
             for i, arg in enumerate(node.args):
                 if i > 0:
                     self.code += ', '
-                self.code += f'{codegen_c.type_to_string(arg.t)} {arg.id}'
+                self.code += f'{codegen_c.type_to_string(arg)} {arg.id}'
             self.code += ') {\n'
             self.tab_count += 1
             for stmt in node.body:
@@ -110,7 +110,7 @@ def codegen_ispc(structs : dict[str, loma_ir.Struct],
                 code += ', '
             if f.is_simd:
                 code += 'uniform '
-            code += f'{codegen_c.type_to_string(arg.t)}'
+            code += f'{codegen_c.type_to_string(arg)}'
             if f.is_simd:
                 code += ' uniform'
             code += f' {arg.id}'

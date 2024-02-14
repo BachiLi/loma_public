@@ -36,7 +36,7 @@ def generate_asdl_file():
           | RefArray  ( ref array, expr index )
           | RefStruct ( ref struct, string member )
 
-      arg  = Arg ( string id, type t )
+      arg  = Arg ( string id, type t, bool is_byref )
 
       type = Int    ( )
            | Float  ( )
