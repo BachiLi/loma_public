@@ -15,6 +15,11 @@ The design principles of loma are:
     \item \textbf{Python embedding}. For ease of both scripting of loma programs and compiler development, loma is embedded in Python, and mostly follows Python's syntax. We aim for the syntax's familiarity and want to reuse Python's parser and AST modules (and existing syntax highlighters). Embedding in Python also makes it easy to use loma from a Python host code. Fortunately, loma should be much faster than Python in general since it's a compiled static type language and has GPU backends.
 \end{itemize}
 
+\section{Dependencies and requirements}
+
+Loma requires Python version to be at least 3.10. 
+Use \lstinline{pip install -r requirements.txt} to install the dependent packages.
+
 \section{Hello, loma}
 
 An example loma program looks like this (the file is located in \lstinline{examples/loma_code/sum_array.py}):
