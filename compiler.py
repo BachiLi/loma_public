@@ -27,9 +27,12 @@ def loma_to_ctypes_type(t : loma_ir.type | loma_ir.arg,
     match t:
         case loma_ir.Arg():
             if isinstance(t.t, loma_ir.Array):
-                return type_to_string(t.t)
+                return loma_to_ctypes_type(t.t, ctypes_structs)
             else:
-                return ctypes.POINTER(loma_to_ctypes_type(t.t, ctypes_structs))
+                if t.is_byref:
+                    return ctypes.POINTER(loma_to_ctypes_type(t.t, ctypes_structs))
+                else:
+                    return loma_to_ctypes_type(t.t, ctypes_structs)
         case loma_ir.Int():
             return ctypes.c_int
         case loma_ir.Float():

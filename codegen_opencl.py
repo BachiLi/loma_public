@@ -24,6 +24,8 @@ class OpenCLCodegenVisitor(codegen_c.CCodegenVisitor):
                 self.code += f'{codegen_c.type_to_string(arg)} {arg.id}'
             self.code += ') {\n'
 
+        self.byref_args = set([arg.id for arg in node.args if arg.is_byref])
+
         self.tab_count += 1
         for stmt in node.body:
             self.visit_stmt(stmt)

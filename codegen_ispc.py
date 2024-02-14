@@ -23,6 +23,8 @@ class ISPCCodegenVisitor(codegen_c.CCodegenVisitor):
             self.code += ', uniform int task_index'
             self.code += ') {\n'
 
+            self.byref_args = set([arg.id for arg in node.args if arg.is_byref])
+
             self.tab_count += 1
             self.emit_tabs()
             self.code += 'uniform int id_offset = work_per_task * task_index;\n'
@@ -73,6 +75,9 @@ class ISPCCodegenVisitor(codegen_c.CCodegenVisitor):
                 self.code += f'{codegen_c.type_to_string(arg)} {arg.id}'
             self.code += ') {\n'
             self.tab_count += 1
+
+            self.byref_args = set([arg.id for arg in node.args if arg.is_byref])
+            
             for stmt in node.body:
                 self.visit_stmt(stmt)
             self.tab_count -= 1
