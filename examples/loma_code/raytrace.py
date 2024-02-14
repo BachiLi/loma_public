@@ -13,31 +13,31 @@ class Ray:
     org : Vec3
     dir : Vec3
 
-def make_vec3(x : In[float], y : In[float], z : In[float]) -> Vec3:
+def make_vec3(x : float, y : float, z : float) -> Vec3:
     ret : Vec3
     ret.x = x
     ret.y = y
     ret.z = z
     return ret
 
-def add(a : In[Vec3], b : In[Vec3]) -> Vec3:
+def add(a : Vec3, b : Vec3) -> Vec3:
     return make_vec3(a.x + b.x, a.y + b.y, a.z + b.z)
 
-def sub(a : In[Vec3], b : In[Vec3]) -> Vec3:
+def sub(a : Vec3, b : Vec3) -> Vec3:
     return make_vec3(a.x - b.x, a.y - b.y, a.z - b.z)
 
-def mul(a : In[float], b : In[Vec3]) -> Vec3:
+def mul(a : float, b : Vec3) -> Vec3:
     return make_vec3(a * b.x, a * b.y, a * b.z)
 
-def dot(a : In[Vec3], b : In[Vec3]) -> float:
+def dot(a : Vec3, b : Vec3) -> float:
     return a.x * b.x + a.y * b.y + a.z * b.z
 
-def normalize(v : In[Vec3]) -> Vec3:
+def normalize(v : Vec3) -> Vec3:
     l : float = sqrt(dot(v, v))
     return make_vec3(v.x / l, v.y / l, v.z / l)
 
 # Returns distance. If distance is zero or negative, the hit misses
-def sphere_isect(sph : In[Sphere], ray : In[Ray]) -> float:
+def sphere_isect(sph : Sphere, ray : Ray) -> float:
     oc : Vec3 = sub(ray.org, sph.center)
     a : float = dot(ray.dir, ray.dir)
     b : float = 2 * dot(oc, ray.dir)
@@ -50,7 +50,7 @@ def sphere_isect(sph : In[Sphere], ray : In[Ray]) -> float:
         ret_dist = (-b - sqrt(discriminant)) / (2 * a)
     return ret_dist
 
-def ray_color(ray : In[Ray]) -> Vec3:
+def ray_color(ray : Ray) -> Vec3:
     sph : Sphere
     sph.center = make_vec3(0, 0, -1)
     sph.radius = 0.5
@@ -67,7 +67,7 @@ def ray_color(ray : In[Ray]) -> Vec3:
         ret_color = add(mul((1 - a), white), mul(a, blue))
     return ret_color
 
-def raytrace(w : In[int], h : In[int], image : Out[Array[Vec3]]):
+def raytrace(w : int, h : int, image : Array[Vec3]):
     # Camera setup
     aspect_ratio : float = int2float(w) / int2float(h)
     focal_length : float = 1.0

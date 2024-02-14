@@ -21,10 +21,7 @@ def annotation_to_type(node) -> loma_ir.type:
                 return loma_ir.Struct(node.id, [])
         case ast.Subscript():
             assert isinstance(node.value, ast.Name)
-            if node.value.id == 'In' or node.value.id == 'Out':
-                # Ignore input/output qualifiers
-                return annotation_to_type(node.slice)
-            elif node.value.id == 'Array':
+            if node.value.id == 'Array':
                 array_type = node.slice
                 static_size = None
                 if isinstance(array_type, ast.Tuple):

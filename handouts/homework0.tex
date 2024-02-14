@@ -25,7 +25,7 @@ Use \lstinline{pip install -r requirements.txt} to install the dependent package
 An example loma program looks like this (the file is located in \lstinline{examples/loma_code/sum_array.py}):
 \begin{lstlisting}[language=python]
 # sum_array.py
-def sum_array(arr : In[Array[float]], arr_size : In[int]) -> float:
+def sum_array(arr : Array[float], arr_size : int) -> float:
     i : int = 0
     s : float = 0.0
     while (i < arr_size, max_iter := 1000):
@@ -104,7 +104,7 @@ The IR of loma in the \href{https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_fo
 \alt 'RefArray' <ref> <expr>
 \alt 'RefStruct' <ref> 
 
-<arg> ::= 'Arg' <string> <type> <inout>
+<arg> ::= 'Arg' <string> <type>
 
 <type> ::= 'Int'
 \alt 'Float'
@@ -125,8 +125,6 @@ The IR of loma in the \href{https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_fo
 \alt 'Equal'
 \alt 'And'
 \alt 'Or'
-
-<inout> ::= 'In' \alt 'Out'
 
 <is_simd> :: 'True' \alt 'False'
 \end{grammar}
@@ -164,7 +162,7 @@ To implement the IR above, we represent it using ASDL (Abstract Syntax Definitio
           | RefArray  ( ref array, expr index )
           | RefStruct ( ref struct, string member )
 
-      arg  = Arg ( string id, type t, inout i )
+      arg  = Arg ( string id, type t )
 
       type = Int    ( )
            | Float  ( )
@@ -186,7 +184,6 @@ To implement the IR above, we represent it using ASDL (Abstract Syntax Definitio
              | And()
              | Or()
 
-      inout = In() | Out()
 \end{lstlisting}
 This IR is defined in \lstinline{ir.py} in the source code.
 
@@ -232,9 +229,9 @@ The meaning of the IR above follows a similar C program. We will explain the sem
 The following \lstinline{FunctionDef} in loma IR
 \begin{lstlisting}
 FunctionDef(id='plus',
-            args=(Arg(id='x', t=Int(), i=In()),
-                  Arg(id='y', t=Int(), i=In()),
-                  Arg(id='z', t=Array(t=Float(), static_size=None), i=Out())),
+            args=(Arg(id='x', t=Int()),
+                  Arg(id='y', t=Int()),
+                  Arg(id='z', t=Array(t=Float(), static_size=None))),
             body=(Return(val=ConstInt(val=0)),),
             is_simd=False,
             ret_type=Int())
@@ -248,9 +245,7 @@ int plus(int x, int y, float* z) {
 
 Each function argument needs to be tagged either as an input (\lstinline{In()}) or an output (\lstinline{Out()}), and its type \lstinline{t} needs to be specified. If a function returns a value, the type of the returned value must also be specified. If a function does not return a value, then it's \lstinline{ret_type} is \lstinline{None}.
 
-A function can take inputs and outputs that are of \lstinline{Array} types. You can have a struct of arrays or array of structs (or structs of arrays of structs). An important assumption we make is that the arrays of function arguments do not have \href{https://en.wikipedia.org/wiki/Aliasing_(computing)}{aliasing} (Fortran compilers make the same assumption and this is why Fortran is sometimes faster than C). We have not implemented a compile time check for this, so the users would have to be extra careful when passing array arguments.
-
-Only \lstinline{Array} types can be marked as \lstinline{Output} (you can make your variables a size 1 array). If an argument is marked as input, we prohibit writing into the variable (i.e., it cannot be on the left hand side of assignment). If an argument is marked as output, we prohibit reading from the variable. These are all restrictions to simplify the implementation of reverse-mode differentiation. \TODO{implement the check}
+A function can take inputs and outputs that are of \lstinline{Array} types. You can have a struct of arrays or array of structs (or structs of arrays of structs). The function arguments are passed by values, except for arrays. When a callee modifies an array element, the caller will observe the changes.
 
 We will explain the \lstinline{is_simd} flag later when we talk about parallelization.
 

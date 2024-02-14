@@ -42,7 +42,7 @@ Then,
 
 Therefore, if we have a straight-line code of a function \lstinline{f}
 \begin{lstlisting}[language=Python]
-def f(x : in[float], y : in[float]) -> float:
+def f(x : float, y : float) -> float:
 	z0 : float = h(x, y)
 	z1 : float = g(z0)
 	return z1
@@ -53,7 +53,7 @@ class _dfloat:
 	val : float
 	dval : float
 
-def Df(x : in[_dfloat], y : in[_dfloat]) -> _dfloat:
+def Df(x : _dfloat, y : _dfloat) -> _dfloat:
 	z0 : _dfloat = Dh(x, y)
 	z1 : _dfloat = Dg(z0)
 	return z1
@@ -150,14 +150,14 @@ This is the main thing you will need to figure out for this homework. We will us
 
 \paragraph{test_identity} The test asks you to transform an identity function.
 \begin{lstlisting}[language=Python]
-def identity(x : In[float]) -> float:
+def identity(x : float) -> float:
     return x
 
 d_identity = fwd_diff(identity)
 \end{lstlisting}
 \lstinline{d_identity} should be something like:
 \begin{lstlisting}[language=Python]
-def d_identity(x : In[_dfloat]) -> _dfloat:
+def d_identity(x : _dfloat) -> _dfloat:
 	_ret : _dfloat
 	_ret.val = x.val
 	_ret.dval = x.dval
@@ -167,14 +167,14 @@ You will need to implement \lstinline{mutate_function_def}, \lstinline{mutate_re
 
 \paragraph{test_constant} This time, you are asked to transform a constant function.
 \begin{lstlisting}[language=Python]
-def constant(x : In[float]) -> float:
+def constant(x : float) -> float:
     return 2.0
 
 d_constant = fwd_diff(constant)
 \end{lstlisting}
 \lstinline{d_constant} should be something like:
 \begin{lstlisting}[language=Python]
-def d_constant(x : In[_dfloat]) -> _dfloat:
+def d_constant(x : _dfloat) -> _dfloat:
 	_ret : _dfloat
 	_ret.val = 2.0
 	_ret.dval = 0.0
@@ -184,16 +184,16 @@ You will need to implement \lstinline{mutate_const_float} to pass this test.
 
 \paragraph{test_binary_ops} This test asks you to implement the derivatives of some binary operations:
 \begin{lstlisting}[language=Python]
-def plus(x : In[float], y : In[float]) -> float:
+def plus(x : float, y : float) -> float:
     return x + y
 
-def subtract(x : In[float], y : In[float]) -> float:
+def subtract(x : float, y : float) -> float:
     return x - y
 
-def multiply(x : In[float], y : In[float]) -> float:
+def multiply(x : float, y : float) -> float:
     return x * y
 
-def divide(x : In[float], y : In[float]) -> float:
+def divide(x : float, y : float) -> float:
     return x / y
 
 d_plus = fwd_diff(plus)
@@ -205,7 +205,7 @@ To pass this test, implement \lstinline{mutate_add}, \lstinline{mutate_sub}, \ls
 
 \paragraph{test_declare} Now we will start to have variable declaration:
 \begin{lstlisting}[language=Python]
-def declare(x : In[float], y : In[float]) -> float:
+def declare(x : float, y : float) -> float:
     z0 : float = x + y
     z1 : float = z0 + 5.0
     z2 : float = z1 * z0
@@ -217,7 +217,7 @@ You'll need to implement \lstinline{mutate_declare} to pass this test.
 
 \paragraph{test_assign and test_side_effect} Next, we test variable assignment.
 \begin{lstlisting}[language=Python]
-def assign(x : In[float], y : In[float]) -> float:
+def assign(x : float, y : float) -> float:
     z : float
     z = x + y
     return z
@@ -226,7 +226,7 @@ d_assign = fwd_diff(assign)
 \end{lstlisting}
 
 \begin{lstlisting}[language=Python]
-def side_effect(x : In[float], y : In[float]) -> float:
+def side_effect(x : float, y : float) -> float:
     z : float
     z = x + y
     z = 0.0
@@ -240,7 +240,7 @@ You'll need to implement \lstinline{mutate_assign} to pass these tests.
 
 \paragraph{test_call} Next, we test intrinsic function calls (you don't need to consider calls to other loma functions yet).
 \begin{lstlisting}[language=Python]
-def call(x : In[float]) -> float:
+def call(x : float) -> float:
     z0 : float = sin(x)
     z1 : float = cos(z0) + 1.0
     z2 : float = sqrt(z1)
@@ -255,14 +255,14 @@ You'll need to implement \lstinline{mutate_call} to pass this test.
 
 \paragraph{test_int_input and test_int_input} Next, we test the handling of integers.
 \begin{lstlisting}[language=Python]
-def int_input(x : In[float], y : In[int]) -> float:
+def int_input(x : float, y : int) -> float:
     z : int = 5
     return z * x + y - 1
 
 d_int_input = fwd_diff(int_input)
 \end{lstlisting}
 \begin{lstlisting}[language=Python]
-def int_output(x : In[float], y : In[int]) -> int:
+def int_output(x : float, y : int) -> int:
     z : int = 5
     return z * x + y - 1
 
@@ -272,32 +272,32 @@ You'll need to go back to your previous code, and make sure that you handle inte
 
 \paragraph{test_array_output, test_array_input, test_int_array_input, test_array_input_indexing, test_array_output_indexing, multiple_outputs} Next, we test the handling of arrays.
 \begin{lstlisting}[language=Python]
-def array_output(x : In[float], y : Out[Array[float]]):
+def array_output(x : float, y : Array[float]):
     y[0] = x * x
     y[1] = x * x * x
 
 d_array_output = fwd_diff(array_output)
 \end{lstlisting}
 \begin{lstlisting}[language=Python]
-def array_input(x : In[Array[float]]) -> float:
+def array_input(x : Array[float]) -> float:
     return x[0] + x[1]
 
 d_array_input = fwd_diff(array_input)
 \end{lstlisting}
 \begin{lstlisting}[language=Python]
-def int_array_input(x : In[Array[float]], y : In[Array[int]]) -> float:
+def int_array_input(x : Array[float], y : Array[int]) -> float:
     return x[0] + x[1] + y[0]
 
 d_int_array_input = fwd_diff(int_array_input)
 \end{lstlisting}
 \begin{lstlisting}[language=Python]
-def array_input_indexing(x : In[Array[float]], i : In[int], j : In[float]) -> float:
+def array_input_indexing(x : Array[float], i : int, j : float) -> float:
     return x[i] + x[float2int(j)] + x[2 * i] + x[2 * float2int(j)]
 
 d_array_input_indexing = fwd_diff(array_input_indexing)
 \end{lstlisting}
 \begin{lstlisting}[language=Python]
-def array_output_indexing(x : In[float], i : In[int], j : In[float], y : Out[Array[float]]):
+def array_output_indexing(x : float, i : int, j : float, y : Array[float]):
     y[i] = x
     y[float2int(j)] = 2 * x
     y[2 * i] = 3 * x
@@ -306,7 +306,7 @@ def array_output_indexing(x : In[float], i : In[int], j : In[float], y : Out[Arr
 d_array_output_indexing = fwd_diff(array_output_indexing)
 \end{lstlisting}
 \begin{lstlisting}[language=Python]
-def multiple_outputs(x : In[float], y : Out[Array[float]], z : Out[Array[float]]):
+def multiple_outputs(x : float, y : Array[float], z : Array[float]):
     y[0] = x * x
     y[1] = x * x * x
     z[0] = y[0] * y[1]
@@ -321,7 +321,7 @@ class Foo:
     x : float
     y : int
 
-def struct_input(foo : In[Foo]) -> float:
+def struct_input(foo : Foo) -> float:
     z : int = 5
     return z * foo.x + foo.y - 1
 
@@ -336,7 +336,7 @@ class Bar:
     z : int
     w : float
 
-def nested_struct_input(foo : In[Foo]) -> float:
+def nested_struct_input(foo : Foo) -> float:
     b : Bar
     b.z = 5
     b.w = 3
@@ -349,7 +349,7 @@ class Foo:
     a : float
     b : int
 
-def struct_output(x : In[float], y : In[int]) -> Foo:
+def struct_output(x : float, y : int) -> Foo:
     foo : Foo
     foo.a = x + y * x
     foo.b = y - x
@@ -362,7 +362,7 @@ class Foo:
     int_arr : Array[int]
     float_arr : Array[float]
 
-def array_in_struct(f : In[Foo]) -> float:
+def array_in_struct(f : Foo) -> float:
     return f.int_arr[0] + f.float_arr[0]
 
 d_array_in_struct = fwd_diff(array_in_struct)
@@ -372,7 +372,7 @@ class Foo:
     x : int
     y : float
 
-def struct_in_array(in_f : In[Array[Foo]], out_f : Out[Array[Foo]]):
+def struct_in_array(in_f : Array[Foo], out_f : Array[Foo]):
     out_f[0].x = in_f[0].x * in_f[0].y
     out_f[0].y = in_f[0].x + in_f[0].y
 
@@ -382,12 +382,12 @@ You will need to implement \lstinline{mutate_struct_access}, and revisit other p
 
 \paragraph{test_poly} The last test shows how differentiated code can be used in loma code:
 \begin{lstlisting}[language=Python]
-def poly(x : In[float]) -> float:
+def poly(x : float) -> float:
     return 3 * x * x * x * x + 5 * x * x + 10
 
 d_poly = fwd_diff(poly)
 
-def d_poly_dx(x : In[float]) -> float:
+def d_poly_dx(x : float) -> float:
     d_x : Diff[float]
     d_x.val = x
     d_x.dval = 1.0
