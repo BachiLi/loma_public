@@ -74,11 +74,11 @@ def replace_diff_types(diff_structs : dict[str, loma_ir.Struct],
                 return t
             case loma_ir.Diff():
                 t = _replace_diff_type(t.t)
-                if t == loma_ir.Int():
+                if isinstance(t, loma_ir.Int):
                     return diff_structs['int']
-                elif t == loma_ir.Float():
+                elif isinstance(t, loma_ir.Float):
                     return diff_structs['float']
-                elif t == loma_ir.Struct():
+                elif isinstance(t, loma_ir.Struct):
                     return diff_structs[t.id]
                 else:
                     # TODO: throw an user error
