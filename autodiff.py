@@ -2,6 +2,7 @@ import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 import irmutator
+import forward_diff
 
 def type_to_diff_type(diff_structs : dict[str, loma_ir.Struct],
                       t : loma_ir.type) -> loma_ir.type:
@@ -227,7 +228,7 @@ def differentiate(structs : dict[str, loma_ir.Struct],
 
     for f in funcs.values():
         if isinstance(f, loma_ir.ForwardDiff):
-            fwd_diff_func = forward_diff(\
+            fwd_diff_func = forward_diff.forward_diff(\
                 f.id, structs, funcs, diff_structs, funcs[f.primal_func])
             funcs[f.id] = fwd_diff_func
         elif isinstance(f, loma_ir.ReverseDiff):
