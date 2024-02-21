@@ -78,7 +78,7 @@ class IRMutator:
 
     def mutate_assign(self, node):
         return loma_ir.Assign(\
-            self.mutate_ref(node.target),
+            self.mutate_expr(node.target),
             self.mutate_expr(node.val),
             lineno = node.lineno)
 
@@ -267,28 +267,3 @@ class IRMutator:
             [self.mutate_expr(arg) for arg in node.args],
             lineno = node.lineno,
             t = node.t)
-
-    def mutate_ref(self, node):
-        match node:
-            case loma_ir.RefName():
-                return self.mutate_ref_name(node)
-            case loma_ir.RefArray():
-                return self.mutate_ref_array(node)
-            case loma_ir.RefStruct():
-                return self.mutate_ref_struct(node)
-            case _:
-                assert False, f'Visitor error: unhandled ref {node}'
-
-    def mutate_ref_name(self, node):
-        return node
-
-    def mutate_ref_array(self, node):
-        return loma_ir.RefArray(\
-            self.mutate_ref(node.array),
-            self.mutate_expr(node.index))
-
-    def mutate_ref_struct(self, node):
-        return loma_ir.RefStruct(\
-            self.mutate_ref(node.struct),
-            node.member)
-        

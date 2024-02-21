@@ -16,7 +16,7 @@ def generate_asdl_file():
            | ReverseDiff ( string id, string primal_func )
              attributes  ( int? lineno )
 
-      stmt = Assign     ( ref target, expr val )
+      stmt = Assign     ( expr target, expr val )
            | Declare    ( string target, type t, expr? val )
            | Return     ( expr val )
            | IfElse     ( expr cond, stmt* then_stmts, stmt* else_stmts )
@@ -31,10 +31,6 @@ def generate_asdl_file():
            | BinaryOp     ( bin_op op, expr left, expr right )
            | Call         ( string id, expr* args )
            attributes     ( int? lineno, type? t )
-
-      ref = RefName   ( string id )
-          | RefArray  ( ref array, expr index )
-          | RefStruct ( ref struct, string member )
 
       arg  = Arg ( string id, type t, bool is_byref )
 

@@ -74,22 +74,21 @@ def ast_cmp_op_convert(node) -> loma_ir.bin_op:
             # TODO: error message
             assert False
 
-def parse_ref(node) -> loma_ir.ref:
+def parse_ref(node) -> loma_ir.expr:
     """ Given a Python AST node representing
         a LHS reference,
-        convert to the corresponding loma
-        ref.
+        convert to the corresponding loma expression.
     """
 
     match node:
         case ast.Name():
-            return loma_ir.RefName(node.id)
+            return loma_ir.Var(node.id)
         case ast.Subscript():
-            return loma_ir.RefArray(parse_ref(node.value),
-                                    visit_expr(node.slice))
+            return loma_ir.ArrayAccess(parse_ref(node.value),
+                                       visit_expr(node.slice))
         case ast.Attribute():
-            return loma_ir.RefStruct(parse_ref(node.value),
-                                     node.attr)
+            return loma_ir.StructAccess(parse_ref(node.value),
+                                        node.attr)
         case _:
             # TODO: error message
             assert False

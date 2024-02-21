@@ -176,24 +176,3 @@ class IRVisitor:
     def visit_call(self, node):
         for arg in node.args:
             self.visit_expr(arg)
-
-    def visit_ref(self, node):
-        match node:
-            case loma_ir.RefName():
-                self.visit_ref_name(node)
-            case loma_ir.RefArray():
-                self.visit_ref_array(node)
-            case loma_ir.RefStruct():
-                self.visit_ref_struct(node)
-            case _:
-                assert False, f'Visitor error: unhandled ref {node}'
-
-    def visit_ref_name(self, node):
-        pass
-
-    def visit_ref_array(self, node):
-        self.visit_ref(node.array)
-        self.visit_expr(node.index)
-
-    def visit_ref_struct(self, node):
-        self.visit_ref(node.struct)

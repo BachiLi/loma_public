@@ -46,20 +46,21 @@ class TypeInferencer(irmutator.IRMutator):
     def lookup_ref_type(self, ref):
         ret_type = None
         match ref:
-            case loma_ir.RefName():
+            case loma_ir.Var():
                 ret_type = self.var_types[ref.id]
-            case loma_ir.RefArray():
+            case loma_ir.ArrayAccess():
                 parent_type = self.lookup_ref_type(ref.array)
                 ret_type = parent_type.t
-            case loma_ir.RefStruct():
+            case loma_ir.StructAccess():
                 parent_type = self.lookup_ref_type(ref.struct)
                 for m in parent_type.members:
-                    if m.id == ref.member:
+                    if m.id == ref.member_id:
                         ret_type = m.t
                         break
                 if ret_type is None:
                     assert False, f'member {ref.member} not found in Struct {parent_type.id}'
             case _:
+                # Error message: invalid lhs
                 assert False
         if isinstance(ret_type, loma_ir.Struct) and len(ret_type.members) == 0:
             ret_type = self.structs[ret_type.id]
@@ -143,7 +144,7 @@ class TypeInferencer(irmutator.IRMutator):
         if new_val.t != ref_type:
             raise error.AssignTypeMismatch(new_val.lineno)
         return loma_ir.Assign(\
-            self.mutate_ref(ass.target),
+            self.mutate_expr(ass.target),
             new_val,
             lineno = ass.lineno)
 

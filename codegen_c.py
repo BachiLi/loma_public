@@ -216,15 +216,15 @@ class CCodegenVisitor(irvisitor.IRVisitor):
 
     def visit_ref(self, node):
         match node:
-            case loma_ir.RefName():
+            case loma_ir.Var():
                 if node.id in self.byref_args:
                     return '(*' + node.id + ')'
                 else:
                     return node.id
-            case loma_ir.RefArray():
+            case loma_ir.ArrayAccess():
                 return self.visit_ref(node.array) + f'[{self.visit_expr(node.index)}]'
-            case loma_ir.RefStruct():
-                return self.visit_ref(node.struct) + f'.{node.member}'
+            case loma_ir.StructAccess():
+                return self.visit_ref(node.struct) + f'.{node.member_id}'
             case _:
                 assert False, f'Visitor error: unhandled ref {node}'
 
