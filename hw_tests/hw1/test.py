@@ -313,6 +313,36 @@ class Homework1Test(unittest.TestCase):
             abs(out.b.val - int(y.val - x.val)) < epsilon and \
             abs(out.a.dval - (x.dval + y.val * x.dval)) < epsilon
 
+    def test_struct_declare(self):
+        with open('loma_code/struct_declare.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/struct_declare.so')
+
+        _dfloat = structs['_dfloat']
+        _dint = structs['_dint']
+        _dFoo = structs['_dFoo']
+        f = _dFoo(a=_dfloat(1.23,4.56), b=_dint(3))
+        out = lib.d_struct_declare(f)
+        assert abs(out.a.val - f.a.val * 2) < epsilon and \
+            out.b.val == f.b.val and \
+            abs(out.a.dval - 2 * f.a.dval) < epsilon
+
+    def test_struct_assign(self):
+        with open('loma_code/struct_assign.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/struct_assign.so')
+
+        _dfloat = structs['_dfloat']
+        _dint = structs['_dint']
+        _dFoo = structs['_dFoo']
+        f = _dFoo(a=_dfloat(1.23,4.56), b=_dint(3))
+        out = lib.d_struct_assign(f)
+        assert abs(out.a.val - f.a.val * 2) < epsilon and \
+            out.b.val == f.b.val and \
+            abs(out.a.dval - 2 * f.a.dval) < epsilon
+
     def test_nested_struct_output(self):
         with open('loma_code/nested_struct_output.py') as f:
             structs, lib = compiler.compile(f.read(),
@@ -376,7 +406,6 @@ class Homework1Test(unittest.TestCase):
         # poly is 3x^4 + 5x^2 + 10
         # the derivative is 12 x^3 + 10 x
         assert out - (12 * x * x * x + 10 * x) < epsilon
-
 
 if __name__ == '__main__':
     unittest.main()
