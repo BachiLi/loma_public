@@ -87,7 +87,7 @@ def replace_diff_types(diff_structs : dict[str, loma_ir.Struct],
     class DiffTypeMutator(irmutator.IRMutator):
         def mutate_function_def(self, node):
             new_args = [\
-                loma_ir.Arg(arg.id, _replace_diff_type(arg.t)) \
+                loma_ir.Arg(arg.id, _replace_diff_type(arg.t), arg.is_byref) \
                 for arg in node.args]
             new_body = [self.mutate_stmt(stmt) for stmt in node.body]
             new_body = irmutator.flatten(new_body)
