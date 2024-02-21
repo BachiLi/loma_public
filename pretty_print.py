@@ -92,7 +92,7 @@ class PrettyPrintVisitor(irvisitor.IRVisitor):
 
     def visit_assign(self, node):
         self.emit_tabs()
-        self.code += self.visit_ref(node.target)
+        self.code += self.visit_expr(node.target)
         expr_str = self.visit_expr(node.val)
         if expr_str != '':
             self.code += f' = {expr_str}'
@@ -174,17 +174,6 @@ class PrettyPrintVisitor(irvisitor.IRVisitor):
                 return ''
             case _:
                 assert False, f'Visitor error: unhandled expression {expr}'
-
-    def visit_ref(self, node):
-        match node:
-            case loma_ir.RefName():
-                return node.id
-            case loma_ir.RefArray():
-                return self.visit_ref(node.array) + f'[{self.visit_expr(node.index)}]'
-            case loma_ir.RefStruct():
-                return self.visit_ref(node.struct) + f'.{node.member}'
-            case _:
-                assert False, f'Visitor error: unhandled ref {node}'
 
 def struct_to_str(s : loma_ir.Struct) -> str:
     code = f'struct {s.id}{{\n'
