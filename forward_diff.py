@@ -1,3 +1,8 @@
+import ir
+ir.generate_asdl_file()
+import _asdl.loma as loma_ir
+import irmutator
+
 def forward_diff(diff_func_id : str,
                  structs : dict[str, loma_ir.Struct],
                  funcs : dict[str, loma_ir.func],
