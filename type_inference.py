@@ -58,7 +58,7 @@ class TypeInferencer(irmutator.IRMutator):
                         ret_type = m.t
                         break
                 if ret_type is None:
-                    assert False, f'member {ref.member} not found in Struct {parent_type.id}'
+                    assert False, f'member {ref.member_id} not found in Struct {parent_type.id}'
             case _:
                 # Error message: invalid lhs
                 assert False
