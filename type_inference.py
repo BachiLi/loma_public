@@ -5,7 +5,6 @@ import autodiff
 import attrs
 import error
 import irmutator
-import forward_diff
 
 def fill_in_struct_info(t : loma_ir.type,
                         structs : dict[str, loma_ir.Struct]) -> loma_ir.type:
@@ -290,10 +289,10 @@ class TypeInferencer(irmutator.IRMutator):
             elif isinstance(f, loma_ir.ForwardDiff):
                 primal_f = self.funcs[f.primal_func]
                 f_args = list(primal_f.args)
-                ret_type = forward_diff.type_to_diff_type(self.diff_structs, primal_f.ret_type)
+                ret_type = autodiff.type_to_diff_type(self.diff_structs, primal_f.ret_type)
                 for i, f_arg in enumerate(f_args):
                     f_args[i] = attrs.evolve(f_args[i],
-                        t=forward_diff.type_to_diff_type(self.diff_structs, f_arg.t))
+                        t=autodiff.type_to_diff_type(self.diff_structs, f_arg.t))
             elif isinstance(f, loma_ir.ReverseDiff):
                 assert False # TODO
             if len(args) != len(f_args):

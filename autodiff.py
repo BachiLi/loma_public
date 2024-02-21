@@ -4,6 +4,38 @@ import _asdl.loma as loma_ir
 import irmutator
 import forward_diff
 
+def type_to_diff_type(diff_structs : dict[str, loma_ir.Struct],
+                      t : loma_ir.type) -> loma_ir.type:
+    """ Given a loma type t, look up diff_structs for the differential type.
+    For example, for float, we will generate a class "_dfloat" to represent
+    both the primal value and the differential:
+    class _dfloat:
+        val : float
+        dval : float
+    
+    Calling type_to_diff_type(diff_structs, loma_ir.Float())
+    would then return the loma type representing _dfloat.
+
+    diff_structs is a map that goes from the ID of the type to the differential
+    struct. For example, diff_structs['float'] will return the _dfloat type.
+    """
+
+    match t:
+        case loma_ir.Int():
+            return diff_structs['int']
+        case loma_ir.Float():
+            return diff_structs['float']
+        case loma_ir.Array():
+            return loma_ir.Array(\
+                type_to_diff_type(diff_structs, t.t),
+                t.static_size)
+        case loma_ir.Struct():
+            return diff_structs[t.id]
+        case None:
+            return None
+        case _:
+            assert False, f'Unhandled type {t}'
+
 def replace_diff_types(diff_structs : dict[str, loma_ir.Struct],
                        func : loma_ir.FunctionDef) -> loma_ir.FunctionDef:
     """ Given a loma function func, find all function arguments and
