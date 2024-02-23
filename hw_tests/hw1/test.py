@@ -146,7 +146,7 @@ class Homework1Test(unittest.TestCase):
         x = _dfloat(1.23, 4.56)
         y = 3
         out = lib.d_int_input(x, y)
-        assert abs(out.val - (5 * x.val + y.val - 1)) < epsilon and \
+        assert abs(out.val - (5 * x.val + y - 1)) < epsilon and \
             abs(out.dval - 5 * x.dval) < epsilon
 
     def test_int_output(self):
@@ -158,7 +158,7 @@ class Homework1Test(unittest.TestCase):
         x = _dfloat(1.23, 4.56)
         y = 3
         out = lib.d_int_output(x, y)
-        assert abs(out.val - int(5 * x.val + y.val - 1)) < epsilon
+        assert abs(out - int(5 * x.val + y - 1)) < epsilon
 
     def test_array_output(self):
         with open('loma_code/array_output.py') as f:
@@ -275,7 +275,7 @@ class Homework1Test(unittest.TestCase):
         _dFoo = structs['_dFoo']
         f = _dFoo(_dfloat(1.23, 4.56), 3)
         out = lib.d_struct_input(f)
-        assert abs(out.val - (5 * f.x.val + f.y.val - 1)) < epsilon and \
+        assert abs(out.val - (5 * f.x.val + f.y - 1)) < epsilon and \
             abs(out.dval - 5 * f.x.dval) < epsilon
 
     def test_nested_struct_input(self):
@@ -288,7 +288,7 @@ class Homework1Test(unittest.TestCase):
         _dBar = structs['_dBar']
         f = _dFoo(_dfloat(1.23, 4.56), _dBar(3, _dfloat(1.23, 4.56)))
         out = lib.d_nested_struct_input(f)
-        assert abs(out.val - (f.x.val + f.y.z.val + f.y.w.val + 5) * 3) < epsilon and \
+        assert abs(out.val - (f.x.val + f.y.z + f.y.w.val + 5) * 3) < epsilon and \
             abs(out.dval - (f.x.dval + f.y.w.dval) * 3) < epsilon
 
     def test_struct_output(self):
@@ -301,9 +301,9 @@ class Homework1Test(unittest.TestCase):
         x = _dfloat(1.23, 4.56)
         y = 3
         out = lib.d_struct_output(x, y)
-        assert abs(out.a.val - (x.val + y.val * x.val)) < epsilon and \
-            abs(out.b.val - int(y.val - x.val)) < epsilon and \
-            abs(out.a.dval - (x.dval + y.val * x.dval)) < epsilon
+        assert abs(out.a.val - (x.val + y * x.val)) < epsilon and \
+            abs(out.b - int(y - x.val)) < epsilon and \
+            abs(out.a.dval - (x.dval + y * x.dval)) < epsilon
 
     def test_struct_declare(self):
         with open('loma_code/struct_declare.py') as f:
@@ -316,7 +316,7 @@ class Homework1Test(unittest.TestCase):
         f = _dFoo(a=_dfloat(1.23,4.56), b=3)
         out = lib.d_struct_declare(f)
         assert abs(out.a.val - f.a.val * 2) < epsilon and \
-            out.b.val == f.b.val and \
+            out.b == f.b and \
             abs(out.a.dval - 2 * f.a.dval) < epsilon
 
     def test_struct_assign(self):
@@ -330,7 +330,7 @@ class Homework1Test(unittest.TestCase):
         f = _dFoo(a=_dfloat(1.23,4.56), b=3)
         out = lib.d_struct_assign(f)
         assert abs(out.a.val - f.a.val * 2) < epsilon and \
-            out.b.val == f.b.val and \
+            out.b == f.b and \
             abs(out.a.dval - 2 * f.a.dval) < epsilon
 
     def test_nested_struct_output(self):
@@ -345,13 +345,13 @@ class Homework1Test(unittest.TestCase):
         bar = _dBar()
         f = lib.d_nested_struct_output(a, ctypes.pointer(bar))
         assert abs(f.x.val - 2 * a.val) < epsilon and \
-            f.y.z.val == 5 and \
+            f.y.z == 5 and \
             abs(f.y.w.val - f.x.val) < epsilon and \
-            bar.z.val == 3 and \
-            abs(bar.w.val - (bar.z.val * a.val)) < epsilon and \
+            bar.z == 3 and \
+            abs(bar.w.val - (bar.z * a.val)) < epsilon and \
             abs(f.x.dval - 2 * a.dval) < epsilon and \
             abs(f.y.w.dval - f.x.dval) < epsilon and \
-            abs(bar.w.dval - (bar.z.val * a.dval)) < epsilon
+            abs(bar.w.dval - (bar.z * a.dval)) < epsilon
 
     def test_array_in_struct(self):
         with open('loma_code/array_in_struct.py') as f:
@@ -364,7 +364,7 @@ class Homework1Test(unittest.TestCase):
         _dFoo = structs['_dFoo']
         f = _dFoo(int_arr=ctypes.pointer(int_arr), float_arr=ctypes.pointer(float_arr))
         out = lib.d_array_in_struct(f)
-        assert out.val - (int_arr.val + float_arr.val) < epsilon and \
+        assert out.val - (int_arr.value + float_arr.val) < epsilon and \
             out.dval - float_arr.dval < epsilon
 
     def test_struct_in_array(self):
@@ -380,8 +380,8 @@ class Homework1Test(unittest.TestCase):
         in_f = _dFoo(x, y)
         out_f = _dFoo()
         lib.d_struct_in_array(ctypes.pointer(in_f), ctypes.pointer(out_f))
-        assert out_f.x.val - int(x.val * y.val) < epsilon and \
-            out_f.y.val - (x.val + y.val) < epsilon and \
+        assert out_f.x - int(x * y.val) < epsilon and \
+            out_f.y.val - (x + y.val) < epsilon and \
             out_f.y.dval - y.dval < epsilon
 
     def test_poly(self):
