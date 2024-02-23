@@ -115,13 +115,12 @@ def resolve_diff_types(structs : dict[str, loma_ir.Struct],
         generate a list of the corresponding differential Structs,
         and resolve all the Diff[] types in the functions.
 
-        Firstly, the following two differential structs are created
-        for the primitive types int and float:
-        class _dint:
-            val : int
+        Firstly, the following differential struct is created
+        for the primitive type float:
         class _dfloat:
             val : float
             dval : float
+        The differential struct for an int is still an int.
 
         Next, for each Struct in structs, we convert them by recursively applying
         the differentiation to each of the member. For example, the following primal Struct
@@ -131,7 +130,7 @@ def resolve_diff_types(structs : dict[str, loma_ir.Struct],
         will be converted to
         class _dFoo:
             x : _dfloat
-            y : _dint
+            y : int
         and the following primal Struct
         class Bar:
             z : Foo
@@ -165,10 +164,7 @@ def resolve_diff_types(structs : dict[str, loma_ir.Struct],
     assert dfloat.id not in structs
     diff_structs['float'] = dfloat
 
-    dint = loma_ir.Struct('_dint',
-                          [loma_ir.MemberDef('val', loma_ir.Int())])
-    assert dint.id not in structs
-    diff_structs['int'] = dint
+    diff_structs['int'] = loma_ir.Int()
 
     def convert_struct_to_diff(s):
         match s:

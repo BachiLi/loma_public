@@ -143,9 +143,8 @@ class Homework1Test(unittest.TestCase):
                                             target = 'c',
                                             output_filename = '_code/int_input.so')
         _dfloat = structs['_dfloat']
-        _dint = structs['_dint']
         x = _dfloat(1.23, 4.56)
-        y = _dint(3)
+        y = 3
         out = lib.d_int_input(x, y)
         assert abs(out.val - (5 * x.val + y.val - 1)) < epsilon and \
             abs(out.dval - 5 * x.dval) < epsilon
@@ -156,9 +155,8 @@ class Homework1Test(unittest.TestCase):
                                             target = 'c',
                                             output_filename = '_code/int_output.so')
         _dfloat = structs['_dfloat']
-        _dint = structs['_dint']
         x = _dfloat(1.23, 4.56)
-        y = _dint(3)
+        y = 3
         out = lib.d_int_output(x, y)
         assert abs(out.val - int(5 * x.val + y.val - 1)) < epsilon
 
@@ -195,11 +193,10 @@ class Homework1Test(unittest.TestCase):
                                             target = 'c',
                                             output_filename = '_code/int_array_input.so')
         _dfloat = structs['_dfloat']
-        _dint = structs['_dint']
         py_x = [_dfloat(0.7, 0.8), _dfloat(0.3, 0.5)]
         x = (_dfloat * len(py_x))(*py_x)
-        py_y = [_dint(5)]
-        y = (_dint * len(py_y))(*py_y)
+        py_y = [5]
+        y = (ctypes.c_int * len(py_y))(*py_y)
         out = lib.d_int_array_input(x, y)
         assert abs(out.val - (0.7 + 0.3 + 5)) < epsilon and \
             abs(out.dval - (0.8 + 0.5)) < epsilon
@@ -210,7 +207,6 @@ class Homework1Test(unittest.TestCase):
                                             target = 'c',
                                             output_filename = '_code/array_input_indexing.so')
         _dfloat = structs['_dfloat']
-        _dint = structs['_dint']
         py_x = [_dfloat(0.1, 0.9),
                 _dfloat(0.2, 0.8),
                 _dfloat(0.3, 0.7),
@@ -219,7 +215,7 @@ class Homework1Test(unittest.TestCase):
                 _dfloat(0.6, 0.4),
                 _dfloat(0.7, 0.3)]
         x = (_dfloat * len(py_x))(*py_x)
-        i = _dint(1)
+        i = 1
         j = _dfloat(3.5, 0.5)
         out = lib.d_array_input_indexing(x, i, j)
         assert abs(out.val - (x[1].val + x[3].val + x[2].val + x[6].val)) < epsilon and \
@@ -231,9 +227,8 @@ class Homework1Test(unittest.TestCase):
                                             target = 'c',
                                             output_filename = '_code/array_output_indexing.so')
         _dfloat = structs['_dfloat']
-        _dint = structs['_dint']
         x = _dfloat(0.3, 0.4)
-        i = _dint(1)
+        i = 1
         j = _dfloat(3.5, 0.5)
         py_y = [_dfloat(0, 0)] * 7
         y = (_dfloat * len(py_y))(*py_y)
@@ -277,9 +272,8 @@ class Homework1Test(unittest.TestCase):
                                             target = 'c',
                                             output_filename = '_code/struct_input.so')
         _dfloat = structs['_dfloat']
-        _dint = structs['_dint']
         _dFoo = structs['_dFoo']
-        f = _dFoo(_dfloat(1.23, 4.56), _dint(3))
+        f = _dFoo(_dfloat(1.23, 4.56), 3)
         out = lib.d_struct_input(f)
         assert abs(out.val - (5 * f.x.val + f.y.val - 1)) < epsilon and \
             abs(out.dval - 5 * f.x.dval) < epsilon
@@ -290,10 +284,9 @@ class Homework1Test(unittest.TestCase):
                                             target = 'c',
                                             output_filename = '_code/nested_struct_input.so')
         _dfloat = structs['_dfloat']
-        _dint = structs['_dint']
         _dFoo = structs['_dFoo']
         _dBar = structs['_dBar']
-        f = _dFoo(_dfloat(1.23, 4.56), _dBar(_dint(3), _dfloat(1.23, 4.56)))
+        f = _dFoo(_dfloat(1.23, 4.56), _dBar(3, _dfloat(1.23, 4.56)))
         out = lib.d_nested_struct_input(f)
         assert abs(out.val - (f.x.val + f.y.z.val + f.y.w.val + 5) * 3) < epsilon and \
             abs(out.dval - (f.x.dval + f.y.w.dval) * 3) < epsilon
@@ -305,9 +298,8 @@ class Homework1Test(unittest.TestCase):
                                             output_filename = '_code/struct_output.so')
 
         _dfloat = structs['_dfloat']
-        _dint = structs['_dint']
         x = _dfloat(1.23, 4.56)
-        y = _dint(3)
+        y = 3
         out = lib.d_struct_output(x, y)
         assert abs(out.a.val - (x.val + y.val * x.val)) < epsilon and \
             abs(out.b.val - int(y.val - x.val)) < epsilon and \
@@ -320,9 +312,8 @@ class Homework1Test(unittest.TestCase):
                                             output_filename = '_code/struct_declare.so')
 
         _dfloat = structs['_dfloat']
-        _dint = structs['_dint']
         _dFoo = structs['_dFoo']
-        f = _dFoo(a=_dfloat(1.23,4.56), b=_dint(3))
+        f = _dFoo(a=_dfloat(1.23,4.56), b=3)
         out = lib.d_struct_declare(f)
         assert abs(out.a.val - f.a.val * 2) < epsilon and \
             out.b.val == f.b.val and \
@@ -335,9 +326,8 @@ class Homework1Test(unittest.TestCase):
                                             output_filename = '_code/struct_assign.so')
 
         _dfloat = structs['_dfloat']
-        _dint = structs['_dint']
         _dFoo = structs['_dFoo']
-        f = _dFoo(a=_dfloat(1.23,4.56), b=_dint(3))
+        f = _dFoo(a=_dfloat(1.23,4.56), b=3)
         out = lib.d_struct_assign(f)
         assert abs(out.a.val - f.a.val * 2) < epsilon and \
             out.b.val == f.b.val and \
@@ -369,8 +359,7 @@ class Homework1Test(unittest.TestCase):
                                             target = 'c',
                                             output_filename = '_code/array_in_struct.so')
         _dfloat = structs['_dfloat']
-        _dint = structs['_dint']
-        int_arr = _dint(3)
+        int_arr = ctypes.c_int(3)
         float_arr = _dfloat(5.0, 7.0)
         _dFoo = structs['_dFoo']
         f = _dFoo(int_arr=ctypes.pointer(int_arr), float_arr=ctypes.pointer(float_arr))
@@ -384,10 +373,9 @@ class Homework1Test(unittest.TestCase):
                                             target = 'c',
                                             output_filename = '_code/struct_in_array.so')
         _dfloat = structs['_dfloat']
-        _dint = structs['_dint']
         _dFoo = structs['_dFoo']
 
-        x = _dint(3)
+        x = 3
         y = _dfloat(5.0, 7.0)
         in_f = _dFoo(x, y)
         out_f = _dFoo()
