@@ -52,7 +52,8 @@ class CCodegenVisitor(irvisitor.IRVisitor):
             self.code += 'int __total_work'
         self.code += ') {\n'
 
-        self.byref_args = set([arg.id for arg in node.args if arg.is_byref])
+        self.byref_args = set([arg.id for arg in node.args if \
+            arg.is_byref and (not isinstance(arg.t, loma_ir.Array))])
 
         self.tab_count += 1
         if node.is_simd:
@@ -110,7 +111,7 @@ class CCodegenVisitor(irvisitor.IRVisitor):
 
     def visit_assign(self, node):
         self.emit_tabs()
-        self.code += self.visit_ref(node.target)
+        self.code += self.visit_expr(node.target)
         expr_str = self.visit_expr(node.val)
         if expr_str != '':
             self.code += f' = {expr_str}'
@@ -213,21 +214,6 @@ class CCodegenVisitor(irvisitor.IRVisitor):
                 return ''
             case _:
                 assert False, f'Visitor error: unhandled expression {expr}'
-
-    def visit_ref(self, node):
-        match node:
-            case loma_ir.Var():
-                if node.id in self.byref_args:
-                    return '(*' + node.id + ')'
-                else:
-                    return node.id
-            case loma_ir.ArrayAccess():
-                return self.visit_ref(node.array) + f'[{self.visit_expr(node.index)}]'
-            case loma_ir.StructAccess():
-                return self.visit_ref(node.struct) + f'.{node.member_id}'
-            case _:
-                assert False, f'Visitor error: unhandled ref {node}'
-
 
 def codegen_c(structs : dict[str, loma_ir.Struct],
               funcs : dict[str, loma_ir.func]) -> str:

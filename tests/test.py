@@ -252,6 +252,16 @@ def test_pass_by_ref_rhs_struct():
     f = Foo(x=5, y=6.0)
     assert lib.pass_by_ref_rhs_struct(ctypes.byref(f)) == 5
 
+def test_pass_by_ref_array():
+    with open('loma_code/pass_by_ref_array.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/pass_by_ref_array.so')
+    py_arr = [1,2,3,4,5,6,7]
+    arr = (ctypes.c_int * len(py_arr))(*py_arr)
+    lib.pass_by_ref_array(arr)
+    assert(arr[3] == arr[5] * 3)
+
 def test_parallel_add():
     with open('loma_code/parallel_add.py') as f:
         structs, lib = compiler.compile(f.read(),
@@ -457,6 +467,7 @@ if __name__ == '__main__':
     test_pass_by_ref_rhs()
     test_pass_by_ref_lhs_struct()
     test_pass_by_ref_rhs_struct()
+    test_pass_by_ref_array()
     test_parallel_add()
     test_simd_local_func()
 
