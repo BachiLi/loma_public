@@ -171,7 +171,7 @@ def resolve_diff_types(structs : dict[str, loma_ir.Struct],
             case loma_ir.Float():
                 return dfloat
             case loma_ir.Int():
-                return dint
+                return loma_ir.Int()
             case loma_ir.Array():
                 return loma_ir.Array(\
                     convert_struct_to_diff(s.t), s.static_size)
