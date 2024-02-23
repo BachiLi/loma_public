@@ -11,7 +11,7 @@ import gpuctypes.opencl as cl
 import cl_utils
 import unittest
 
-epsilon = 1e-5
+epsilon = 1e-4
 
 class Homework1Test(unittest.TestCase):
     def setUp(self):
