@@ -185,7 +185,8 @@ def resolve_diff_types(structs : dict[str, loma_ir.Struct],
         diff_structs[s.id] = convert_struct_to_diff(s)
 
     for ds in diff_structs.values():
-        structs[ds.id] = ds
+        if isinstance(ds, loma_ir.Struct):
+            structs[ds.id] = ds
 
     # Replace all Diff types with their differential types in the code
     for f in funcs.values():
