@@ -132,6 +132,54 @@ def test_local_array_init_zero():
                                   output_filename = '_code/local_array_init_zero.so')
     assert lib.local_array_init_zero() == 13
 
+def test_sum_nested_array():
+    with open('loma_code/sum_nested_array.py') as f:
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/sum_nested_array.so')
+    
+    pointer_arr = (ctypes.POINTER(ctypes.c_int) * 3)()
+    arr0 = (ctypes.c_int * 5)(1,2,3,4,5)
+    pointer_arr[0] = ctypes.cast(ctypes.pointer(arr0), ctypes.POINTER(ctypes.c_int))
+    arr1 = (ctypes.c_int * 4)(6,7,8,9)
+    pointer_arr[1] = ctypes.cast(ctypes.pointer(arr1), ctypes.POINTER(ctypes.c_int))
+    arr2 = (ctypes.c_int * 3)(10,11,12)
+    pointer_arr[2] = ctypes.cast(ctypes.pointer(arr2), ctypes.POINTER(ctypes.c_int))
+
+    size_arr = (ctypes.c_int * 3)(5, 4, 3)
+
+    lib.sum_nested_array(pointer_arr, size_arr, 3) == 78
+
+def test_nested_array_output():
+    with open('loma_code/nested_array_output.py') as f:
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/nested_array_output.so')
+    
+    pointer_arr = (ctypes.POINTER(ctypes.c_int) * 3)()
+    arr0 = (ctypes.c_int * 5)()
+    pointer_arr[0] = ctypes.cast(ctypes.pointer(arr0), ctypes.POINTER(ctypes.c_int))
+    arr1 = (ctypes.c_int * 4)()
+    pointer_arr[1] = ctypes.cast(ctypes.pointer(arr1), ctypes.POINTER(ctypes.c_int))
+    arr2 = (ctypes.c_int * 3)()
+    pointer_arr[2] = ctypes.cast(ctypes.pointer(arr2), ctypes.POINTER(ctypes.c_int))
+
+    size_arr = (ctypes.c_int * 3)(5, 4, 3)
+
+    lib.nested_array_output(pointer_arr, size_arr, 3)
+    assert pointer_arr[0][0] == 1 and \
+           pointer_arr[0][1] == 2 and \
+           pointer_arr[0][2] == 3 and \
+           pointer_arr[0][3] == 4 and \
+           pointer_arr[0][4] == 5 and \
+           pointer_arr[1][0] == 6 and \
+           pointer_arr[1][1] == 7 and \
+           pointer_arr[1][2] == 8 and \
+           pointer_arr[1][3] == 9 and \
+           pointer_arr[2][0] == 10 and \
+           pointer_arr[2][1] == 11 and \
+           pointer_arr[2][2] == 12
+
 def test_intrinsic_func_call():
     with open('loma_code/intrinsic_func_call.py') as f:
         _, lib = compiler.compile(f.read(),
@@ -454,6 +502,8 @@ if __name__ == '__main__':
     test_while_loop()
     test_local_static_array()
     test_local_array_init_zero()
+    test_sum_nested_array()
+    test_nested_array_output()
     test_intrinsic_func_call()
     test_func_decl()
     test_struct_access()
