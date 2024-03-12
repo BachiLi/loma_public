@@ -43,6 +43,8 @@ class IRVisitor:
                 self.visit_ifelse(node)
             case loma_ir.While():
                 self.visit_while(node)
+            case loma_ir.CallStmt():
+                self.visit_call_stmt(node)
             case _:
                 assert False, f'Visitor error: unhandled statement {node}'
 
@@ -67,6 +69,9 @@ class IRVisitor:
         self.visit_expr(node.cond)
         for stmt in node.body:
             self.visit_stmt(stmt)
+
+    def visit_call_stmt(self, node):
+        self.visit_expr(node.call)
 
     def visit_expr(self, node):
         match node:

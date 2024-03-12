@@ -179,7 +179,6 @@ def visit_stmt(node) -> loma_ir.stmt:
     """ Given a Python AST node representing a statement,
         converts to a loma IR statement.
     """
-
     match node:
         case ast.Return():
             return loma_ir.Return(visit_expr(node.value), lineno = node.lineno)
@@ -219,6 +218,11 @@ def visit_stmt(node) -> loma_ir.stmt:
             max_iter = int(max_iter_assign.value.value)
             body = [visit_stmt(s) for s in node.body]
             return loma_ir.While(cond, max_iter, body, lineno = node.lineno)
+        case ast.Expr():
+            # TODO: error messages
+            assert isinstance(node.value, ast.Call)
+            call_expr = visit_expr(node.value)
+            return loma_ir.CallStmt(call_expr, lineno = node.lineno)
         case _:
             assert False, f'Unknown statement {type(node).__name__}'
 

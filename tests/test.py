@@ -36,6 +36,22 @@ def test_binary_ops():
     # d = c / a = 36 / 11
     assert abs(lib.binary_ops() - 36.0 / 11.0) < 1e-6
 
+def test_builtin_funcs():
+    with open('loma_code/builtin_funcs.py') as f:
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/builtin_funcs.so')
+
+    x = 1.5
+    z0 = math.sin(x)
+    z1 = math.cos(z0) + 1
+    z2 = math.sqrt(z1)
+    z3 = math.pow(z2, z1)
+    z4 = math.exp(z3)
+    z5 = math.log(z3 + z4)
+
+    assert abs(lib.builtin_funcs(x) - z5) < 1e-6
+
 def test_args():
     with open('loma_code/args.py') as f:
         _, lib = compiler.compile(f.read(),
@@ -308,7 +324,14 @@ def test_pass_by_ref_array():
     py_arr = [1,2,3,4,5,6,7]
     arr = (ctypes.c_int * len(py_arr))(*py_arr)
     lib.pass_by_ref_array(arr)
-    assert(arr[3] == arr[5] * 3)
+    assert arr[3] == arr[5] * 3
+
+def test_call_stmt():
+    with open('loma_code/call_stmt.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/call_stmt.so')
+    assert lib.call_stmt() == 5
 
 def test_parallel_add():
     with open('loma_code/parallel_add.py') as f:
@@ -493,6 +516,7 @@ if __name__ == '__main__':
 
     test_declaration()
     test_binary_ops()
+    test_builtin_funcs()
     test_args()
     test_mutation()
     test_array_read()
@@ -518,6 +542,7 @@ if __name__ == '__main__':
     test_pass_by_ref_lhs_struct()
     test_pass_by_ref_rhs_struct()
     test_pass_by_ref_array()
+    test_call_stmt()
     test_parallel_add()
     test_simd_local_func()
 

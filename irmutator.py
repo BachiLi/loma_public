@@ -61,6 +61,8 @@ class IRMutator:
                 return self.mutate_ifelse(node)
             case loma_ir.While():
                 return self.mutate_while(node)
+            case loma_ir.CallStmt():
+                return self.mutate_call_stmt(node)
             case _:
                 assert False, f'Visitor error: unhandled statement {node}'
 
@@ -104,6 +106,11 @@ class IRMutator:
             new_cond,
             node.max_iter,
             new_body,
+            lineno = node.lineno)
+
+    def mutate_call_stmt(self, node):
+        return loma_ir.CallStmt(\
+            self.mutate_expr(node.call),
             lineno = node.lineno)
 
     def mutate_expr(self, node):

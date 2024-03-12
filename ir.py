@@ -21,6 +21,7 @@ def generate_asdl_file():
            | Return     ( expr val )
            | IfElse     ( expr cond, stmt* then_stmts, stmt* else_stmts )
            | While      ( expr cond, int max_iter, stmt* body )
+           | CallStmt   ( expr call )
            attributes   ( int? lineno )
 
       expr = Var          ( string id )
