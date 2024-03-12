@@ -4,4 +4,319 @@
 
 \header{2}{Reverse mode automatic differentiation}
 
+\section{Getting gradients by running the function backwards.}
+
+In the second homework, we will implement what's called the reverse-mode automatic differentiation on straight-line code. It is equivalent (or can be seen as a generalization) of the popular backpropagation algorithm in deep learning. Before we talk about reverse mode, let's talk about why we need something other than the forward mode we implemented last time.
+
+Consider a function $f(\mathbf{x})$ that takes many numbers and outputs a scalar $f(\mathbf{x}): \mathbb{R}^n \rightarrow \mathbb{R}$, where $n$ can be a large number (say, a million). Suppose we want to compute the gradient of $f$ (say, for optimizing or sampling $f$ using gradient-based methods). Applying forward mode differentiation to $f$ would give as a function $Df(\mathbf{x}, \mathbf{dx}) : \mathbb{R}^n \times \mathbb{R}^n \rightarrow \mathbb{R} \times \mathbb{R}$. Since $Df$ can only output one derivative at a time, we need to feed in $n$ different ``one-hot'' $\mathbf{dx}$ (where one component is $1$ and all others are $0$) in order to get the full gradient vector -- this is too inefficient. Instead, reverse mode gives us a function $D^{T}f(\mathbf{x}, dy) : \mathbb{R}^n \times \mathbb{R} \rightarrow \mathbb{R}^n$ that can give us the full gradient vector at once if we set $dy=1$.
+
+How is this possible? Let's use the same example we used for forward mode:
+\begin{lstlisting}[language=Python]
+def f(x : float, y : float) -> float:
+	z0 : float = h(x, y)
+	z1 : float = g(z0)
+	return z1
+\end{lstlisting}
+Recall that the forward mode transform turns the function into their ``Df'' version.
+\begin{lstlisting}[language=Python]
+class _dfloat:
+	val : float
+	dval : float
+
+def Df(x : _dfloat, y : _dfloat) -> _dfloat:
+	z0 : _dfloat = Dh(x, y)
+	z1 : _dfloat = Dg(z0)
+	return z1
+\end{lstlisting}
+In reverse mode, we want to turn \lstinline{f} into its \lstinline{DTf} version. The function signature of \lstinline{DTf} is:
+\begin{lstlisting}[language=Python]
+def DTf(x : Ref[_dfloat], y : Ref[_dfloat], dz1 : float)
+\end{lstlisting}
+It allows us to input \lstinline{x.val}, \lstinline{y.val}, and \lstinline{dz1} (usually called the ``adjoint''), and receive the derivatives $dz_1 \times \frac{\partial f}{\partial x}$ and $dz_1 \times \frac{\partial f}{\partial y}$ in \lstinline{x.dval} and \lstinline{y.dval}.
+
+Suppose we also have \lstinline{DTh} and \lstinline{DTg}:
+\begin{lstlisting}[language=Python]
+def DTh(x : Ref[_dfloat], y : Ref[_dfloat], dz0 : float)
+def DTg(z0 : Ref[_dfloat], dz1 : float)
+\end{lstlisting}
+How do we use them to assemble our target \lstinline{DTf}?
+
+Notice that the input of \lstinline{DTg} requires the adjoint \lstinline{dz1} from the input of \lstinline{DTf}, and the input of \lstinline{DTh} requires the adjoint \lstinline{dz0} from the output of \lstinline{DTg} (through \lstinline{z0.dval}. Thus, the only sensible way to properly assemble these functions is the following:
+\begin{lstlisting}[language=Python]
+def DTf(x : Ref[_dfloat], y : Ref[_dfloat], dz1 : float):
+	# First, run the function forward
+	z0 : float = h(x.val, y.val)
+	z1 : float = g(z0)
+	# Next, run it backwards
+	DTg(z0, dz1)
+	DTh(x, y, z0.dval) # DTh will write the outputs in x and y 
+\end{lstlisting}
+Suppose \lstinline{DTh} and \lstinline{DTg} takes around the same time as \lstinline{h} and \lstinline{g}, respectively, then \lstinline{DTf} would take around two times to compute as \lstinline{f} -- we can compute the gradients cheaply regardless of the number of input variables! (This argument breaks when we have recursive functions or simply have very deeply nested function call, in the homework we ignore this, but we will discuss this in much more details in the class).
+
+Like in the forward mode, we need the list of ``terminal'' cases:
+\begin{equation}
+\begin{aligned}
+\text{DTConstant}(c, dz) &= \left(dc \leftarrow 0\right) \\
+\text{DTVariable}(x, dz) &= \left(dx \leftarrow dz\right) \\
+\text{DTAdd}(x, y, dz) &= \left(dx \leftarrow dz, dy \leftarrow dz\right) \\
+\text{DTSub}(x, y, dz) &= \left(dx \leftarrow dz, dy \leftarrow -dz\right) \\
+\text{DTMul}(x, y, dz) &= \left(dx \leftarrow dz \cdot y, dy \leftarrow dz \cdot x\right) \\
+\text{DTDiv}(x, y, dz) &= \left(dx \leftarrow \frac{dz}{y}, dy \leftarrow \frac{-dz \cdot x}{y^2}\right) \\
+\text{DTSin}(x, dz) &= \left(dx \leftarrow dz \cdot \cos(x)\right) \\
+\text{DTCos}(x, dz) &= \left(dx \leftarrow -dz \cdot \sin(x)\right) \\
+\text{DSqrt}(x, dz) &= \left(dx \leftarrow \frac{dz}{2\sqrt{x}} \right) \\
+\text{DPow}(x, y, dz) &= \left(dx \leftarrow dz \cdot y \cdot x^{y-1}, dy \leftarrow x^y \log(x) \right) \\
+\text{DExp}(x, dz) &= \left(dx \leftarrow dz \cdot \exp(x) \right) \\
+\text{DLog}(x, dz) &= \left(dx \leftarrow \frac{dz}{x} \right) \\
+\text{Dfloat2int}(x, dz) &= \left(dx \leftarrow 0\right)
+\end{aligned}
+\end{equation}
+
+\section{Reverse-mode automatic differentiation in loma}
+
+Just like the forward mode differentiation, the reverse mode can be defined as the following in loma:
+\begin{lstlisting}[language=Python]
+def f(x : float) -> float:
+	# ...
+
+df = rev_diff(f) # df has type Ref[_dfloat], float -> void
+\end{lstlisting}
+
+The transformation will happen in \lstinline{autodiff.py} and \lstinline{reverse_diff.py}. \textbf{Your task is to fill in the blanks in the \lstinline{reverse_diff} function in \lstinline{reverse_diff.py}. Use \lstinline{hw_tests/hw2/test.py} to test your implementation. If you pass all tests, you get full points. Each test is weighted equally.}
+
+\subsection{Function type after reverse mode transformation.}
+\label{sec:reversemodespec}
+
+Given a function \lstinline{f(x0 : T0, x1 : T1, ...) -> T}, reverse mode will transform the signature to \lstinline{DTf(x0 : Ref[Diff[T0]], x1 : Ref[Diff[T1]], ..., _dout : T)}. For an input argument \lstinline{x}, there are three cases:
+\begin{itemize}
+	\item \lstinline{x : T} is only used as an input. The transformed argument \lstinline{x : Ref[Diff[T]]} will contain the output derivatives. Importantly, we will add the derivatives to the existing differential in \lstinline{x}, instead of overwriting it. This eliminates the need to initialize the data structure to zero, which can be costly in some cases.
+	\item \lstinline{x : Ref[T]} is only used as an output. The transformed argument \lstinline{x : Ref[Diff[T]]} is used as an input for the adjoint of the output \lstinline{x}.
+	\item \lstinline{x : Ref[T]} is used for both input and output. The transformed argument \lstinline{x : Ref[Diff[T]]} is first used as an input for the adjoint, and then the differentials is used to store the derivative w.r.t. \lstinline{x}.
+\end{itemize}
+
+\subsection{Transformation of statements and expressions}
+As in the previous homework, we will implement an \lstinline{IRMutator} to transform the code to its reverse-mode derivatives. As usual, we recommend you to try to pass the tests one-by-one. 
+
+\paragraph{test_identity} The task again asks you to transform the following identity function:
+\begin{lstlisting}[language=Python]
+def identity(x : float) -> float:
+    return x
+
+d_identity = rev_diff(identity)
+\end{lstlisting}
+The reverse mode transformation should give the following function:
+\begin{lstlisting}[language=Python]
+def d_identity(x : Ref[_dfloat], _dreturn : float):
+	x.dval = x.dval + _dreturn;
+\end{lstlisting}
+(Compare the result to the forward mode transformation -- how is it different?)
+
+You will need to implement \lstinline{mutate_function_def}, \lstinline{mutate_return}, and \lstinline{mutate_var} for the transformation. For \lstinline{mutate_function_def}, you need to come up with the new argument types of \lstinline{d_identity}. Next, you need to visit the statement in reverse order to accumulate the derivatives. For \lstinline{mutate_var}, I recommend returning a Python \lstinline{dict} that maps variable ID to its adjoint expression (\lstinline{_dreturn} in this case) -- by returning a dictionary for each expression, we can obtain all the variables used in an expression and their adjoints. Finally, for \lstinline{mutate_return}, you want to get the dictionary from the expression, and accumulate the derivatives to the corresponding variables. 
+
+\paragraph{test_constant} This one should be easy: given the following constant function
+\begin{lstlisting}[language=Python]
+def constant(x : float) -> float:
+    return 2.0
+
+d_constant = rev_diff(constant)
+\end{lstlisting}
+You should turn it to a ``no-op'' function:
+\begin{lstlisting}[language=Python]
+def d_constant(x : Ref[_dfloat], _dreturn : float):
+	pass
+\end{lstlisting}
+
+\paragraph{test_binary_ops} This task asks you to transform the following binary operations:
+\begin{lstlisting}[language=Python]
+def plus(x : float, y : float) -> float:
+    return x + y
+
+def subtract(x : float, y : float) -> float:
+    return x - y
+
+def multiply(x : float, y : float) -> float:
+    return x * y
+
+def divide(x : float, y : float) -> float:
+    return x / y
+
+d_plus = rev_diff(plus)
+d_subtract = rev_diff(subtract)
+d_multiply = rev_diff(multiply)
+d_divide = rev_diff(divide)
+\end{lstlisting}
+
+You'll need to implement \lstinline{mutate_add}, \lstinline{mutate_sub}, \lstinline{mutate_mul}, and \lstinline{mutate_div}. I recommend you implement it so that each of them returns a dictionary that maps the variable ID to the adjoint expression. I find the following dictionary merging function to be useful:
+\begin{lstlisting}[language=Python]
+def merge_dicts(x, y):
+    for key, y_value in y.items():
+        if key in x:
+            x_value = x[key]
+            x[key] = loma_ir.BinaryOp(\
+                loma_ir.Add(),
+                x_value,
+                y_value,
+                lineno = x_value.lineno,
+                t = x_value.t)
+        else:
+            x[key] = y_value
+    return x
+\end{lstlisting}
+
+We provide our output for \lstinline{d_plus} as an example:
+\begin{lstlisting}[language=Python]
+def d_plus(x : Ref[_dfloat], y : Ref[_dfloat], _dreturn : float):
+	x.dval = x.dval + _dreturn;
+	y.dval = y.dval + _dreturn;
+\end{lstlisting}
+
+\paragraph{test_square} This one tests if you handle multiple use of one variable inside an expression correctly:
+\begin{lstlisting}[language=Python]
+def square(x : float) -> float:
+    return x * x
+
+d_square = rev_diff(square)
+\end{lstlisting}
+Our output is
+\begin{lstlisting}[language=Python]
+def d_square(x : Ref[_dfloat], _dreturn : float):
+	x.dval = x.dval + x.val * _dreturn + x.val * _dreturn;
+\end{lstlisting}
+
+\paragraph{test_declare} Things will get a bit more complicated from now on. The test asks you to transform the following sequence of variable declarations:
+\begin{lstlisting}[language=Python]
+def declare(x : float, y : float) -> float:
+    z0 : float = x + y
+    z1 : float = z0 + 5.0
+    z2 : float = z1 * z0
+    z3 : float = z2 / z1
+    z4 : float = z3 - x
+    return z4
+
+d_declare = rev_diff(declare)
+\end{lstlisting}
+The reverse mode transformation should gives the following code:
+\begin{lstlisting}[language=Python]
+def d_declare(x : Ref[_dfloat], y : Ref[_dfloat], _dreturn : float):
+	# Forward pass: execute the primal code
+	z0 : _dfloat
+	z0.val = x.val + y.val
+	z1 : _dfloat
+	z1.val = z0.val + 5.0
+	z2 : _dfloat
+	z2.val = z1.val * z0.val
+	z3 : _dfloat
+	z3.val = z2.val / z1.val
+	z4 : _dfloat
+	z4.val = z3.val - x.val
+	# Reverse pass: traverse the code backwards
+	z4.dval = z4.dval + _dreturn
+	z3.dval = z3.dval + z4.dval
+	x.dval = x.dval + (0.0 - z4.dval)
+	z2.dval = z2.dval + z3.dval / z1.val
+	z1.dval = z1.dval + (0.0 - z3.dval * z2.val / z1.val * z1.val)
+	z1.dval = z1.dval + z0.val * z2.dval
+	z0.dval = z0.dval + z1.val * z2.dval
+	z0.dval = z0.dval + z1.dval
+	x.dval = x.dval + z0.dval
+	y.dval = y.dval + z0.dval
+\end{lstlisting}
+
+The transformation would first take the primal (original) code and turn all the variable declarations to their corresponding differential types. The primal values (say, \lstinline{z2.val}) can be used later in the reverse pass. The differentials (say, \lstinline{z1.dval}) will later be used for storing the derivatives. Next, we run the statements backwards (from \lstinline{z4} to \lstinline{z0}), and accumulate the derivatives like before.
+
+You should first modify \lstinline{mutate_function_def} to add the forward pass generation. I implemented this by adding another \lstinline{IRMutator} for transforming the primal function. Next, you should implement \lstinline{mutate_declare} to backpropagate the derivatives.
+
+\paragraph{test_assign1-5 and test_assign_args} The assign statements are trickier to handle since they may overwrite the values we want to reuse later in the reverse pass. Our solution is to cache the overwritten values into an array, so that we can reuse it later. For example, in \lstinline{test_assign2}, we are asked to differentiate the following function:
+\begin{lstlisting}[language=Python]
+def assign2(x : float, y : float) -> float:
+    z : float
+    z = 2.5 * x - 3.0 * y
+    z = z + x * y
+    return z
+
+d_assign2 = rev_diff(assign2)
+\end{lstlisting}
+
+My implementation would generate the following code:
+\begin{lstlisting}[language=Python]
+def d_assign2(x : Ref[_dfloat], y : Ref[_dfloat], _dreturn : float):
+	# Forward pass
+	_t_float : Array[float, 2] # cache the values into an array
+	z : _dfloat
+	_t_float[0] = z.val # cache z before it's overwritten
+	z.val = 2.5 * x.val - 3.0 * y.val
+	_t_float[1] = z.val # cache z before it's overwritten
+	z.val = z.val + x.val * y.val
+	
+	# Reverse pass
+	# Backprop "return z"
+	z.dval = z.dval + _dreturn
+	# Backprop "z = z + x * y"
+	z.val = _t_float[1] # First, recover the value of z before overwrite
+	# the adjoints for z, x, y, respectively, these are the three
+	# variables used in the expression z + x * y
+	_adj_float_1_0 : float = z.dval
+	_adj_float_1_1 : float = y.val * z.dval
+	_adj_float_1_2 : float = x.val * z.dval
+	# zero the differential of z first (to account for the overwrite)
+	z.dval = 0.0
+	# accumulate the adjoints to z, x, y
+	z.dval = z.dval + _adj_float_1_0
+	x.dval = x.dval + _adj_float_1_1
+	y.dval = y.dval + _adj_float_1_2
+	# Backprop "z = 2.5 * x - 3.0 * y"
+	z.val = _t_float[0] # recover the value of z before overwrite
+	# The adjoints for x and y respectively.
+	_adj_float_0_0 : float = 2.5 * z.dval
+	_adj_float_0_1 : float = 3.0 * (0.0 - z.dval)
+	# zero the differential of z first
+	z.dval = 0.0
+	# accumulate the adjoints to x and y
+	x.dval = x.dval + _adj_float_0_0
+	y.dval = y.dval + _adj_float_0_1
+\end{lstlisting}
+
+The generated code is a bit involved. Let's look at them line by line. Firstly, in the forward pass, we
+first allocate an array \lstinline{_t_float} for each assign statement (line 3). Before each assign statement, we cache the left hand side values to the array, so that we don't lose the values (line 5 and 7).
+
+In the reverse pass, for each assign statement \lstinline{z = f(x0, x1, ... z)}, we need to to the following:
+\begin{enumerate}
+	\item First, pop from the cache: \lstinline{z = cached_z} (line 14 and 27).
+	\item Next, declare new adjoint variables for all the inputs: \lstinline{_adj_x0 = ...}, \lstinline{_adj_x1 = ...}, and \lstinline{_adj_z = ...}. (line 17-19 and line 29-30).
+	\item Next, zero the differential of z: \lstinline{z.dval = 0} (line 21 and 32).
+	\item Next, accumulate the adjoint variables to their corresponding differentials: \lstinline{x0.dval += _adj_x0}, \lstinline{x1.dval += _adj_x1}, ... \lstinline{z.dval += _adj_z}. (line 23-25 and 34-35)..
+\end{enumerate}
+
+You'll need to modify \lstinline{mutate_function_def} and add implementation to \lstinline{mutate_assign} to pass these tests.
+
+\paragraph{test_refs_out1-3 and test_refs_inout} These are testing whether you handle pass-by-reference inputs/outputs correctly. See Section~\ref{sec:reversemodespec} for the exact criteria.
+
+\paragraph{test_call_sin, test_call_cos, test_call_sqrt, test_call_pow, test_call_exp, test_call_log, test_call} You'll implement \lstinline{mutate_call} to handle these tests. They should not be that different from the binary operations.
+
+\paragraph{test_int_input, test_int_output, test_int_assign} These test whether your code can handle integer variables. You should properly ignore adjoints for integers in your generated code. Assignment to an integer variable requires a bit of special handling: recall that we use an array to cache the values that are overwritten. We now need two arrays: one for floats and one for integers.
+
+\paragraph{test_multivariate} This test demonstrates how reverse mode would usually be used in loma code:
+\begin{lstlisting}[language=Python]
+def multivariate(x : float, y : float) -> float:
+    return 3 * x * cos(y) + y * y
+
+d_multivariate = rev_diff(multivariate)
+
+def multivariate_grad(x : float, y : float, dx : Ref[float], dy : Ref[float]):
+    dx_ : Diff[float]
+    dx_.val = x
+    dx_.dval = 0.0
+    dy_ : Diff[float]
+    dy_.val = y
+    dy_.dval = 0.0
+
+    d_multivariate(dx_, dy_, 1.0)
+    dx = dx_.dval
+    dy = dy_.dval
+\end{lstlisting}
+You probably don't need to implement anything extra to pass this test.
+
+\subsection{Extra credits (30\%)}
+The rest of the tests are considered extra credits. They should not be too hard but it is a bit annoying to transform code to handle arrays and structs. I will let you figure out the details since it's extra credits!
+
 \end{document}

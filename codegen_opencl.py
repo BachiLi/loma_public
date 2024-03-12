@@ -8,6 +8,9 @@ class OpenCLCodegenVisitor(codegen_c.CCodegenVisitor):
     """ Generates OpenCL code from loma IR.
     """
 
+    def __init__(self, func_defs):
+        super().__init__(func_defs)
+
     def visit_function_def(self, node):
         if node.is_simd:
             self.code += f'__kernel void {node.id}('
@@ -83,7 +86,7 @@ def codegen_opencl(structs : dict[str, loma_ir.Struct],
         code += ');\n'
 
     for f in funcs.values():
-        cg = OpenCLCodegenVisitor()
+        cg = OpenCLCodegenVisitor(funcs)
         cg.visit_function(f)
         code += cg.code
 

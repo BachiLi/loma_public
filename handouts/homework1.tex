@@ -6,7 +6,7 @@
 
 \section{Total derivatives}
 
-In our first homework, we will implement what is known as the ``forward mode'' automatic differentiation in loma for generating code that computes the derivatives. 
+In our first homework, we will implement what is known as the ``forward mode'' automatic differentiation in loma for generating code that computes the derivatives.
 Specifically, given a (differentiable) function $f: \mathbb{R}^n \rightarrow \mathbb{R}^m$, we will automatically generate its \href{https://en.wikipedia.org/wiki/Total_derivative}{total derivative} $df: \mathbb{R}^n \times \mathbb{R}^n \rightarrow \mathbb{R}^m$. 
 The total derivative $df(\mathbf{x}, \mathbf{dx})$ (noticed that it takes two inputs $\mathbf{x}$ and $\mathbf{dx}$ instead of only one!) is defined as the best linear approximation at point $\mathbf{x}$:
 \begin{equation}
@@ -32,31 +32,31 @@ We will focus on straight-line code for this homework, that is, code without if-
 
 The key idea of forward-mode automatic differentiation is the \textbf{chain rule}. Let
 \begin{equation}
-	f(x) = g(h(x)).
+    f(x) = g(h(x)).
 \end{equation}
 Then,
 \begin{equation}
-	Df(x, dx) = Dg(Dh(x, dx)).
+    Df(x, dx) = Dg(Dh(x, dx)).
 \end{equation}
 (Try proving this using the definition of total derivative!)
 
 Therefore, if we have a straight-line code of a function \lstinline{f}
 \begin{lstlisting}[language=Python]
 def f(x : float, y : float) -> float:
-	z0 : float = h(x, y)
-	z1 : float = g(z0)
-	return z1
+    z0 : float = h(x, y)
+    z1 : float = g(z0)
+    return z1
 \end{lstlisting}
 We can automatically synthesize its \lstinline{Df} by 1) replacing all datatypes \lstinline{float} with a new struct \lstinline{_dfloat} that stores both the primal value and the total derivative, and 2) replacing all function calls with their own ``Df'':
 \begin{lstlisting}[language=Python]
 class _dfloat:
-	val : float
-	dval : float
+    val : float
+    dval : float
 
 def Df(x : _dfloat, y : _dfloat) -> _dfloat:
-	z0 : _dfloat = Dh(x, y)
-	z1 : _dfloat = Dg(z0)
-	return z1
+    z0 : _dfloat = Dh(x, y)
+    z1 : _dfloat = Dg(z0)
+    return z1
 \end{lstlisting}
 We can recursively perform this transformation to function \lstinline{h} and \lstinline{g}, then we are done!
 
@@ -86,59 +86,59 @@ Here, we provide the list of terminal cases of the basic operations in loma:
 Our goal is this homework is to transform loma functions to their derivatives. In loma, the total derivative of a function is declared as follows:
 \begin{lstlisting}[language=Python]
 def f(x : float) -> float:
-	# ...
+    # ...
 
 df = fwd_diff(f) # df has type _dfloat -> _dfloat
 \end{lstlisting}
 
-Loma will automatically generate the content of \lstinline{df}, so the programmer does not have to implement it themselves.
+Loma should automatically generate the content of \lstinline{df}, so the programmer does not have to implement it themselves.
 
-The transformation will happen in \lstinline{autodiff.py}. \textbf{Your task is to fill in the blanks in the \lstinline{forward_diff} function. Use \lstinline{hw_tests/test.py} to test your implementation. If you pass all tests, you get full points. Each test is weighted equally.}
+The transformation will happen in \lstinline{autodiff.py} and \lstinline{forward_diff.py}. \textbf{Your task is to fill in the blanks in the \lstinline{forward_diff} function in \lstinline{forward_diff.py}. Use \lstinline{hw_tests/hw1/test.py} to test your implementation. If you pass all tests, you get full points. Each test is weighted equally.}
 
 \subsection{Transformation of types}
 We (well, I) have implemented most of this part for you, but you should still understand this part for your implementation. We define two basic types for differentiation: \lstinline{_dfloat} and \lstinline{_dint}:
 \begin{lstlisting}[language=Python]
 class _dfloat:
-	val : float
-	dval : float
+    val : float
+    dval : float
 
 class _dint:
-	val : int
+    val : int
 \end{lstlisting}
 These types represent the primal values and total derivatives of floats and integers (for integers, the differential is always zero). For a general struct with id \lstinline{X}, we synthesize a new differential struct with id \lstinline{_dX}, where we convert the types of all its members to the differential type. For example, for the following types:
 \begin{lstlisting}[language=Python]
 class Foo:
-	x : int
-	y : float
-	z : Bar
+    x : int
+    y : float
+    z : Bar
 
 class Bar:
-	a : float
-	b : int
+    a : float
+    b : int
 \end{lstlisting}
 We will generate the following new types to represent the primal values and total derivatives:
 \begin{lstlisting}[language=Python]
 class _dFoo:
-	x : _dint
-	y : _dfloat
-	z : _dBar
+    x : _dint
+    y : _dfloat
+    z : _dBar
 
 class _dBar:
-	a : _dfloat
-	b : _dint
+    a : _dfloat
+    b : _dint
 \end{lstlisting}
 
 For a function definition, we transform all argument types and return type to their \lstinline{_d} counterparts. For example, for the following function \lstinline{f}:
 \begin{lstlisting}[language=Python]
 def f(x : float, y : Foo) -> Bar:
-	# ...
+    # ...
 
 df = fwd_diff(f)
 \end{lstlisting}
 \lstinline{df} would have the type:
 \begin{lstlisting}[language=Python]
 def df(x : _dfloat, y : _dFoo) -> _dBar:
-	# ...
+    # ...
 \end{lstlisting}
 
 Finally, loma introduces a type modifier \lstinline{Diff[]} that allows one to specify the \lstinline{_d} counterpart of a type. For example, \lstinline{Diff[float]} resolves to the type \lstinline{_dfloat}, and \lstinline{Diff[Foo]} resolves to the type \lstinline{_dFoo}. 
@@ -158,10 +158,10 @@ d_identity = fwd_diff(identity)
 \lstinline{d_identity} should be something like:
 \begin{lstlisting}[language=Python]
 def d_identity(x : _dfloat) -> _dfloat:
-	_ret : _dfloat
-	_ret.val = x.val
-	_ret.dval = x.dval
-	return _ret
+    _ret : _dfloat
+    _ret.val = x.val
+    _ret.dval = x.dval
+    return _ret
 \end{lstlisting}
 You will need to implement \lstinline{mutate_function_def}, \lstinline{mutate_return}, and \lstinline{mutate_var} for the transformation. You may find the \lstinline{type_to_diff_type} useful for transforming the function signatures. 
 
@@ -175,10 +175,10 @@ d_constant = fwd_diff(constant)
 \lstinline{d_constant} should be something like:
 \begin{lstlisting}[language=Python]
 def d_constant(x : _dfloat) -> _dfloat:
-	_ret : _dfloat
-	_ret.val = 2.0
-	_ret.dval = 0.0
-	return _ret
+    _ret : _dfloat
+    _ret.val = 2.0
+    _ret.dval = 0.0
+    return _ret
 \end{lstlisting}
 You will need to implement \lstinline{mutate_const_float} to pass this test.
 

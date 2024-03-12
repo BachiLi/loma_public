@@ -36,6 +36,10 @@ class CCodegenVisitor(irvisitor.IRVisitor):
 
     code = ''
     tab_count = 0
+    funcs_defs = None
+
+    def __init__(self, func_defs):
+        self.func_defs = func_defs
 
     def emit_tabs(self):
         self.code += '\t' * self.tab_count
@@ -143,6 +147,10 @@ class CCodegenVisitor(irvisitor.IRVisitor):
         self.emit_tabs()
         self.code += '}\n'
 
+    def visit_call_stmt(self, node):
+        self.emit_tabs()
+        self.code += self.visit_expr(node.call) + ';\n'
+
     def visit_expr(self, node):
         match node:
             case loma_ir.Var():
@@ -207,7 +215,15 @@ class CCodegenVisitor(irvisitor.IRVisitor):
                     func_id = '(int)'
 
                 ret = f'{func_id}('
-                ret += ','.join([self.visit_expr(arg) for arg in node.args])
+                if func_id in self.func_defs:
+                    func_def = self.func_defs[func_id]
+                    arg_strs = [self.visit_expr(arg) for arg in node.args]
+                    for i, arg in enumerate(arg_strs):
+                        if func_def.args[i].is_byref and (not isinstance(func_def.args[i], loma_ir.Array)):
+                            arg_strs[i] = '&(' + arg + ')'
+                    ret += ','.join(arg_strs)
+                else:
+                    ret += ','.join([self.visit_expr(arg) for arg in node.args])
                 ret += ')'
                 return ret
             case None:
@@ -253,9 +269,9 @@ def codegen_c(structs : dict[str, loma_ir.Struct],
                 code += ', '
             code += 'int __work_id'
         code += ');\n'
-    
+
     for f in funcs.values():
-        cg = CCodegenVisitor()
+        cg = CCodegenVisitor(funcs)
         cg.visit_function(f)
         code += cg.code
     return code

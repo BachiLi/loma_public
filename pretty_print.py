@@ -47,7 +47,10 @@ class PrettyPrintVisitor(irvisitor.IRVisitor):
         for i, arg in enumerate(node.args):
             if i > 0:
                 self.code += ', '
-            self.code += f'{type_to_string(arg.t)} {arg.id}'
+            if arg.is_byref:
+                self.code += f'Ref[{type_to_string(arg.t)}] {arg.id}'
+            else:
+                self.code += f'{type_to_string(arg.t)} {arg.id}'
         if node.is_simd:
             if len(node.args) > 0:
                 self.code += ', '
@@ -190,6 +193,27 @@ def func_to_str(f : loma_ir.func) -> str:
     ppv = PrettyPrintVisitor()
     ppv.visit_function(f)
     return ppv.code
+
+def stmt_to_str(s : loma_ir.stmt) -> str:
+    ppv = PrettyPrintVisitor()
+    ppv.visit_stmt(s)
+    return ppv.code
+
+def expr_to_str(e : loma_ir.expr) -> str:
+    ppv = PrettyPrintVisitor()
+    ppv.visit_stmt(e)
+    return ppv.code
+
+def loma_to_str(node) -> str:
+    match node:
+        case loma_ir.func():
+            return func_to_str(node)
+        case loma_ir.stmt():
+            return stmt_to_str(node)
+        case loma_ir.expr():
+            return expr_to_str(node)
+        case _:
+            assert False
 
 def pretty_print(structs : dict[str, loma_ir.Struct],
                  funcs : dict[str, loma_ir.func]):

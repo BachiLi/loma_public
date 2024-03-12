@@ -5,6 +5,7 @@ import autodiff
 import attrs
 import error
 import irmutator
+import pretty_print
 
 def fill_in_struct_info(t : loma_ir.type,
                         structs : dict[str, loma_ir.Struct]) -> loma_ir.type:
@@ -53,6 +54,9 @@ class TypeInferencer(irmutator.IRMutator):
                 ret_type = parent_type.t
             case loma_ir.StructAccess():
                 parent_type = self.lookup_ref_type(ref.struct)
+                if not isinstance(parent_type, loma_ir.Struct):
+                    # TODO: error message
+                    assert False
                 for m in parent_type.members:
                     if m.id == ref.member_id:
                         ret_type = m.t
@@ -60,7 +64,7 @@ class TypeInferencer(irmutator.IRMutator):
                 if ret_type is None:
                     assert False, f'member {ref.member_id} not found in Struct {parent_type.id}'
             case _:
-                # Error message: invalid lhs
+                # TODO: error message (invalid lhs)
                 assert False
         if isinstance(ret_type, loma_ir.Struct) and len(ret_type.members) == 0:
             ret_type = self.structs[ret_type.id]
@@ -288,13 +292,21 @@ class TypeInferencer(irmutator.IRMutator):
                 ret_type = f.ret_type
             elif isinstance(f, loma_ir.ForwardDiff):
                 primal_f = self.funcs[f.primal_func]
-                f_args = list(primal_f.args)
+                f_args = [\
+                    loma_ir.Arg(arg.id, autodiff.type_to_diff_type(self.diff_structs, arg.t), arg.is_byref) \
+                    for arg in primal_f.args]
                 ret_type = autodiff.type_to_diff_type(self.diff_structs, primal_f.ret_type)
                 for i, f_arg in enumerate(f_args):
                     f_args[i] = attrs.evolve(f_args[i],
                         t=autodiff.type_to_diff_type(self.diff_structs, f_arg.t))
             elif isinstance(f, loma_ir.ReverseDiff):
-                assert False # TODO
+                primal_f = self.funcs[f.primal_func]
+                f_args = [\
+                    loma_ir.Arg(arg.id, autodiff.type_to_diff_type(self.diff_structs, arg.t), is_byref=True) \
+                    for arg in primal_f.args]
+                if primal_f.ret_type is not None:
+                    f_args.append(loma_ir.Arg('_dreturn', primal_f.ret_type, is_byref=False))
+                ret_type = None
             if len(args) != len(f_args):
                 raise error.CallTypeMismatch(call.id, call.lineno)
             for i, (call_arg, f_arg) in enumerate(zip(args, f_args)):

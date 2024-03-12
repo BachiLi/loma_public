@@ -9,6 +9,9 @@ class ISPCCodegenVisitor(codegen_c.CCodegenVisitor):
         See https://ispc.github.io/index.html for more details about ispc.
     """
 
+    def __init__(self, func_defs):
+        super().__init__(func_defs)
+
     def visit_function_def(self, node):
         if node.is_simd:
             self.code += f'task void __{node.id}_task('
@@ -126,7 +129,7 @@ def codegen_ispc(structs : dict[str, loma_ir.Struct],
         code += ');\n'
 
     for f in funcs.values():
-        cg = ISPCCodegenVisitor()
+        cg = ISPCCodegenVisitor(funcs)
         cg.visit_function(f)
         code += cg.code
 
