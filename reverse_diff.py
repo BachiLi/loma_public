@@ -36,8 +36,8 @@ def reverse_diff(diff_func_id : str,
         func - the function to be differentiated
     """
 
-    # HW1 happens here. Modify the following IR mutators to perform
-    # forward differentiation.
+    # HW2 happens here. Modify the following IR mutators to perform
+    # reverse differentiation.
 
     # Apply the differentiation.
     class RevDiffMutator(irmutator.IRMutator):
