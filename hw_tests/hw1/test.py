@@ -124,7 +124,7 @@ class Homework1Test(unittest.TestCase):
                                             output_filename = '_code/call_cos.so')
         _dfloat = structs['_dfloat']
         x = _dfloat(1.5, 0.3)
-        out = lib.d_call_cos(x, dout)
+        out = lib.d_call_cos(x)
 
         assert abs(out.val - math.cos(x.val)) < epsilon and \
             abs(out.dval + x.dval * math.sin(x.val)) < epsilon
@@ -151,7 +151,7 @@ class Homework1Test(unittest.TestCase):
         y = _dfloat(0.7, 0.4)
         out = lib.d_call_pow(x, y)
 
-        assert abs(out.val - math.pow(x, y)) < epsilon and \
+        assert abs(out.val - math.pow(x.val, y.val)) < epsilon and \
             abs(out.dval - (x.dval * y.val * math.pow(x.val, y.val - 1) + \
                             y.dval * math.pow(x.val, y.val) * math.log(x.val))) < epsilon
 
