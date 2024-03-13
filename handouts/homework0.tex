@@ -88,7 +88,8 @@ The IR of loma in the \href{https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_fo
 \alt 'Declare' <string> <type> [<expr>]? 
 \alt 'Return' <expr>
 \alt 'IfElse' <expr> <stmt>* <stmt>*
-\alt 'While' <expr> <int> <stmt>*) \\
+\alt 'While' <expr> <int> <stmt>*
+\alt 'CallStmt' <expr>) \\
 'attributes' <int>?
 
 <expr> ::= ('Var' <string>
@@ -136,17 +137,18 @@ We will explain the more precise semantics of the IR later, but most of them sho
 
 To implement the IR above, we represent it using ASDL (Abstract Syntax Definition Language) -- see \href{https://eli.thegreenplace.net/2014/06/04/using-asdl-to-describe-asts-in-compilers}{Eli Bendersky's blog post} for a brief introduction. This is what Python used for representing its \href{https://github.com/python/cpython/blob/main/Parser/Python.asdl}{abstract syntax tree}. The IR above can be directly translated to the following ASDL:
 \begin{lstlisting}
-    module loma {
+     module loma {
       func = FunctionDef ( string id, arg* args, stmt* body, bool is_simd, type? ret_type )
            | ForwardDiff ( string id, string primal_func )
            | ReverseDiff ( string id, string primal_func )
              attributes  ( int? lineno )
 
-      stmt = Assign     ( ref target, expr val )
+      stmt = Assign     ( expr target, expr val )
            | Declare    ( string target, type t, expr? val )
            | Return     ( expr val )
            | IfElse     ( expr cond, stmt* then_stmts, stmt* else_stmts )
            | While      ( expr cond, int max_iter, stmt* body )
+           | CallStmt   ( expr call )
            attributes   ( int? lineno )
 
       expr = Var          ( string id )
@@ -158,11 +160,7 @@ To implement the IR above, we represent it using ASDL (Abstract Syntax Definitio
            | Call         ( string id, expr* args )
            attributes     ( int? lineno, type? t )
 
-      ref = RefName   ( string id )
-          | RefArray  ( ref array, expr index )
-          | RefStruct ( ref struct, string member )
-
-      arg  = Arg ( string id, type t )
+      arg  = Arg ( string id, type t, bool is_byref )
 
       type = Int    ( )
            | Float  ( )
@@ -183,7 +181,7 @@ To implement the IR above, we represent it using ASDL (Abstract Syntax Definitio
              | Equal()
              | And()
              | Or()
-
+    }
 \end{lstlisting}
 This IR is defined in \lstinline{ir.py} in the source code.
 
@@ -229,23 +227,26 @@ The meaning of the IR above follows a similar C program. We will explain the sem
 The following \lstinline{FunctionDef} in loma IR
 \begin{lstlisting}
 FunctionDef(id='plus',
-            args=(Arg(id='x', t=Int()),
-                  Arg(id='y', t=Int()),
-                  Arg(id='z', t=Array(t=Float(), static_size=None))),
+            args=(Arg(id='x', t=Int(), is_byref = False),
+                  Arg(id='y', t=Int(), is_byref = False),
+                  Arg(id='z', t=Array(t=Float(), static_size=None)), is_byref = False),
+                  Arg(id='w', t=Int(), is_byref = True)
             body=(Return(val=ConstInt(val=0)),),
             is_simd=False,
             ret_type=Int())
 \end{lstlisting}
 (take some time to read it, it's not too bad), has the same meaning as the following C function definition:
 \begin{lstlisting}[language=C]
-int plus(int x, int y, float* z) {
+int plus(int x, int y, float* z, int *w) {
     return 0;
 }
 \end{lstlisting}
 
 Each function argument needs to be tagged either as an input (\lstinline{In()}) or an output (\lstinline{Out()}), and its type \lstinline{t} needs to be specified. If a function returns a value, the type of the returned value must also be specified. If a function does not return a value, then it's \lstinline{ret_type} is \lstinline{None}.
 
-A function can take inputs and outputs that are of \lstinline{Array} types. You can have a struct of arrays or array of structs (or structs of arrays of structs). The function arguments are passed by values, except for arrays. When a callee modifies an array element, the caller will observe the changes.
+A function can take inputs and outputs that are of \lstinline{Array} types. You can have a struct of arrays or array of structs (or structs of arrays of structs). The function arguments are by default passed by values, except for arrays. When a callee modifies an array element, the caller will observe the changes.
+
+Loma also supports call-by-reference (similar to \lstinline{int &w} in C++) using the \lstinline{is_byref} flag. If an argument is marked as \lstinline{is_byref}, then even if it is not an array, when a calle modifies the variable, the calle will observe the changes.
 
 We will explain the \lstinline{is_simd} flag later when we talk about parallelization.
 
@@ -367,15 +368,16 @@ The frontend has an almost one-to-one relationship to the IR. Below we list how 
 \subsection{Function definition.} 
 The following Python frontend code:
 \begin{lstlisting}[language=Python]
-def plus(x : In[int], y : In[int], z : Out[Array[float]]) -> int:
+def plus(x : int, y : int, z : Array[float], w : Ref[int]) -> int:
 \end{lstlisting}
 will be translated to the following loma IR:
 \begin{lstlisting}
 FunctionDef(id='plus',
-            args=(Arg(id='x', t=Int(), i=In()),
-                  Arg(id='y', t=Int(), i=In()),
-                  Arg(id='z', t=Array(t=Float(), static_size=None), i=Out())),
-            body=(Return(val=ConstInt(val=0, lineno=2, t=None), lineno=2),),
+            args=(Arg(id='x', t=Int(), is_byref=False),
+                  Arg(id='y', t=Int(), is_byref=False),
+                  Arg(id='z', t=Array(t=Float(), static_size=None), is_byref=False),
+                  Arg(id='w', t=Int(), is_byref=True)),
+            body=None,
             is_simd=False,
             ret_type=Int())
 \end{lstlisting}

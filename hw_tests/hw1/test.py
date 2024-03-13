@@ -105,6 +105,80 @@ class Homework1Test(unittest.TestCase):
         assert abs(out.val - (x.val * y.val)) < epsilon and \
             abs(out.dval - (x.dval * y.val + x.val * y.dval)) < epsilon
 
+    def test_call_sin(self):
+        with open('loma_code/call_sin.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/call_sin.so')
+        _dfloat = structs['_dfloat']
+        x = _dfloat(1.5, 0.3)
+        out = lib.d_call_sin(x)
+
+        assert abs(out.val - math.sin(x.val)) < epsilon and \
+            abs(out.dval - x.dval * math.cos(x.val)) < epsilon
+
+    def test_call_cos(self):
+        with open('loma_code/call_cos.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/call_cos.so')
+        _dfloat = structs['_dfloat']
+        x = _dfloat(1.5, 0.3)
+        out = lib.d_call_cos(x, dout)
+
+        assert abs(out.val - math.cos(x.val)) < epsilon and \
+            abs(out.dval + x.dval * math.sin(x.val)) < epsilon
+
+    def test_call_sqrt(self):
+        with open('loma_code/call_sqrt.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/call_sqrt.so')
+        _dfloat = structs['_dfloat']
+        x = _dfloat(1.5, 0.3)
+        out = lib.d_call_sqrt(x)
+
+        assert abs(out.val - math.sqrt(x.val)) < epsilon and \
+            abs(out.dval - (0.5 * x.dval / math.sqrt(x.val))) < epsilon
+
+    def test_call_pow(self):
+        with open('loma_code/call_pow.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/call_pow.so')
+        _dfloat = structs['_dfloat']
+        x = _dfloat(1.5, 0.3)
+        y = _dfloat(0.7, 0.4)
+        out = lib.d_call_pow(x, y)
+
+        assert abs(out.val - math.pow(x, y)) < epsilon and \
+            abs(out.dval - (x.dval * y.val * math.pow(x.val, y.val - 1) + \
+                            y.dval * math.pow(x.val, y.val) * math.log(x.val))) < epsilon
+
+    def test_call_exp(self):
+        with open('loma_code/call_exp.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/call_exp.so')
+        _dfloat = structs['_dfloat']
+        x = _dfloat(1.5, 0.3)
+        out = lib.d_call_exp(x)
+
+        assert abs(out.val - math.exp(x.val)) < epsilon and \
+            abs(out.dval - x.dval * math.exp(x.val)) < epsilon
+
+    def test_call_log(self):
+        with open('loma_code/call_log.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/call_log.so')
+        _dfloat = structs['_dfloat']
+        x = _dfloat(1.5, 0.3)
+        out = lib.d_call_log(x)
+
+        assert abs(out.val - math.log(x.val)) < epsilon and \
+            abs(out.dval - x.dval / x.val) < epsilon
+
     def test_call(self):
         with open('loma_code/call.py') as f:
             structs, lib = compiler.compile(f.read(),

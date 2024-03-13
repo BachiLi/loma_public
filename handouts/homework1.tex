@@ -203,182 +203,26 @@ d_divide = fwd_diff(divide)
 \end{lstlisting}
 To pass this test, implement \lstinline{mutate_add}, \lstinline{mutate_sub}, \lstinline{mutate_mul} and \lstinline{mutate_div}.
 
-\paragraph{test_declare} Now we will start to have variable declaration:
+As a reference, here's what \lstinline{d_plus} should look like:
 \begin{lstlisting}[language=Python]
-def declare(x : float, y : float) -> float:
-    z0 : float = x + y
-    z1 : float = z0 + 5.0
-    z2 : float = z1 * z0
-    return z2
-
-d_declare = fwd_diff(declare)
-\end{lstlisting}
-You'll need to implement \lstinline{mutate_declare} to pass this test.
-
-\paragraph{test_assign and test_side_effect} Next, we test variable assignment.
-\begin{lstlisting}[language=Python]
-def assign(x : float, y : float) -> float:
-    z : float
-    z = x + y
-    return z
-
-d_assign = fwd_diff(assign)
+def d_plus(x : _dfloat, y : _dfloat) -> _dfloat:
+    _return : _dfloat
+    _return.val = x.val + y.val
+    _return.dval = x.dval + y.dval
+    return _return
 \end{lstlisting}
 
-\begin{lstlisting}[language=Python]
-def side_effect(x : float, y : float) -> float:
-    z : float
-    z = x + y
-    z = 0.0
-    z = x * y
-    return z
+\paragraph{test_declare} Now we will start to have variable declaration. You'll need to implement \lstinline{mutate_declare} to pass this test.
 
-d_side_effect = fwd_diff(side_effect)
-\end{lstlisting}
+\paragraph{test_assign and test_side_effect} Next, we test variable assignment. You'll need to implement \lstinline{mutate_assign} to pass these tests.
 
-You'll need to implement \lstinline{mutate_assign} to pass these tests.
+\paragraph{test_call_sin, test_call_cos, test_call_sqrt, test_call_pow, test_call_exp, test_call_log, test_call} Next, we test intrinsic function calls (you don't need to consider calls to other loma functions yet). You'll need to implement \lstinline{mutate_call} to pass these tests.
 
-\paragraph{test_call} Next, we test intrinsic function calls (you don't need to consider calls to other loma functions yet).
-\begin{lstlisting}[language=Python]
-def call(x : float) -> float:
-    z0 : float = sin(x)
-    z1 : float = cos(z0) + 1.0
-    z2 : float = sqrt(z1)
-    z3 : float = pow(z2, z1)
-    z4 : float = exp(z3)
-    z5 : float = log(z3 + z4)
-    return z5
+\paragraph{test_int_input and test_int_input} Next, we test the handling of integers. You'll need to go back to your previous code, and make sure that you handle integers correctly. In particular, \lstinline{_dint} does not have a \lstinline{dval} member, so you need to handle this.
 
-d_call = fwd_diff(call)
-\end{lstlisting}
-You'll need to implement \lstinline{mutate_call} to pass this test.
+\paragraph{test_array_output, test_array_input, test_int_array_input, test_array_input_indexing, test_array_output_indexing, multiple_outputs} Next, we test the handling of arrays. You'll need to implement \lstinline{mutate_array}, and go back to your previous code to make sure you handle array types properly. You also need to handle the \lstinline{float2int} function call.
 
-\paragraph{test_int_input and test_int_input} Next, we test the handling of integers.
-\begin{lstlisting}[language=Python]
-def int_input(x : float, y : int) -> float:
-    z : int = 5
-    return z * x + y - 1
-
-d_int_input = fwd_diff(int_input)
-\end{lstlisting}
-\begin{lstlisting}[language=Python]
-def int_output(x : float, y : int) -> int:
-    z : int = 5
-    return z * x + y - 1
-
-d_int_output = fwd_diff(int_output)
-\end{lstlisting}
-You'll need to go back to your previous code, and make sure that you handle integers correctly. In particular, \lstinline{_dint} does not have a \lstinline{dval} member, so you need to handle this.
-
-\paragraph{test_array_output, test_array_input, test_int_array_input, test_array_input_indexing, test_array_output_indexing, multiple_outputs} Next, we test the handling of arrays.
-\begin{lstlisting}[language=Python]
-def array_output(x : float, y : Array[float]):
-    y[0] = x * x
-    y[1] = x * x * x
-
-d_array_output = fwd_diff(array_output)
-\end{lstlisting}
-\begin{lstlisting}[language=Python]
-def array_input(x : Array[float]) -> float:
-    return x[0] + x[1]
-
-d_array_input = fwd_diff(array_input)
-\end{lstlisting}
-\begin{lstlisting}[language=Python]
-def int_array_input(x : Array[float], y : Array[int]) -> float:
-    return x[0] + x[1] + y[0]
-
-d_int_array_input = fwd_diff(int_array_input)
-\end{lstlisting}
-\begin{lstlisting}[language=Python]
-def array_input_indexing(x : Array[float], i : int, j : float) -> float:
-    return x[i] + x[float2int(j)] + x[2 * i] + x[2 * float2int(j)]
-
-d_array_input_indexing = fwd_diff(array_input_indexing)
-\end{lstlisting}
-\begin{lstlisting}[language=Python]
-def array_output_indexing(x : float, i : int, j : float, y : Array[float]):
-    y[i] = x
-    y[float2int(j)] = 2 * x
-    y[2 * i] = 3 * x
-    y[2 * float2int(j)] = 4 * x
-
-d_array_output_indexing = fwd_diff(array_output_indexing)
-\end{lstlisting}
-\begin{lstlisting}[language=Python]
-def multiple_outputs(x : float, y : Array[float], z : Array[float]):
-    y[0] = x * x
-    y[1] = x * x * x
-    z[0] = y[0] * y[1]
-
-d_multiple_outputs = fwd_diff(multiple_outputs)
-\end{lstlisting}
-You'll need to implement \lstinline{mutate_array}, and go back to your previous code to make sure you handle array types properly. You also need to handle the \lstinline{float2int} function call.
-
-\paragraph{test_struct_input, test_nested_struct_input, test_struct_output, test_nested_struct_output, test_array_in_struct, test_struct_in_array} Next, we test the differentiation with Structs.
-\begin{lstlisting}[language=Python]
-class Foo:
-    x : float
-    y : int
-
-def struct_input(foo : Foo) -> float:
-    z : int = 5
-    return z * foo.x + foo.y - 1
-
-d_struct_input = fwd_diff(struct_input)
-\end{lstlisting}
-\begin{lstlisting}[language=Python]
-class Foo:
-    x : float
-    y : Bar
-
-class Bar:
-    z : int
-    w : float
-
-def nested_struct_input(foo : Foo) -> float:
-    b : Bar
-    b.z = 5
-    b.w = 3
-    return (foo.x + foo.y.z + foo.y.w + b.z) * b.w
-
-d_nested_struct_input = fwd_diff(nested_struct_input)
-\end{lstlisting}
-\begin{lstlisting}[language=Python]
-class Foo:
-    a : float
-    b : int
-
-def struct_output(x : float, y : int) -> Foo:
-    foo : Foo
-    foo.a = x + y * x
-    foo.b = y - x
-    return foo
-
-d_struct_output = fwd_diff(struct_output)
-\end{lstlisting}
-\begin{lstlisting}[language=Python]
-class Foo:
-    int_arr : Array[int]
-    float_arr : Array[float]
-
-def array_in_struct(f : Foo) -> float:
-    return f.int_arr[0] + f.float_arr[0]
-
-d_array_in_struct = fwd_diff(array_in_struct)
-\end{lstlisting}
-\begin{lstlisting}[language=Python]
-class Foo:
-    x : int
-    y : float
-
-def struct_in_array(in_f : Array[Foo], out_f : Array[Foo]):
-    out_f[0].x = in_f[0].x * in_f[0].y
-    out_f[0].y = in_f[0].x + in_f[0].y
-
-d_struct_in_array = fwd_diff(struct_in_array)
-\end{lstlisting}
-You will need to implement \lstinline{mutate_struct_access}, and revisit other part of your code to make sure you have handled Struct correctly. When considering struct access as a left hand side in \lstinline{mutate_assign}, you can use the type of the right hand side (\lstinline{node.val.t}) to infer the type of the access.
+\paragraph{test_struct_input, test_nested_struct_input, test_struct_output, test_nested_struct_output, test_array_in_struct, test_struct_in_array} Next, we test the differentiation with Structs. You will need to implement \lstinline{mutate_struct_access}, and revisit other part of your code to make sure you have handled Struct correctly. When considering struct access as a left hand side in \lstinline{mutate_assign}, you can use the type of the right hand side (\lstinline{node.val.t}) to infer the type of the access.
 
 \paragraph{test_poly} The last test shows how differentiated code can be used in loma code:
 \begin{lstlisting}[language=Python]
