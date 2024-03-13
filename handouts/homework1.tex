@@ -96,16 +96,14 @@ Loma should automatically generate the content of \lstinline{df}, so the program
 The transformation will happen in \lstinline{autodiff.py} and \lstinline{forward_diff.py}. \textbf{Your task is to fill in the blanks in the \lstinline{forward_diff} function in \lstinline{forward_diff.py}. Use \lstinline{hw_tests/hw1/test.py} to test your implementation. If you pass all tests, you get full points. Each test is weighted equally.}
 
 \subsection{Transformation of types}
-We (well, I) have implemented most of this part for you, but you should still understand this part for your implementation. We define two basic types for differentiation: \lstinline{_dfloat} and \lstinline{_dint}:
+We (well, I) have implemented most of this part for you, but you should still understand this part for your implementation. We define a basic type for differentiation: \lstinline{_dfloat}:
 \begin{lstlisting}[language=Python]
 class _dfloat:
     val : float
     dval : float
-
-class _dint:
-    val : int
 \end{lstlisting}
-These types represent the primal values and total derivatives of floats and integers (for integers, the differential is always zero). For a general struct with id \lstinline{X}, we synthesize a new differential struct with id \lstinline{_dX}, where we convert the types of all its members to the differential type. For example, for the following types:
+For integers, the corresponding differential type is still \lstinline{int}.
+The \lstinline{_dfloat} type represents the primal values and total derivatives of floats. For a general struct with id \lstinline{X}, we synthesize a new differential struct with id \lstinline{_dX}, where we convert the types of all its members to the differential type. For example, for the following types:
 \begin{lstlisting}[language=Python]
 class Foo:
     x : int
@@ -119,13 +117,13 @@ class Bar:
 We will generate the following new types to represent the primal values and total derivatives:
 \begin{lstlisting}[language=Python]
 class _dFoo:
-    x : _dint
+    x : int
     y : _dfloat
     z : _dBar
 
 class _dBar:
     a : _dfloat
-    b : _dint
+    b : int
 \end{lstlisting}
 
 For a function definition, we transform all argument types and return type to their \lstinline{_d} counterparts. For example, for the following function \lstinline{f}:
