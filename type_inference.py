@@ -296,9 +296,6 @@ class TypeInferencer(irmutator.IRMutator):
                     loma_ir.Arg(arg.id, autodiff.type_to_diff_type(self.diff_structs, arg.t), arg.is_byref) \
                     for arg in primal_f.args]
                 ret_type = autodiff.type_to_diff_type(self.diff_structs, primal_f.ret_type)
-                for i, f_arg in enumerate(f_args):
-                    f_args[i] = attrs.evolve(f_args[i],
-                        t=autodiff.type_to_diff_type(self.diff_structs, f_arg.t))
             elif isinstance(f, loma_ir.ReverseDiff):
                 primal_f = self.funcs[f.primal_func]
                 f_args = [\
