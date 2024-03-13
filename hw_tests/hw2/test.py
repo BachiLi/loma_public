@@ -491,6 +491,10 @@ class Homework2Test(unittest.TestCase):
         assert abs(dx.value - 3 * math.cos(y.value)) < epsilon and \
             abs(dy.value - (-3 * x.value * math.sin(y.value) + 2 * y.value)) < epsilon
 
+class Homework2Bonus(unittest.TestCase):
+    def setUp(self):
+        os.chdir(os.path.dirname(os.path.realpath(__file__)))
+
     def test_array_output(self):
         with open('loma_code/array_output.py') as f:
             structs, lib = compiler.compile(f.read(),
