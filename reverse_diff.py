@@ -19,17 +19,11 @@ def reverse_diff(diff_func_id : str,
         and return a function that computes the total derivative of func.
 
         For example, given the following function:
-        def square(x : float) -> float:
+        def square(x : In[float]) -> float:
             return x * x
         and let diff_func_id = 'd_square', reverse_diff() should return
-        def d_square(x : Ref[_dfloat], _dreturn : float):
-            x.dval += _dreturn * x.val
-            x.dval += _dreturn * x.val
-
-        where the class _dfloat is
-        class _dfloat:
-            val : float
-            dval : float
+        def d_square(x : In[float], _dx : Out[float], _dreturn : float):
+            _dx = _dx + _dreturn * x + _dreturn * x
 
         Parameters:
         diff_func_id - the ID of the returned function

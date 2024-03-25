@@ -14,18 +14,21 @@ def forward_diff(diff_func_id : str,
         and return a function that computes the total derivative of func.
 
         For example, given the following function:
-        def square(x : float) -> float:
+        def square(x : In[float]) -> float:
             return x * x
         and let diff_func_id = 'd_square', forward_diff() should return
-        def d_square(x : _dfloat):
-            _return : _dfloat
-            _return.val = x.val * x.val
-            _return.dval = x.val * x.dval + x.dval * x.val
-            return _return
+        def d_square(x : In[_dfloat]) -> _dfloat:
+            return make__dfloat(x.val * x.val, x.val * x.dval + x.dval * x.val)
         where the class _dfloat is
         class _dfloat:
             val : float
             dval : float
+        and the function make__dfloat is
+        def make__dfloat(val : float, dval : float) -> _dfloat:
+            ret : _dfloat
+            ret.val = val
+            ret.dval = dval
+            return ret
 
         Parameters:
         diff_func_id - the ID of the returned function
@@ -37,6 +40,7 @@ def forward_diff(diff_func_id : str,
                 Struct to the corresponding differential Struct
                 e.g., diff_structs['float'] returns _dfloat
         func - the function to be differentiated
+        func_to_fwd - mapping from primal function ID to its forward differentiation
     """
 
     # HW1 happens here. Modify the following IR mutators to perform
