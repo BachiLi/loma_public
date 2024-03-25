@@ -1,4 +1,4 @@
-def call(x : float, y : float) -> float:
+def call(x : In[float], y : In[float]) -> float:
     z0 : float = sin(x)
     z1 : float = cos(z0) + 1.0
     z2 : float = sqrt(z1) - y * y

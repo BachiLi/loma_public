@@ -1,4 +1,4 @@
-def assign_args(w : float, x : float, y : float, z : float) -> float:
+def assign_args(w : In[float], x : In[float], y : In[float], z : In[float]) -> float:
     w = 5.0
     x = w + x + y + z
     y = 6.0

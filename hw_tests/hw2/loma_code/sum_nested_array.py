@@ -1,4 +1,4 @@
-def sum_nested_array(arr : Array[Array[float]]) -> float:
+def sum_nested_array(arr : In[Array[Array[float]]]) -> float:
     s : float = 0
     s = s + arr[0][0] * arr[0][0]
     s = s + arr[0][1] * arr[0][1]

@@ -29,7 +29,7 @@ def loma_to_ctypes_type(t : loma_ir.type | loma_ir.arg,
             if isinstance(t.t, loma_ir.Array):
                 return loma_to_ctypes_type(t.t, ctypes_structs)
             else:
-                if t.is_byref:
+                if t.i == loma_ir.Out():
                     return ctypes.POINTER(loma_to_ctypes_type(t.t, ctypes_structs))
                 else:
                     return loma_to_ctypes_type(t.t, ctypes_structs)
@@ -108,7 +108,7 @@ def compile(loma_code : str,
 
         print(code)
 
-        log = run(['g++', '-shared', '-fPIC', '-o', output_filename, '-O2', '-x', 'c++', '-'],
+        log = run(['gcc', '-shared', '-fPIC', '-o', output_filename, '-O2', '-x', 'c', '-'],
             input = code,
             encoding='utf-8',
             capture_output=True)

@@ -26,7 +26,8 @@ class ISPCCodegenVisitor(codegen_c.CCodegenVisitor):
             self.code += ', uniform int task_index'
             self.code += ') {\n'
 
-            self.byref_args = set([arg.id for arg in node.args if arg.is_byref])
+            self.byref_args = set([arg.id for arg in node.args if \
+                arg.i == loma_ir.Out() and (not isinstance(arg.t, loma_ir.Array))])
 
             self.tab_count += 1
             self.emit_tabs()
@@ -79,7 +80,8 @@ class ISPCCodegenVisitor(codegen_c.CCodegenVisitor):
             self.code += ') {\n'
             self.tab_count += 1
 
-            self.byref_args = set([arg.id for arg in node.args if arg.is_byref])
+            self.byref_args = set([arg.id for arg in node.args if \
+                arg.i == loma_ir.Out() and (not isinstance(arg.t, loma_ir.Array))])
             
             for stmt in node.body:
                 self.visit_stmt(stmt)

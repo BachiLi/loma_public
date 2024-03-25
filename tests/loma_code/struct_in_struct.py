@@ -6,7 +6,7 @@ class Bar:
     y : float
     z : int
 
-def struct_in_struct(bar : Bar) -> Foo:
+def struct_in_struct(bar : In[Bar]) -> Foo:
     f : Foo
     f.x = 5
     f.bar = bar

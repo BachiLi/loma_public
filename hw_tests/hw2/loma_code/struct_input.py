@@ -3,7 +3,7 @@ class Foo:
     y : int
     z : float
 
-def struct_input(foo : Foo) -> float:
+def struct_input(foo : In[Foo]) -> float:
     w : int = 5
     return w * foo.x + foo.y + foo.x * foo.z - 1
 

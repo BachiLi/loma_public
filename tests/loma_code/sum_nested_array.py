@@ -1,4 +1,4 @@
-def sum_nested_array(arr : Array[Array[int]], size : Array[int], n : int) -> int:
+def sum_nested_array(arr : In[Array[Array[int]]], size : In[Array[int]], n : In[int]) -> int:
     s : int = 0
     i : int = 0
     while (i < n, max_iter := 100):

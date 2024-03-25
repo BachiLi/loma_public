@@ -15,7 +15,7 @@ def type_to_string(node : loma_ir.type | loma_ir.arg) -> str:
             if isinstance(node.t, loma_ir.Array):
                 return type_to_string(node.t)
             else:
-                return type_to_string(node.t) + ('*' if node.is_byref else '')
+                return type_to_string(node.t) + ('*' if node.i == loma_ir.Out() else '')
         case loma_ir.Int():
             return 'int'
         case loma_ir.Float():
@@ -45,7 +45,7 @@ class CCodegenVisitor(irvisitor.IRVisitor):
         self.code += '\t' * self.tab_count
 
     def visit_function_def(self, node):
-        self.code += f'extern \"C\" {type_to_string(node.ret_type)} {node.id}('
+        self.code += f'{type_to_string(node.ret_type)} {node.id}('
         for i, arg in enumerate(node.args):
             if i > 0:
                 self.code += ', '
@@ -55,9 +55,8 @@ class CCodegenVisitor(irvisitor.IRVisitor):
                 self.code += ', '
             self.code += 'int __total_work'
         self.code += ') {\n'
-
         self.byref_args = set([arg.id for arg in node.args if \
-            arg.is_byref and (not isinstance(arg.t, loma_ir.Array))])
+            arg.i == loma_ir.Out() and (not isinstance(arg.t, loma_ir.Array))])
 
         self.tab_count += 1
         if node.is_simd:
@@ -219,7 +218,8 @@ class CCodegenVisitor(irvisitor.IRVisitor):
                     func_def = self.func_defs[func_id]
                     arg_strs = [self.visit_expr(arg) for arg in node.args]
                     for i, arg in enumerate(arg_strs):
-                        if func_def.args[i].is_byref and (not isinstance(func_def.args[i], loma_ir.Array)):
+                        if func_def.args[i].i == loma_ir.Out() and \
+                                (not isinstance(func_def.args[i].t, loma_ir.Array)):
                             arg_strs[i] = '&(' + arg + ')'
                     ret += ','.join(arg_strs)
                 else:
@@ -259,7 +259,7 @@ def codegen_c(structs : dict[str, loma_ir.Struct],
 
     # Forward declaration of functions
     for f in funcs.values():
-        code += f'extern \"C\" {type_to_string(f.ret_type)} {f.id}('
+        code += f'{type_to_string(f.ret_type)} {f.id}('
         for i, arg in enumerate(f.args):
             if i > 0:
                 code += ', '

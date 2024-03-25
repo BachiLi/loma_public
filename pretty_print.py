@@ -47,10 +47,10 @@ class PrettyPrintVisitor(irvisitor.IRVisitor):
         for i, arg in enumerate(node.args):
             if i > 0:
                 self.code += ', '
-            if arg.is_byref:
-                self.code += f'Ref[{type_to_string(arg.t)}] {arg.id}'
+            if arg.i == loma_ir.In():
+                self.code += f'In[{type_to_string(arg.t)}] {arg.id}'
             else:
-                self.code += f'{type_to_string(arg.t)} {arg.id}'
+                self.code += f'Out[{type_to_string(arg.t)}] {arg.id}'
         if node.is_simd:
             if len(node.args) > 0:
                 self.code += ', '

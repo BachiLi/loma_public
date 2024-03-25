@@ -42,7 +42,7 @@ Then,
 
 Therefore, if we have a straight-line code of a function \lstinline{f}
 \begin{lstlisting}[language=Python]
-def f(x : float, y : float) -> float:
+def f(x : In[float], y : In[float]) -> float:
     z0 : float = h(x, y)
     z1 : float = g(z0)
     return z1
@@ -53,7 +53,7 @@ class _dfloat:
     val : float
     dval : float
 
-def Df(x : _dfloat, y : _dfloat) -> _dfloat:
+def Df(x : In[_dfloat], y : In[_dfloat]) -> _dfloat:
     z0 : _dfloat = Dh(x, y)
     z1 : _dfloat = Dg(z0)
     return z1
@@ -85,7 +85,7 @@ Here, we provide the list of terminal cases of the basic operations in loma:
 
 Our goal is this homework is to transform loma functions to their derivatives. In loma, the total derivative of a function is declared as follows:
 \begin{lstlisting}[language=Python]
-def f(x : float) -> float:
+def f(x : In[float]) -> float:
     # ...
 
 df = fwd_diff(f) # df has type _dfloat -> _dfloat
@@ -102,6 +102,15 @@ class _dfloat:
     val : float
     dval : float
 \end{lstlisting}
+For convienence, we have also provided a constructor \lstinline{make__dfloat}:
+\begin{lstlisting}[language=Python]
+def make__dfloat(val : In[float], dval : In[float]) -> _dfloat:
+    ret : _dfloat
+    ret.val = val
+    ret.dval = dval
+    return ret
+\end{lstlisting}
+
 For integers, the corresponding differential type is still \lstinline{int}.
 The \lstinline{_dfloat} type represents the primal values and total derivatives of floats. For a general struct with id \lstinline{X}, we synthesize a new differential struct with id \lstinline{_dX}, where we convert the types of all its members to the differential type. For example, for the following types:
 \begin{lstlisting}[language=Python]
@@ -144,59 +153,58 @@ Finally, loma introduces a type modifier \lstinline{Diff[]} that allows one to s
 We have implemented these transformations except for the function definition part in \lstinline{resolve_diff_types()} in \lstinline{autodiff.py}.
 
 \subsection{Transformation of statements and expressions}
-This is the main thing you will need to figure out for this homework. We will use an \lstinline{IRMutator} to visit a \lstinline{FunctionDef} node that represents the primal function, and transform it to the derivative function. I recommend you to try to pass the tests one-by-one and incrementally build up your implementation. Here, we briefly describe each test and what you need to implement to pass the tests.
+This is the main thing you will need to figure out for this homework. We will use an \lstinline{IRMutator} to visit a \lstinline{FunctionDef} node that represents the primal function, and transform it to the derivative function. You should be able to do this by only modifying the \lstinline{FwdDiffMutator} in \lstinline{forward_diff.py}. I recommend you to try to pass the tests one-by-one and incrementally build up your implementation. Here, we briefly describe each test and what you need to implement to pass the tests.
 
 \paragraph{test_identity} The test asks you to transform an identity function.
 \begin{lstlisting}[language=Python]
-def identity(x : float) -> float:
+def identity(x : In[float]) -> float:
     return x
 
 d_identity = fwd_diff(identity)
 \end{lstlisting}
 \lstinline{d_identity} should be something like:
 \begin{lstlisting}[language=Python]
-def d_identity(x : _dfloat) -> _dfloat:
-    _ret : _dfloat
-    _ret.val = x.val
-    _ret.dval = x.dval
-    return _ret
+def d_identity(x : In[_dfloat]) -> _dfloat:
+    return make__dfloat(x.val, x.dval)
 \end{lstlisting}
-You will need to implement \lstinline{mutate_function_def}, \lstinline{mutate_return}, and \lstinline{mutate_var} for the transformation. You may find the \lstinline{type_to_diff_type} useful for transforming the function signatures. 
+You will need to implement \lstinline{mutate_function_def}, \lstinline{mutate_var}, and \lstinline{mutate_return} for the transformation. You may find the \lstinline{type_to_diff_type} useful for transforming the function signatures. 
+
+\lstinline{mutate_function_def(self, node)} takes a node that is itself a \lstinline{loma_ir.FunctionDef} (see Homework 0 for the definition), and should return another \lstinline{loma_ir.FunctionDef} that is the forward differentiation transformed version. Read \lstinline{irmutator.py} to see how to create a \lstinline{FunctionDef}. \lstinline{mutate_var(self, node)} instead takes a node that is a \lstinline{loma_ir.Var}. We recommend returning a tuple here: the first element of the tuple being the primal value (\lstinline{x.val} in this case), and the second element being the differential (\lstinline{x.dval} in this case). You might want to use \lstinline{loma_ir.StructAccess} to access the \lstinline{.val} and \lstinline{.dval} members. Finally, \lstinline{mutate_return} takes the return statement and transform it. If you choose to return a tuple from \lstinline{mutate_var}, you will need to assemble them to return the result. We recommend to assemble the results by building a \lstinline{loma_ir.Call} to \lstinline{make__dfloat}, with the primal and differential expressions being the two arguments.
 
 \paragraph{test_constant} This time, you are asked to transform a constant function.
 \begin{lstlisting}[language=Python]
-def constant(x : float) -> float:
+def constant(x : In[float]) -> float:
     return 2.0
 
 d_constant = fwd_diff(constant)
 \end{lstlisting}
 \lstinline{d_constant} should be something like:
 \begin{lstlisting}[language=Python]
-def d_constant(x : _dfloat) -> _dfloat:
-    _ret : _dfloat
-    _ret.val = 2.0
-    _ret.dval = 0.0
-    return _ret
+def d_constant(x : In[_dfloat]) -> _dfloat:
+    return make__dfloat(2.0, 0.0)
 \end{lstlisting}
-You will need to implement \lstinline{mutate_const_float} to pass this test.
+You will need to implement \lstinline{mutate_const_float} to pass this test. Like \lstinline{mutate_var}, we recommend to return the primal and differential expressions as a tuple here as well.
 
-\paragraph{test_binary_ops} This test asks you to implement the derivatives of some binary operations:
+\paragraph{test_plus, test_subtract, test_multiply, test_divide} These tests asks you to implement the derivatives of some binary operations:
 \begin{lstlisting}[language=Python]
 def plus(x : float, y : float) -> float:
     return x + y
 
+d_plus = fwd_diff(plus)
+
 def subtract(x : float, y : float) -> float:
     return x - y
+
+d_subtract = fwd_diff(subtract)
 
 def multiply(x : float, y : float) -> float:
     return x * y
 
+d_multiply = fwd_diff(multiply)
+
 def divide(x : float, y : float) -> float:
     return x / y
 
-d_plus = fwd_diff(plus)
-d_subtract = fwd_diff(subtract)
-d_multiply = fwd_diff(multiply)
 d_divide = fwd_diff(divide)
 \end{lstlisting}
 To pass this test, implement \lstinline{mutate_add}, \lstinline{mutate_sub}, \lstinline{mutate_mul} and \lstinline{mutate_div}.
@@ -204,23 +212,140 @@ To pass this test, implement \lstinline{mutate_add}, \lstinline{mutate_sub}, \ls
 As a reference, here's what \lstinline{d_plus} should look like:
 \begin{lstlisting}[language=Python]
 def d_plus(x : _dfloat, y : _dfloat) -> _dfloat:
-    _return : _dfloat
-    _return.val = x.val + y.val
-    _return.dval = x.dval + y.dval
-    return _return
+    return make__dfloat(x.val + y.val, x.dval + y.dval)
 \end{lstlisting}
+
+\lstinline{mutate_add(self, node)} takes a \lstinline{loma_ir.BinaryOp} node as input. You can use \lstinline{node.left} and \lstinline{node.right} to access the two children nodes. Like \lstinline{mutate_var} and \lstinline{mutate_const_float}, we recommend returning a tuple of two expressions, one is the primal and one is the differential. \lstinline{mutate_sub}, \lstinline{mutate_mul} and \lstinline{mutate_div} should work similarly.
 
 \paragraph{test_declare} Now we will start to have variable declaration. You'll need to implement \lstinline{mutate_declare} to pass this test.
 
-\paragraph{test_assign and test_side_effect} Next, we test variable assignment. You'll need to implement \lstinline{mutate_assign} to pass these tests.
+You are asked to transform this code:
+\begin{lstlisting}[language=Python]
+def declare(x : In[float], y : In[float]) -> float:
+    z0 : float = x + y
+    z1 : float = z0 + 5.0
+    z2 : float = z1 * z0
+    return z2
+
+d_declare = fwd_diff(declare)
+\end{lstlisting}
+
+You should turn it into something like:
+\begin{lstlisting}[language=Python]
+def d_declare(x : In[_dfloat], y : In[_dfloat]) -> _dfloat:
+    z0 : _dfloat = make__dfloat(x.val + y.val, x.dval + y.dval)
+    z1 : _dfloat = make__dfloat(z0.val + 5.0, z0.dval + 0.0)
+    z2 : _dfloat = make__dfloat(z1.val * z0.val, z1.dval * z0.dval + z1.val * z0.dval)
+    return make__dfloat(z2.val, z2.dval)
+\end{lstlisting}
+Each line is turned from a \lstinline{float} declaration into a \lstinline{_dfloat} declaration. The implementation should be similar to \lstinline{return}.
+
+\paragraph{test_assign and test_side_effect} Next, we test variable assignment. You'll need to implement \lstinline{mutate_assign} to pass these tests:
+
+\begin{lstlisting}[language=Python]
+def assign(x : In[float], y : In[float]) -> float:
+    z : float
+    z = x + y
+    return z
+
+d_assign = fwd_diff(assign)
+
+def side_effect(x : In[float], y : In[float]) -> float:
+    z : float
+    z = x + y
+    z = 0.0
+    z = x * y
+    return z
+
+d_side_effect = fwd_diff(side_effect)
+\end{lstlisting}
+
+In forward mode, assignment should be similar to decalaration. For reference, \lstinline{d_assign} should look like something below:
+\begin{lstlisting}[language=Python]
+def d_assign(x : In[_dfloat], y : In[_dfloat]) -> _dfloat:
+    z : _dfloat 
+    z = make__dfloat(x.val + y.val, x.dval + y.dval)
+    return make__dfloat(z.val, z.dval)
+\end{lstlisting}
 
 \paragraph{test_call_sin, test_call_cos, test_call_sqrt, test_call_pow, test_call_exp, test_call_log, test_call} Next, we test intrinsic function calls (you don't need to consider calls to other loma functions yet). You'll need to implement \lstinline{mutate_call} to pass these tests.
 
-\paragraph{test_int_input and test_int_input} Next, we test the handling of integers. You'll need to go back to your previous code, and make sure that you handle integers correctly. In particular, \lstinline{_dint} does not have a \lstinline{dval} member, so you need to handle this.
+For your reference, the \lstinline{call_sin} function:
+\begin{lstlisting}[language=Python]
+def call_sin(x : In[float]) -> float:
+    return sin(x)
 
-\paragraph{test_array_output, test_array_input, test_int_array_input, test_array_input_indexing, test_array_output_indexing, multiple_outputs} Next, we test the handling of arrays. You'll need to implement \lstinline{mutate_array}, and go back to your previous code to make sure you handle array types properly. You also need to handle the \lstinline{float2int} function call.
+d_call_sin = fwd_diff(call_sin)
+\end{lstlisting}
+should be transformed into something like:
+\begin{lstlisting}[language=Python]
+def d_call_sin(x : In[_dfloat]) -> _dfloat:
+    return make__dfloat(sin(x.val), cos(x.val) * x.dval)
+\end{lstlisting}
 
-\paragraph{test_struct_input, test_nested_struct_input, test_struct_output, test_nested_struct_output, test_array_in_struct, test_struct_in_array} Next, we test the differentiation with Structs. You will need to implement \lstinline{mutate_struct_access}, and revisit other part of your code to make sure you have handled Struct correctly. When considering struct access as a left hand side in \lstinline{mutate_assign}, you can use the type of the right hand side (\lstinline{node.val.t}) to infer the type of the access.
+\paragraph{test_int_input and test_int_output} Next, we test the handling of integers. You'll need to go back to your previous code, and make sure that you handle integers correctly. For reference, for the \lstinline{int_input} function:
+\begin{lstlisting}[language=Python]
+def int_input(x : In[float], y : In[int]) -> float:
+    z : int = 5
+    return z * x + y - 1
+
+d_int_input = fwd_diff(int_input)
+\end{lstlisting}
+It should be transformed into something like:
+\begin{lstlisting}[language=Python]
+def d_int_input(x : In[_dfloat], y : In[int]) -> _dfloat:
+    z : int = 5
+    return make__dfloat(z * x.val + y - 1, 0.0 * x.val + z * x.dval + 0.0 - 0.0)
+\end{lstlisting}
+The point is to correctly turn the derivative into zero or ignore them when you encounter integers. You can use \lstinline{expr.t} to access the type if \lstinline{expr} is an expression. If it is an integer, \lstinline{expr.t == loma_ir.Int()} and \lstinline{isinstance(expr.t, loma_ir.Int)}.
+
+\paragraph{test_array_output, test_array_input, test_int_array_input, test_array_input_indexing, test_array_output_indexing, multiple_outputs} Next, we test the handling of arrays. You'll need to implement \lstinline{mutate_array_access}, and go back to your previous code to make sure you handle array types properly. You also need to handle the \lstinline{float2int} function call. For reference, the \lstinline{array_output} function:
+\begin{lstlisting}[language=Python]
+def array_output(x : In[float], y : Out[Array[float]]):
+    y[0] = x * x
+    y[1] = x * x * x
+
+d_array_output = fwd_diff(array_output)
+\end{lstlisting}
+should be transformed into something like:
+\begin{lstlisting}[language=Python]
+def d_array_output(x : In[_dfloat], y : Out[Array[_dfloat]]):
+    y[0] = make__dfloat(x.val * x.val, x.dval * x.val + x.val * x.dval)
+    y[1] = make__dfloat(x.val * x.val * x.val,
+        (x.dval * x.val + x.val * x.dval) * x.val + x.val * x.val * x.dval)
+\end{lstlisting}
+
+You need to make sure that array indexing is properly handled: you need to go in the indexing and turn the relevant expressions into their \lstinline{.val} version.
+
+\paragraph{test_struct_input, test_nested_struct_input, test_struct_output, test_nested_struct_output, test_array_in_struct, test_struct_in_array} Next, we test the differentiation with Structs. You will need to implement \lstinline{mutate_struct_access}, and revisit other part of your code to make sure you have handled Struct correctly. As with the integer case, you can use the type of the right hand side (\lstinline{node.val.t}) to infer the type of the access.
+
+For reference, the \lstinline{nested_struct_input} function:
+\begin{lstlisting}[language=Python]
+class Foo:
+    x : float
+    y : Bar
+
+class Bar:
+    z : int
+    w : float
+
+def nested_struct_input(foo : In[Foo]) -> float:
+    b : Bar
+    b.z = 5
+    b.w = 3
+    return (foo.x + foo.y.z + foo.y.w + b.z) * b.w
+
+d_nested_struct_input = fwd_diff(nested_struct_input)
+\end{lstlisting}
+should be transformed into
+\begin{lstlisting}[language=Python]
+def d_nested_struct_input(foo : In[_dFoo]) -> _dfloat
+    b : _dBar
+    b.z = 5
+    b.w = make__dfloat(3, 0.0)
+    return make__dfloat(foo.x.val + foo.y.z + foo.y.w.val + b.z * b.w.val,
+        foo.x.dval + 0.0 + foo.y.w.dval + 0.0 * b.w.val + foo.x.val + foo.y.z + foo.y.w.val + b.z * b.w.dval)
+\end{lstlisting}
 
 \paragraph{test_poly} The last test shows how differentiated code can be used in loma code:
 \begin{lstlisting}[language=Python]
@@ -236,5 +361,116 @@ def d_poly_dx(x : float) -> float:
     return d_poly(d_x).dval
 \end{lstlisting}
 You probably don't need to implement anything extra to pass this test.
+
+\section{Forward mode in action}
+This part is not graded, but once you have implemented Homework 1, you can run the code and see some optimization in action. 
+
+\begin{figure}
+\centering
+\includegraphics[width=0.8\linewidth]{imgs/optimize-fwd.png}
+\caption{Using loma to optimize a 2D function.}
+\label{fig:optimize}
+\end{figure}
+
+\paragraph{Optimizing a polynomial function.} The file \lstinline{examples/optimize_poly_fwd.py} implements a gradient descent optimization routine for a third order multivariate polynomial, where the gradient is computed using automatic differentiation. Figure~\ref{fig:optimize} shows the loss function landscape and the optimization trajectory (the red curve): we start from the top right (2, 2) and slowly move towards the center where the loss is lower.
+
+\paragraph{Single pendulum derived using Hamiltonian mechanics.} 
+We're going to use automatic differentiation to derive the equation of motion of a physical system, using something called Hamiltonian mechanics. This part is inspired by Justin Le's \href{https://github.com/mstksg/hamilton}{github project} and \href{https://blog.jle.im/entry/hamiltonian-dynamics-in-haskell.html}{blog post}.
+
+Here, we are interested in a single pendulum, where the 2D location $(x, y)$ of the pendulum is dependent of a single angle $q$:
+\begin{equation}
+\begin{aligned}
+x &= r \sin(q) \\
+y &= -r \cos(q)
+\end{aligned}
+\end{equation}
+
+Hamiltonian mechanics allows us to derive the equation of motion of the angle $q$, by adding an auxiliary variable $p$ (usually called the ``generalized momentum''), and positing two first-order ordinary differential equations over a \emph{Hamiltonian} $H(q, p)$:
+\begin{equation}
+\begin{aligned}
+\dot{q} &= \frac{\partial}{\partial p} H(q, p) \\
+\dot{p} &= -\frac{\partial}{\partial q} H(q, p)
+\end{aligned}
+\end{equation}
+
+Our goal is to use automatic differentiation to automatically compute the two partial derivatives. First we need to define the Hamiltonian $H$.
+
+The Hamiltonian $H$ is composed of two parts: the kinetic energy $K$ and the potential energy $U$.
+\begin{equation}
+H = K + U
+\end{equation}
+
+We set the potential energy to the gravitional potential energy:
+\begin{equation}
+U = m g y = -m g r \cos(q)
+\end{equation}
+
+The kinetic energy $K$ is a bit more involved, since we need to write it in terms of the generalized momentum $p$. See \href{https://blog.jle.im/entry/hamiltonian-dynamics-in-haskell.html}{Justin Le's blog post} for the derivation:
+\begin{equation}
+K = \frac{1}{2}m \left(\dot{x}^2 + \dot{y}^2\right) = \frac{1}{2} \mathbf{p}^T \left(J^T M J\right)^{-1} \mathbf{p}
+\end{equation}
+where
+\begin{equation}
+J=
+\begin{bmatrix}
+\frac{\partial x}{\partial q} \\
+\frac{\partial y}{\partial q}
+\end{bmatrix},
+\end{equation}
+,
+\begin{equation}
+M=
+\begin{bmatrix}
+m & 0 \\
+0 & m
+\end{bmatrix},
+\end{equation}
+and $\mathbf{p}$ is a length-1 vector that contains a single element $p$.
+
+Even though the equations are involved, you can see that the $K$ function can be completely determined by everything above, so it's possible to completely automate the computation of $K$, while using automatic differentiation to compute $J$. Unfortunately, our system does not support nested differentiation yet (we need to differentiate $K$ later to compute the partial derivative of $H$), so here we'll compute it by hand: the (1-by-1) matrix $J^TMJ$ is:
+\begin{equation}
+J^TMJ = 
+\begin{bmatrix}
+m r^2
+\end{bmatrix}
+\end{equation}
+So it's inverse is $\frac{1}{mr^2}$:
+\begin{equation}
+K = \frac{p^2}{mr^2}
+\end{equation}
+
+We can then implement the Hamiltonian in loma:
+\begin{lstlisting}[language=Python]
+class PendulumConfig:
+    mass : float
+    radius : float
+    g : float
+
+def hamiltonian(q : In[float], p : In[float], c : In[PendulumConfig]) -> float:
+    K : float = p * p / (c.mass * c.radius * c.radius)
+    y : float = -c.radius * cos(q)
+    U : float = c.mass * c.g * y
+    return K + U
+
+d_hamiltonian = fwd_diff(hamiltonian)
+
+def dHdq(q : In[float], p : In[float], c : In[PendulumConfig]):
+    d_q : Diff[float]
+    d_q.val = q
+    d_q.dval = 1.0
+    d_p : Diff[float]
+    d_p.val = p
+    d_p.dval = 0.0
+    # dvals are automatically initialized to zero
+    d_c : Diff[PendulumConfig]
+    d_c.mass.val = c.mass
+    d_c.radius.val = c.radius
+    d_c.g.val = c.g
+    return d_hamiltonian(q, p, c).dval
+
+# dHdp is omitted
+\end{lstlisting}
+
+See \lstinline{examples/single_pendulum_fwd.mp4} for the animation in action.
 
 \end{document}

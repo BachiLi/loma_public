@@ -2,7 +2,7 @@ class Foo:
     a : float
     b : int
 
-def struct_output(x : float, y : int) -> Foo:
+def struct_output(x : In[float], y : In[int]) -> Foo:
     foo : Foo
     foo.a = x + y * x
     foo.b = y - x

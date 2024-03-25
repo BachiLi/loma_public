@@ -37,23 +37,50 @@ class Homework1Test(unittest.TestCase):
         out = lib.d_constant(x)
         assert abs(out.val - 2.0) < epsilon and abs(out.dval - 0.0) < epsilon
 
-    def test_binary_ops(self):
-        with open('loma_code/binary_ops.py') as f:
+    def test_plus(self):
+        with open('loma_code/plus.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/binary_ops.so')
+                                            output_filename = '_code/plus.so')
         _dfloat = structs['_dfloat']
         x = _dfloat(5.0, 0.5)
         y = _dfloat(6.0, 1.5)
         out_plus = lib.d_plus(x, y)
         assert abs(out_plus.val - (x.val + y.val)) < epsilon and \
                abs(out_plus.dval - (x.dval + y.dval)) < epsilon
+
+    def test_subtract(self):
+        with open('loma_code/subtract.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/subtract.so')
+        _dfloat = structs['_dfloat']
+        x = _dfloat(5.0, 0.5)
+        y = _dfloat(6.0, 1.5)
         out_sub = lib.d_subtract(x, y)
         assert abs(out_sub.val - (x.val - y.val)) < epsilon and \
                abs(out_sub.dval - (x.dval - y.dval)) < epsilon
+
+    def test_multiply(self):
+        with open('loma_code/multiply.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/multiply.so')
+        _dfloat = structs['_dfloat']
+        x = _dfloat(5.0, 0.5)
+        y = _dfloat(6.0, 1.5)
         out_mul = lib.d_multiply(x, y)
         assert abs(out_mul.val - x.val * y.val) < epsilon and \
                abs(out_mul.dval - (x.dval * y.val + x.val * y.dval)) < epsilon
+
+    def test_divide(self):
+        with open('loma_code/divide.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/divide.so')
+        _dfloat = structs['_dfloat']
+        x = _dfloat(5.0, 0.5)
+        y = _dfloat(6.0, 1.5)
         out_div = lib.d_divide(x, y)
         assert abs(out_div.val - (x.val/y.val)) < epsilon and \
                abs(out_div.dval - ((x.dval * y.val - x.val * y.dval)/(y.val * y.val))) < epsilon

@@ -1,4 +1,4 @@
-def assign2(x : float, y : float) -> float:
+def assign2(x : In[float], y : In[float]) -> float:
     z : float
     z = 2.5 * x - 3.0 * y
     z = z + x * y

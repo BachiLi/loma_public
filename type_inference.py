@@ -76,7 +76,7 @@ class TypeInferencer(irmutator.IRMutator):
         for i, arg in enumerate(node.args):
             t = fill_in_struct_info(arg.t, self.structs)
             self.var_types[arg.id] = t
-            self.current_func_args[i] = loma_ir.Arg(arg.id, t, arg.is_byref)
+            self.current_func_args[i] = loma_ir.Arg(arg.id, t, arg.i)
         new_args = self.current_func_args
         
         new_ret_type = node.ret_type
@@ -293,16 +293,24 @@ class TypeInferencer(irmutator.IRMutator):
             elif isinstance(f, loma_ir.ForwardDiff):
                 primal_f = self.funcs[f.primal_func]
                 f_args = [\
-                    loma_ir.Arg(arg.id, autodiff.type_to_diff_type(self.diff_structs, arg.t), arg.is_byref) \
+                    loma_ir.Arg(arg.id, autodiff.type_to_diff_type(self.diff_structs, arg.t), arg.i) \
                     for arg in primal_f.args]
                 ret_type = autodiff.type_to_diff_type(self.diff_structs, primal_f.ret_type)
             elif isinstance(f, loma_ir.ReverseDiff):
                 primal_f = self.funcs[f.primal_func]
-                f_args = [\
-                    loma_ir.Arg(arg.id, autodiff.type_to_diff_type(self.diff_structs, arg.t), is_byref=True) \
-                    for arg in primal_f.args]
+                f_args = []
+                for arg in primal_f.args:
+                    if arg.i == loma_ir.In():
+                        f_args.append(arg)
+                        dvar_id = '_d' + arg.id
+                        f_args.append(loma_ir.Arg('_d' + arg.id, arg.t, i = loma_ir.Out()))
+                    else:
+                        assert arg.i == loma_ir.Out()
+                        f_args.append(arg)
+                        f_args.append(loma_ir.Arg('_d' + dvar_id, arg.t, i = loma_ir.In()))
                 if primal_f.ret_type is not None:
-                    f_args.append(loma_ir.Arg('_dreturn', primal_f.ret_type, is_byref=False))
+                    self.return_var_id = '_dreturn'
+                    f_args.append(loma_ir.Arg('_dreturn', primal_f.ret_type, i = loma_ir.In()))
                 ret_type = None
             if len(args) != len(f_args):
                 raise error.CallTypeMismatch(call.id, call.lineno)

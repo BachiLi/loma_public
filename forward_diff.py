@@ -2,12 +2,14 @@ import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 import irmutator
+import autodiff
 
 def forward_diff(diff_func_id : str,
                  structs : dict[str, loma_ir.Struct],
                  funcs : dict[str, loma_ir.func],
                  diff_structs : dict[str, loma_ir.Struct],
-                 func : loma_ir.FunctionDef) -> loma_ir.FunctionDef:
+                 func : loma_ir.FunctionDef,
+                 func_to_fwd : dict[str, str]) -> loma_ir.FunctionDef:
     """ Given a primal loma function func, apply forward differentiation
         and return a function that computes the total derivative of func.
 

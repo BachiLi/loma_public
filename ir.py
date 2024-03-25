@@ -33,7 +33,7 @@ def generate_asdl_file():
            | Call         ( string id, expr* args )
            attributes     ( int? lineno, type? t )
 
-      arg  = Arg ( string id, type t, bool is_byref )
+      arg  = Arg ( string id, type t, inout i )
 
       type = Int    ( )
            | Float  ( )
@@ -54,6 +54,8 @@ def generate_asdl_file():
              | Equal()
              | And()
              | Or()
+
+      inout = In() | Out()
     }
     """,
     header= '',

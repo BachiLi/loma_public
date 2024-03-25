@@ -1,4 +1,4 @@
-def foo(x : Ref[int]):
+def foo(x : Out[int]):
     x = 5
 
 def call_stmt() -> int:

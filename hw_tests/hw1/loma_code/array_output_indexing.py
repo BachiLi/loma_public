@@ -1,4 +1,4 @@
-def array_output_indexing(x : float, i : int, j : float, y : Array[float]):
+def array_output_indexing(x : In[float], i : In[int], j : In[float], y : Out[Array[float]]):
     y[i] = x
     y[float2int(j)] = 2 * x
     y[2 * i] = 3 * x

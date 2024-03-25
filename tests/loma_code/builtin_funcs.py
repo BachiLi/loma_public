@@ -1,4 +1,4 @@
-def builtin_funcs(x : float) -> float:
+def builtin_funcs(x : In[float]) -> float:
     z0 : float = sin(x)
     z1 : float = cos(z0) + 1.0
     z2 : float = sqrt(z1)

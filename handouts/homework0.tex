@@ -17,7 +17,7 @@ The design principles of loma are:
 
 \section{Dependencies and requirements}
 
-Loma requires Python version to be at least 3.10. 
+Loma requires Python version to be at least 3.10.14. 
 Use \lstinline{pip install -r requirements.txt} to install the dependent packages.
 
 \section{Hello, loma}
@@ -25,7 +25,7 @@ Use \lstinline{pip install -r requirements.txt} to install the dependent package
 An example loma program looks like this (the file is located in \lstinline{examples/loma_code/sum_array.py}):
 \begin{lstlisting}[language=python]
 # sum_array.py
-def sum_array(arr : Array[float], arr_size : int) -> float:
+def sum_array(arr : In[Array[float]], arr_size : In[int]) -> float:
     i : int = 0
     s : float = 0.0
     while (i < arr_size, max_iter := 1000):
@@ -42,8 +42,8 @@ When you feed this program to the loma compiler and specifies C as a backend (cu
 \begin{lstlisting}[language=c]
 #include <math.h>
         
-extern "C" float sum_array(float* arr, int arr_size);
-extern "C" float sum_array(float* arr, int arr_size) {
+float sum_array(float* arr, int arr_size);
+float sum_array(float* arr, int arr_size) {
     int i = (int)(0);
     float s = (float)(0.0);
     while ((i) < (arr_size)) {
@@ -84,7 +84,7 @@ The IR of loma in the \href{https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_fo
 \alt 'ReverseDiff' <string> <string>) \\
 'attributes' <int>?
 
-<stmt> ::= ('Assign' <ref> <expr>
+<stmt> ::= ('Assign' <expr> <expr>
 \alt 'Declare' <string> <type> [<expr>]? 
 \alt 'Return' <expr>
 \alt 'IfElse' <expr> <stmt>* <stmt>*
@@ -101,11 +101,7 @@ The IR of loma in the \href{https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_fo
 \alt 'Call' <string> <expr>*) \\
 'attributes' <int>? <type>?
 
-<ref> ::= 'RefName' <string>
-\alt 'RefArray' <ref> <expr>
-\alt 'RefStruct' <ref> 
-
-<arg> ::= 'Arg' <string> <type>
+<arg> ::= 'Arg' <string> <type> <inout>
 
 <type> ::= 'Int'
 \alt 'Float'
@@ -127,6 +123,8 @@ The IR of loma in the \href{https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_fo
 \alt 'And'
 \alt 'Or'
 
+<inout> ::= 'In' \alt 'Out'
+
 <is_simd> :: 'True' \alt 'False'
 \end{grammar}
 
@@ -137,7 +135,7 @@ We will explain the more precise semantics of the IR later, but most of them sho
 
 To implement the IR above, we represent it using ASDL (Abstract Syntax Definition Language) -- see \href{https://eli.thegreenplace.net/2014/06/04/using-asdl-to-describe-asts-in-compilers}{Eli Bendersky's blog post} for a brief introduction. This is what Python used for representing its \href{https://github.com/python/cpython/blob/main/Parser/Python.asdl}{abstract syntax tree}. The IR above can be directly translated to the following ASDL:
 \begin{lstlisting}
-     module loma {
+    module loma {
       func = FunctionDef ( string id, arg* args, stmt* body, bool is_simd, type? ret_type )
            | ForwardDiff ( string id, string primal_func )
            | ReverseDiff ( string id, string primal_func )
@@ -160,7 +158,7 @@ To implement the IR above, we represent it using ASDL (Abstract Syntax Definitio
            | Call         ( string id, expr* args )
            attributes     ( int? lineno, type? t )
 
-      arg  = Arg ( string id, type t, bool is_byref )
+      arg  = Arg ( string id, type t, inout i )
 
       type = Int    ( )
            | Float  ( )
@@ -181,6 +179,8 @@ To implement the IR above, we represent it using ASDL (Abstract Syntax Definitio
              | Equal()
              | And()
              | Or()
+
+      inout = In() | Out()
     }
 \end{lstlisting}
 This IR is defined in \lstinline{ir.py} in the source code.
@@ -227,10 +227,10 @@ The meaning of the IR above follows a similar C program. We will explain the sem
 The following \lstinline{FunctionDef} in loma IR
 \begin{lstlisting}
 FunctionDef(id='plus',
-            args=(Arg(id='x', t=Int(), is_byref = False),
-                  Arg(id='y', t=Int(), is_byref = False),
-                  Arg(id='z', t=Array(t=Float(), static_size=None)), is_byref = False),
-                  Arg(id='w', t=Int(), is_byref = True)
+            args=(Arg(id='x', t=Int(), inout = In()),
+                  Arg(id='y', t=Int(), inout = In()),
+                  Arg(id='z', t=Array(t=Float(), static_size=None)), inout = In()),
+                  Arg(id='w', t=Int(), inout = Out())
             body=(Return(val=ConstInt(val=0)),),
             is_simd=False,
             ret_type=Int())
@@ -246,7 +246,7 @@ Each function argument needs to be tagged either as an input (\lstinline{In()}) 
 
 A function can take inputs and outputs that are of \lstinline{Array} types. You can have a struct of arrays or array of structs (or structs of arrays of structs). The function arguments are by default passed by values, except for arrays. When a callee modifies an array element, the caller will observe the changes.
 
-Loma also supports call-by-reference (similar to \lstinline{int &w} in C++) using the \lstinline{is_byref} flag. If an argument is marked as \lstinline{is_byref}, then even if it is not an array, when a calle modifies the variable, the calle will observe the changes.
+If an argument is marked as \lstinline{In()}, you can never write to it. On the other hand, if an argument is marked as \lstinline{Out()}, you can never read from it. All arguments marked as \lstinline{Out()}, arrays or not, are passed by reference.
 
 We will explain the \lstinline{is_simd} flag later when we talk about parallelization.
 
@@ -624,6 +624,8 @@ def mutate_function_def(self, node):
 It recursively calls the \lstinline{mutate_stmt} function and assemble a new \lstinline{FunctionDef} that accounts for the new mutations. Note that, as commented, \lstinline{mutate_stmt} can sometimes return a list of statement, thus we need to unpack the list.
 
 The \lstinline{TypeInferencer} then overrides the all the mutations to infer the types, check them, and throw errors when types do not match.
+
+After the type inference phase, the \lstinline{.t} attribute for each expression (\lstinline{expr}) is filled.
 
 \section{C Backend}
 

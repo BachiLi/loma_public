@@ -5,6 +5,24 @@ ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 import attrs
 
+def annotation_to_inout(node) -> loma_ir.inout:
+    """ Determine whether the function argument
+        is input or output.
+        In[float] -> input
+        Out[int] -> output
+    """
+
+    # TODO: error messages
+    assert type(node) == ast.Subscript
+    assert type(node.value) == ast.Name
+    if node.value.id == 'In':
+        return loma_ir.In()
+    elif node.value.id == 'Out':
+        return loma_ir.Out()
+    else:
+        # TODO: error message
+        assert False
+
 def annotation_to_type(node) -> loma_ir.type:
     """ Given a Python AST node, returns the corresponding
         loma type
@@ -21,7 +39,7 @@ def annotation_to_type(node) -> loma_ir.type:
                 return loma_ir.Struct(node.id, [])
         case ast.Subscript():
             assert isinstance(node.value, ast.Name)
-            if node.value.id == 'Ref':
+            if node.value.id == 'In' or node.value.id == 'Out':
                 # Ignore input/output qualifiers
                 return annotation_to_type(node.slice)
             elif node.value.id == 'Array':
@@ -41,13 +59,6 @@ def annotation_to_type(node) -> loma_ir.type:
                 assert False
         case _:
             assert False
-
-def is_byref(node) -> bool:
-    if type(node) == ast.Subscript:
-        if type(node.value) == ast.Name:
-            if node.value.id == 'Ref':
-                return True
-    return False
 
 def ast_cmp_op_convert(node) -> loma_ir.bin_op:
     """ Given a Python AST node representing
@@ -105,7 +116,7 @@ def visit_FunctionDef(node) -> loma_ir.FunctionDef:
     assert node_args.kwarg is None
     args = [loma_ir.Arg(arg.arg,
                         annotation_to_type(arg.annotation),
-                        is_byref(arg.annotation)) for arg in node_args.args]
+                        annotation_to_inout(arg.annotation)) for arg in node_args.args]
     body = [visit_stmt(b) for b in node.body]
     ret_type = None
     if node.returns:

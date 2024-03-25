@@ -289,14 +289,6 @@ def test_pass_by_ref_lhs():
     lib.pass_by_ref_lhs(ctypes.byref(x))
     assert x.value == 5
 
-def test_pass_by_ref_rhs():
-    with open('loma_code/pass_by_ref_rhs.py') as f:
-        _, lib = compiler.compile(f.read(),
-                                  target = 'c',
-                                  output_filename = '_code/pass_by_ref_rhs.so')
-    x = ctypes.c_int32(100)
-    assert lib.pass_by_ref_rhs(ctypes.byref(x)) == 100
-
 def test_pass_by_ref_lhs_struct():
     with open('loma_code/pass_by_ref_lhs_struct.py') as f:
         structs, lib = compiler.compile(f.read(),
@@ -307,24 +299,17 @@ def test_pass_by_ref_lhs_struct():
     lib.pass_by_ref_lhs_struct(ctypes.byref(f))
     assert f.x == 5
 
-def test_pass_by_ref_rhs_struct():
-    with open('loma_code/pass_by_ref_rhs_struct.py') as f:
-        structs, lib = compiler.compile(f.read(),
-                                  target = 'c',
-                                  output_filename = '_code/pass_by_ref_rhs_struct.so')
-    Foo = structs['Foo']
-    f = Foo(x=5, y=6.0)
-    assert lib.pass_by_ref_rhs_struct(ctypes.byref(f)) == 5
-
 def test_pass_by_ref_array():
     with open('loma_code/pass_by_ref_array.py') as f:
         structs, lib = compiler.compile(f.read(),
                                   target = 'c',
                                   output_filename = '_code/pass_by_ref_array.so')
-    py_arr = [1,2,3,4,5,6,7]
-    arr = (ctypes.c_int * len(py_arr))(*py_arr)
-    lib.pass_by_ref_array(arr)
-    assert arr[3] == arr[5] * 3
+    py_arr_in = [1,2,3,4,5,6,7]
+    arr_in = (ctypes.c_int * len(py_arr_in))(*py_arr_in)
+    py_arr_out = [0,0,0,0,0,0,0]
+    arr_out = (ctypes.c_int * len(py_arr_out))(*py_arr_out)
+    lib.pass_by_ref_array(arr_in, arr_out)
+    assert arr_out[3] == arr_in[5] * 3
 
 def test_call_stmt():
     with open('loma_code/call_stmt.py') as f:
@@ -538,9 +523,7 @@ if __name__ == '__main__':
     test_struct_in_array_in_struct()
     test_struct_init_zero()
     test_pass_by_ref_lhs()
-    test_pass_by_ref_rhs()
     test_pass_by_ref_lhs_struct()
-    test_pass_by_ref_rhs_struct()
     test_pass_by_ref_array()
     test_call_stmt()
     test_parallel_add()

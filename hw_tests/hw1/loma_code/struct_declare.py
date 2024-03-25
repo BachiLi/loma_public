@@ -2,7 +2,7 @@ class Foo:
     a : float
     b : int
 
-def struct_declare(f : Foo) -> Foo:
+def struct_declare(f : In[Foo]) -> Foo:
     foo : Foo = f
     foo.a = foo.a * 2
     return foo

@@ -1,4 +1,4 @@
-def int_assign(x : float, y : int) -> float:
+def int_assign(x : In[float], y : In[int]) -> float:
     z : int = y
     w : float = z * x
     z = 6
