@@ -24,7 +24,7 @@ def forward_diff(diff_func_id : str,
             val : float
             dval : float
         and the function make__dfloat is
-        def make__dfloat(val : float, dval : float) -> _dfloat:
+        def make__dfloat(val : In[float], dval : In[float]) -> _dfloat:
             ret : _dfloat
             ret.val = val
             ret.dval = dval
