@@ -64,6 +64,14 @@ def forward_diff(diff_func_id : str,
             # HW1: TODO
             return super().mutate_assign(node)
 
+        def mutate_ifelse(self, node):
+            # HW3: TODO
+            return super().mutate_ifelse(node)
+
+        def mutate_while(self, node):
+            # HW3: TODO
+            return super().mutate_while(node)
+
         def mutate_const_float(self, node):
             # HW1: TODO
             return super().mutate_const_float(node)

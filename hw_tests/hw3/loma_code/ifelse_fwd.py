@@ -1,4 +1,4 @@
-def ifelse(x : float, y : float) -> float:
+def ifelse(x : In[float], y : In[float]) -> float:
     ret : float
     if y > 0.0:
         ret = 5.0 * x

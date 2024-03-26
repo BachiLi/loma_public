@@ -14,7 +14,8 @@ def reverse_diff(diff_func_id : str,
                  structs : dict[str, loma_ir.Struct],
                  funcs : dict[str, loma_ir.func],
                  diff_structs : dict[str, loma_ir.Struct],
-                 func : loma_ir.FunctionDef) -> loma_ir.FunctionDef:
+                 func : loma_ir.FunctionDef,
+                 func_to_rev : dict[str, str]) -> loma_ir.FunctionDef:
     """ Given a primal loma function func, apply reverse differentiation
         and return a function that computes the total derivative of func.
 
@@ -35,22 +36,10 @@ def reverse_diff(diff_func_id : str,
                 Struct to the corresponding differential Struct
                 e.g., diff_structs['float'] returns _dfloat
         func - the function to be differentiated
+        func_to_rev - mapping from primal function ID to its reverse differentiation
     """
 
-    def merge_dicts(x, y):
-        for key, y_value in y.items():
-            if key in x:
-                x_value = x[key]
-                x[key] = loma_ir.BinaryOp(\
-                    loma_ir.Add(),
-                    x_value,
-                    y_value,
-                    lineno = x_value.lineno,
-                    t = x_value.t)
-            else:
-                x[key] = y_value
-        return x
-
+    # Some utility functions you can use for your homework.
     def type_to_string(t):
         match t:
             case loma_ir.Int():
@@ -93,13 +82,16 @@ def reverse_diff(diff_func_id : str,
             case _:
                 assert False
 
-    def accum_deriv(target, deriv):
+    def accum_deriv(target, deriv, overwrite):
         match target.t:
             case loma_ir.Int():
                 return []
             case loma_ir.Float():
-                return [loma_ir.Assign(target,
-                    loma_ir.BinaryOp(loma_ir.Add(), target, deriv))]
+                if overwrite:
+                    return [loma_ir.Assign(target, deriv)]
+                else:
+                    return [loma_ir.Assign(target,
+                        loma_ir.BinaryOp(loma_ir.Add(), target, deriv))]
             case loma_ir.Struct():
                 s = target.t
                 stmts = []
@@ -109,11 +101,11 @@ def reverse_diff(diff_func_id : str,
                     deriv_m = loma_ir.StructAccess(
                         deriv, m.id, t = m.t)
                     if isinstance(m.t, loma_ir.Float):
-                        stmts += accum_deriv(target_m, deriv_m)
+                        stmts += accum_deriv(target_m, deriv_m, overwrite)
                     elif isinstance(m.t, loma_ir.Int):
                         pass
                     elif isinstance(m.t, loma_ir.Struct):
-                        stmts += accum_deriv(target_m, deriv_m)
+                        stmts += accum_deriv(target_m, deriv_m, overwrite)
                     else:
                         assert isinstance(m.t, loma_ir.Array)
                         assert m.t.static_size is not None
@@ -122,10 +114,80 @@ def reverse_diff(diff_func_id : str,
                                 target_m, loma_ir.ConstInt(i), t = m.t.t)
                             deriv_m = loma_ir.ArrayAccess(
                                 deriv_m, loma_ir.ConstInt(i), t = m.t.t)
-                            stmts += assign_zero(deriv_m)
+                            stmts += accum_deriv(target_m, deriv_m, overwrite)
                 return stmts
             case _:
                 assert False
+
+    # A utility class that you can use for HW3.
+    # This mutator normalizes each call expression into
+    # f(x0, x1, ...)
+    # where x0, x1, ... are all loma_ir.Var or 
+    # loma_ir.ArrayAccess or loma_ir.StructAccess
+    class CallNormalizeMutator(irmutator.IRMutator):
+        def mutate_function_def(self, node):
+            self.tmp_count = 0
+            self.tmp_declare_stmts = []
+            new_body = [self.mutate_stmt(stmt) for stmt in node.body]
+            new_body = irmutator.flatten(new_body)
+
+            new_body = self.tmp_declare_stmts + new_body
+
+            return loma_ir.FunctionDef(\
+                node.id, node.args, new_body, node.is_simd, node.ret_type, lineno = node.lineno)
+
+        def mutate_return(self, node):
+            self.tmp_assign_stmts = []
+            val = self.mutate_expr(node.val)
+            return self.tmp_assign_stmts + [loma_ir.Return(\
+                val,
+                lineno = node.lineno)]
+
+        def mutate_declare(self, node):
+            self.tmp_assign_stmts = []
+            val = None
+            if node.val is not None:
+                val = self.mutate_expr(node.val)
+            return self.tmp_assign_stmts + [loma_ir.Declare(\
+                node.target,
+                node.t,
+                val,
+                lineno = node.lineno)]
+
+        def mutate_assign(self, node):
+            self.tmp_assign_stmts = []
+            target = self.mutate_expr(node.target)
+            val = self.mutate_expr(node.val)
+            return self.tmp_assign_stmts + [loma_ir.Assign(\
+                target,
+                val,
+                lineno = node.lineno)]
+
+        def mutate_call_stmt(self, node):
+            self.tmp_assign_stmts = []
+            call = self.mutate_expr(node.call)
+            return self.tmp_assign_stmts + [loma_ir.CallStmt(\
+                call,
+                lineno = node.lineno)]
+
+        def mutate_call(self, node):
+            new_args = []
+            for arg in node.args:
+                if not isinstance(arg, loma_ir.Var) and \
+                        not isinstance(arg, loma_ir.ArrayAccess) and \
+                        not isinstance(arg, loma_ir.StructAccess):
+                    arg = self.mutate_expr(arg)
+                    tmp_name = f'_call_t_{self.tmp_count}_{random_id_generator()}'
+                    self.tmp_count += 1
+                    tmp_var = loma_ir.Var(tmp_name, t = arg.t)
+                    self.tmp_declare_stmts.append(loma_ir.Declare(\
+                        tmp_name, arg.t))
+                    self.tmp_assign_stmts.append(loma_ir.Assign(\
+                        tmp_var, arg))
+                    new_args.append(tmp_var)
+                else:
+                    new_args.append(arg)
+            return loma_ir.Call(node.id, new_args, t = node.t)
 
     # HW2 happens here. Modify the following IR mutators to perform
     # reverse differentiation.
@@ -147,6 +209,18 @@ def reverse_diff(diff_func_id : str,
         def mutate_assign(self, node):
             # HW2: TODO
             return super().mutate_assign(node)
+
+        def mutate_ifelse(self, node):
+            # HW3: TODO
+            return super().mutate_ifelse(node)
+
+        def mutate_call_stmt(self, node):
+            # HW3: TODO
+            return super().mutate_call_stmt(node)
+
+        def mutate_while(self, node):
+            # HW3: TODO
+            return super().mutate_while(node)
 
         def mutate_const_float(self, node):
             # HW2: TODO

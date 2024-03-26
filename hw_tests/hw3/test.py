@@ -41,19 +41,22 @@ class Homework3Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/ifelse_rev.so')
-        _dfloat = structs['_dfloat']
-        x = _dfloat(1.23, 0.0)
-        y = _dfloat(1, 0.0)
-        lib.rev_ifelse(x, y, 0.3)
-        assert abs(x.dval - 5 * 0.3) < epsilon and \
-            abs(y.dval) < epsilon
+        x = 1.23
+        _dx = ctypes.c_float(0)
+        y = 1.0
+        _dy = ctypes.c_float(0)
+        lib.rev_ifelse(x, _dx, y, _dy, 0.3)
+        assert abs(_dx.value - 5 * 0.3) < epsilon and \
+            abs(_dy.value) < epsilon
 
         # test both branches
-        x = _dfloat(1.23, 0.0)
-        y = _dfloat(-1, 0.0)
-        lib.rev_ifelse(x, y, 0.3)
-        assert abs(x.dval - 2 * 0.3) < epsilon and \
-            abs(y.dval) < epsilon
+        x = 1.23
+        _dx = ctypes.c_float(0)
+        y = -1.0
+        _dy = ctypes.c_float(0)
+        lib.rev_ifelse(x, _dx, y, _dy, 0.3)
+        assert abs(_dx.value - 2 * 0.3) < epsilon and \
+            abs(_dy.value) < epsilon
 
     def test_ifelse_side_effects_rev(self):
         with open('loma_code/ifelse_side_effects_rev.py') as f:
@@ -61,19 +64,22 @@ class Homework3Test(unittest.TestCase):
                                             target = 'c',
                                             output_filename = '_code/ifelse_side_effects_rev.so')
         
-        _dfloat = structs['_dfloat']
-        x = _dfloat(1.23, 0.0)
-        y = _dfloat(1, 0.0)
-        lib.rev_ifelse_side_effects(x, y, 0.3)
-        assert abs(x.dval - 0.3 * math.cos(5.0 * x.val) * 5) < epsilon and \
-            abs(y.dval) < epsilon
+        x = 1.23
+        _dx = ctypes.c_float(0)
+        y = 1.0
+        _dy = ctypes.c_float(0)
+        lib.rev_ifelse_side_effects(x, _dx, y, _dy, 0.3)
+        assert abs(_dx.value - 0.3 * math.cos(5.0 * x) * 5) < epsilon and \
+            abs(_dy.value) < epsilon
 
         # test both branches
-        x = _dfloat(1.23, 0.0)
-        y = _dfloat(-1, 0.0)
-        lib.rev_ifelse_side_effects(x, y, 0.3)
-        assert abs(x.dval - 2 * 0.3) < epsilon and \
-            abs(y.dval) < epsilon
+        x = 1.23
+        _dx = ctypes.c_float(0)
+        y = -1.0
+        _dy = ctypes.c_float(0)
+        lib.rev_ifelse_side_effects(x, _dx, y, _dy, 0.3)
+        assert abs(_dx.value - 2 * 0.3) < epsilon and \
+            abs(_dy.value) < epsilon
 
     def test_nested_ifelse_rev(self):
         with open('loma_code/nested_ifelse_rev.py') as f:
@@ -82,25 +88,29 @@ class Homework3Test(unittest.TestCase):
                                             output_filename = '_code/nested_ifelse_rev.so')
         
         # test all three branches
-        _dfloat = structs['_dfloat']
-        x = _dfloat(1.23, 0.0)
-        y = _dfloat(1, 0.0)
-        lib.rev_nested_ifelse(x, y, 0.3)
-        assert abs(x.dval - 0.3 * math.cos(5.0 * x.val) * 5) < epsilon and \
-            abs(y.dval) < epsilon
+        x = 1.23
+        _dx = ctypes.c_float(0)
+        y = 1
+        _dy = ctypes.c_float(0)
+        lib.rev_nested_ifelse(x, _dx, y, _dy, 0.3)
+        assert abs(_dx.value - 0.3 * math.cos(5.0 * x) * 5) < epsilon and \
+            abs(_dy.value) < epsilon
 
-        _dfloat = structs['_dfloat']
-        x = _dfloat(-1.23, 0.0)
-        y = _dfloat(1, 0.0)
-        lib.rev_nested_ifelse(x, y, 0.3)
-        assert abs(x.dval + 0.3 * math.sin(5.0 * x.val) * 5) < epsilon and \
-            abs(y.dval) < epsilon
+        x = -1.23
+        _dx = ctypes.c_float(0)
+        y = 1
+        _dy = ctypes.c_float(0)
+        lib.rev_nested_ifelse(x, _dx, y, _dy, 0.3)
+        assert abs(_dx.value + 0.3 * math.sin(5.0 * x) * 5) < epsilon and \
+            abs(_dy.value) < epsilon
 
-        x = _dfloat(1.23, 0.0)
-        y = _dfloat(-1, 0.0)
-        lib.rev_nested_ifelse(x, y, 0.3)
-        assert abs(x.dval - 2 * 0.3) < epsilon and \
-            abs(y.dval) < epsilon
+        x = 1.23
+        _dx = ctypes.c_float(0)
+        y = -1
+        _dy = ctypes.c_float(0)
+        lib.rev_nested_ifelse(x, _dx, y, _dy, 0.3)
+        assert abs(_dx.value - 2 * 0.3) < epsilon and \
+            abs(_dy.value) < epsilon
 
     def test_func_call_fwd(self):
         with open('loma_code/func_call_fwd.py') as f:
@@ -115,6 +125,193 @@ class Homework3Test(unittest.TestCase):
         # dz = 2 * (2 * dx * x * y + x * x * dy + 2 * dy * y)
         assert abs(z.val - 2 * (x.val * x.val * y.val + y.val * y.val)) < epsilon and \
             abs(z.dval - 2 * (2 * x.dval * x.val * y.val + x.val * x.val * y.dval + 2 * y.dval * y.val)) < epsilon
+
+    def test_func_call_rev(self):
+        with open('loma_code/func_call_rev.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/func_call_rev.so')
+        x = 0.67
+        _dx = ctypes.c_float(0)
+        y = 0.5
+        _dy = ctypes.c_float(0)
+        dout = 0.3
+        z = lib.rev_func_call(x, ctypes.byref(_dx), y, ctypes.byref(_dy), dout)
+        # z = 2 * (x * x * y + y * y)
+        # dx = 4 * x * y * dout
+        # dy = 2 * x^2 * dout + 2 * y * dout
+        assert abs(_dx.value - (4 * x * y * dout)) < epsilon and \
+            abs(_dy.value - dout * (2 * x * x + 2 * y))
+
+    def test_func_call_rev2(self):
+        with open('loma_code/func_call_rev2.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/func_call_rev2.so')
+        x = 0.67
+        _dx = ctypes.c_float(0)
+        y = 0.5
+        _dy = ctypes.c_float(0)
+        dout = 0.3
+        z = lib.rev_func_call(x, ctypes.byref(_dx), y, ctypes.byref(_dy), dout)
+        # z = 2 * ((x + y) * (x * y))
+        # dx = 2 * dout * ((x * y) + (x + y) * y)
+        # dy = 2 * dout * ((x * y) + (x + y) * x)
+        assert abs(_dx.value - (2 * dout * ((x * y) + (x + y) * y))) < epsilon and \
+            abs(_dy.value - (2 * dout * ((x * y) + (x + y) * x))) < epsilon
+
+    def test_func_call_assign_rev(self):
+        with open('loma_code/func_call_assign_rev.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/func_call_assign_rev.so')
+        x = 0.67
+        _dx = ctypes.c_float(0)
+        y = 0.5
+        _dy = ctypes.c_float(0)
+        dout = 0.3
+        z = lib.rev_func_call_assign(x, ctypes.byref(_dx), y, ctypes.byref(_dy), dout)
+        # z = 2 * x * x * y * y
+        # dx = dout * 4 * x * y^2
+        # dy = dout * 4 * x^2 * y
+        assert abs(_dx.value - dout * 4 * x * y * y) < epsilon and \
+            abs(_dy.value - dout * 4 * x * x * y) < epsilon
+
+    def test_call_stmt(self):
+        with open('loma_code/call_stmt.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/call_stmt.so')
+        x = 0.67
+        _dx = ctypes.c_float(0)
+        dout = 0.3
+        z = lib.rev_call_stmt(x, ctypes.byref(_dx), dout)
+        # y = 2 * (x * x + x)
+        # dx = 2 * dout * (2 * x + 1)
+        assert abs(_dx.value - (2 * dout * (2 * x + 1))) < epsilon
+
+    def test_call_stmt_side_effects(self):
+        with open('loma_code/call_stmt_side_effects.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/call_stmt_side_effects.so')
+        x = 0.67
+        _dx = ctypes.c_float(0)
+        dout = 0.3
+        z = lib.rev_call_stmt_side_effects(x, ctypes.byref(_dx), dout)
+        # y = 2 * (x * x + x) + 10 * x
+        # dx = dout * (2 * (2 * x + 1) + 10)
+        assert abs(_dx.value - (dout * (2 * (2 * x + 1) + 10))) < epsilon
+
+    def test_call_stmt_side_effects2(self):
+        with open('loma_code/call_stmt_side_effects2.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/call_stmt_side_effects2.so')
+        x = 0.67
+        _dx = ctypes.c_float(0)
+        y = 0.89
+        _dy = ctypes.c_float(0)
+        dout = 0.3
+        out = lib.rev_call_stmt_side_effects2(x, ctypes.byref(_dx), y, ctypes.byref(_dy), dout)
+
+        # out = 2 * (x * x + x) + (0.5 * y)^2 * x
+        # dx = dout * (2 * (2 * x + 1) + (0.5 * y)^2)
+        # dy = dout * (0.5 * y) * x
+        assert abs(_dx.value - (dout * (2 * (2 * x + 1) + 0.25 * y * y))) < epsilon and \
+            abs(_dy.value - (dout * (0.5 * y * x))) < epsilon
+
+    def test_chained_calls(self):
+        with open('loma_code/chained_calls.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/chained_calls.so')
+        x = 0.67
+        _dx = ctypes.c_float(0)
+        dout = 0.3
+        out = lib.rev_chained_calls(x, ctypes.byref(_dx), dout)
+
+        # out = sin(2 * x * x)
+        # dx = dout * cos(2 * x * x) * 4 * x 
+        assert abs(_dx.value - (dout * math.cos(2 * x * x) * 4 * x)) < epsilon
+
+    def test_while_loop_fwd(self):
+        with open('loma_code/while_loop_fwd.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/while_loop_fwd.so')
+        _dfloat = structs['_dfloat']
+        x = _dfloat(1.23, 0.4)
+        n = 5
+        out = lib.fwd_while_loop(x, n)
+
+        # out = sin(sin(sin(sin(sin(x)))))
+        # dout = dx * (cos(sin(sin(sin(sin(x))))) *
+        #              cos(sin(sin(sin(x)))) *
+        #              cos(sin(sin(x))) *
+        #              cos(sin(x)) *
+        #              cos(x))
+        assert abs(out.dval - x.dval * (math.cos(math.sin(math.sin(math.sin(math.sin(x.val))))) * \
+                                        math.cos(math.sin(math.sin(math.sin(x.val))))) * \
+                                        math.cos(math.sin(math.sin(x.val))) * \
+                                        math.cos(math.sin(x.val)) * \
+                                        math.cos(x.val)) < epsilon
+
+    def test_while_loop_rev(self):
+        with open('loma_code/while_loop_rev.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/while_loop_rev.so')
+        x = 1.23
+        _dx = ctypes.c_float(0)
+        n = 5
+        _dn = ctypes.c_int(0)
+        dout = 0.4
+        out = lib.rev_while_loop(x, _dx, n, _dn, dout)
+
+        # out = sin(sin(sin(sin(sin(x)))))
+        # dx = dout * (cos(sin(sin(sin(sin(x))))) *
+        #              cos(sin(sin(sin(x)))) *
+        #              cos(sin(sin(x))) *
+        #              cos(sin(x)) *
+        #              cos(x))
+        assert abs(_dx.value - dout * (math.cos(math.sin(math.sin(math.sin(math.sin(x))))) * \
+                                       math.cos(math.sin(math.sin(math.sin(x))))) * \
+                                       math.cos(math.sin(math.sin(x))) * \
+                                       math.cos(math.sin(x)) * \
+                                       math.cos(x)) < epsilon
+
+    def test_nested_while_loop_rev(self):
+        with open('loma_code/nested_while_loop_rev.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/nested_while_loop_rev.so')
+        x = 1.23
+        _dx = ctypes.c_float(0)
+        n = 5
+        _dn = ctypes.c_int(0)
+        dout = 0.4
+        lib.rev_nested_while_loop(x, _dx, n, _dn, dout)
+
+        # out = x + (n * (n-1)) * x^2
+        # dx = dout * (1 + 2 * x * (n * (n - 1)))
+        assert abs(_dx.value - dout * (1 + 2 * x * (n * (n - 1)))) < epsilon
+
+    def test_three_level_while_loop_rev(self):
+        with open('loma_code/three_level_while_loop_rev.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/three_level_while_loop_rev.so')
+        x = 0.123
+        _dx = ctypes.c_float(0)
+        n = 5
+        _dn = ctypes.c_int(0)
+        dout = 0.4
+        lib.rev_three_level_while_loop(x, _dx, n, _dn, dout)
+
+        # out = x + n^3 * x^2
+        # dx = dout * (1 + 2 * x * n^3))
+        assert abs(_dx.value - dout * (1 + 2 * x * n * n * n)) < epsilon
 
 if __name__ == '__main__':
     unittest.main()

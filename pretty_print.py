@@ -117,6 +117,10 @@ class PrettyPrintVisitor(irvisitor.IRVisitor):
         self.emit_tabs()
         self.code += '}\n'
 
+    def visit_call_stmt(self, node):
+        self.emit_tabs()
+        self.code += self.visit_expr(node.call) + ';\n'
+
     def visit_while(self, node):
         self.emit_tabs()
         self.code += f'while ({self.visit_expr(node.cond)}) {{\n'
@@ -214,6 +218,13 @@ def loma_to_str(node) -> str:
             return expr_to_str(node)
         case _:
             assert False
+
+def pretty_print_stmts(stmts : list[loma_ir.stmt]):
+    code = ''
+    for s in stmts:
+        code += stmt_to_str(s)
+
+    print(code)
 
 def pretty_print(structs : dict[str, loma_ir.Struct],
                  funcs : dict[str, loma_ir.func]):

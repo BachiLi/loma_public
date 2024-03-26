@@ -304,7 +304,8 @@ def differentiate(structs : dict[str, loma_ir.Struct],
             print(pretty_print.loma_to_str(fwd_diff_func))
         elif isinstance(f, loma_ir.ReverseDiff):
             rev_diff_func = reverse_diff.reverse_diff(\
-                f.id, structs, funcs, diff_structs, funcs[f.primal_func])
+                f.id, structs, funcs, diff_structs,
+                funcs[f.primal_func], func_to_rev)
             funcs[f.id] = rev_diff_func
             import pretty_print
             print(pretty_print.loma_to_str(rev_diff_func))
