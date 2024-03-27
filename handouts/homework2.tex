@@ -57,19 +57,19 @@ Suppose \lstinline{DTh} and \lstinline{DTg} takes around the same time as \lstin
 Like in the forward mode, we need the list of ``terminal'' cases:
 \begin{equation}
 \begin{aligned}
-\text{DTConstant}(c, dz) &= \left(dc \leftarrow 0\right) \\
-\text{DTVariable}(x, dz) &= \left(dx \leftarrow dz\right) \\
-\text{DTAdd}(x, y, dz) &= \left(dx \leftarrow dz, dy \leftarrow dz\right) \\
-\text{DTSub}(x, y, dz) &= \left(dx \leftarrow dz, dy \leftarrow -dz\right) \\
-\text{DTMul}(x, y, dz) &= \left(dx \leftarrow dz \cdot y, dy \leftarrow dz \cdot x\right) \\
-\text{DTDiv}(x, y, dz) &= \left(dx \leftarrow \frac{dz}{y}, dy \leftarrow \frac{-dz \cdot x}{y^2}\right) \\
-\text{DTSin}(x, dz) &= \left(dx \leftarrow dz \cdot \cos(x)\right) \\
-\text{DTCos}(x, dz) &= \left(dx \leftarrow -dz \cdot \sin(x)\right) \\
-\text{DSqrt}(x, dz) &= \left(dx \leftarrow \frac{dz}{2\sqrt{x}} \right) \\
-\text{DPow}(x, y, dz) &= \left(dx \leftarrow dz \cdot y \cdot x^{y-1}, dy \leftarrow x^y \log(x) \right) \\
-\text{DExp}(x, dz) &= \left(dx \leftarrow dz \cdot \exp(x) \right) \\
-\text{DLog}(x, dz) &= \left(dx \leftarrow \frac{dz}{x} \right) \\
-\text{Dfloat2int}(x, dz) &= \left(dx \leftarrow 0\right)
+\text{DTConstant}(c, dz) &= \left[dc \leftarrow 0\right] \\
+\text{DTVariable}(x, dz) &= \left[dx \leftarrow dz\right] \\
+\text{DTAdd}(x, y, dz) &= \left[dx += dz, dy += dz\right] \\
+\text{DTSub}(x, y, dz) &= \left[dx += dz, dy += -dz\right] \\
+\text{DTMul}(x, y, dz) &= \left[dx += dz \cdot y, dy += dz \cdot x\right] \\
+\text{DTDiv}(x, y, dz) &= \left[dx += \frac{dz}{y}, dy += \frac{-dz \cdot x}{y^2}\right] \\
+\text{DTSin}(x, dz) &= \left(dx += dz \cdot \cos(x)\right) \\
+\text{DTCos}(x, dz) &= \left(dx += -dz \cdot \sin(x)\right) \\
+\text{DSqrt}(x, dz) &= \left(dx += \frac{dz}{2\sqrt{x}} \right) \\
+\text{DPow}(x, y, dz) &= \left(dx += dz \cdot y \cdot x^{y-1}, dy += x^y \log(x) \right) \\
+\text{DExp}(x, dz) &= \left(dx += dz \cdot \exp(x) \right) \\
+\text{DLog}(x, dz) &= \left(dx += \frac{dz}{x} \right) \\
+\text{Dfloat2int}(x, dz) &= \left(dx += 0\right)
 \end{aligned}
 \end{equation}
 
@@ -91,7 +91,7 @@ The transformation will happen in \lstinline{autodiff.py} and \lstinline{reverse
 Given a function \lstinline{f(x0 : In[T0], x1 : Out[T1], ...) -> T}, reverse mode will transform the signature to \lstinline{DTf(x0 : In[T0], _dx0 : Out[T0], x1 : In[T1], ..., _dout : T)}. For an input argument \lstinline{x}, there are two cases:
 \begin{itemize}
 	\item \lstinline{x : In[T]} is only used as an input. We will append the adjoint output \lstinline{_dx : Out[T]} right after \lstinline{x}. Importantly, we will add the derivatives to the existing differential in \lstinline{_dx}, instead of overwriting it. This eliminates the need to initialize the data structure to zero, which can be costly in some cases.
-	\item \lstinline{x : Out[T]} is only used as an output. The transformed argument \lstinline{x : In[T]]} is used as an input for the adjoint of the output \lstinline{x}.
+	\item \lstinline{x : Out[T]} is only used as an output. We transform the argument to an adjoint input \lstinline{x : In[T]]}. The original output argument is removed.
 \end{itemize}
 
 \paragraph{Handling argument name collision.} We need to generate several new arguments for our reverse mode transform. It is possible that the name of these new argument collide with existing arguments. This can cause problems when we want to do nested differentiation in the next homework. My (hacky) solution is to append a random string for each generated argument. For example, the following function:
@@ -129,7 +129,12 @@ def d_identity(x : In[float], _dx : Out[float], _dreturn : In[float]):
 \end{lstlisting}
 (Compare the result to the forward mode transformation -- how is it different?)
 
-You will need to implement \lstinline{mutate_function_def}, \lstinline{mutate_return}, and \lstinline{mutate_var} for the transformation. For \lstinline{mutate_function_def}, you need to come up with the new argument types of \lstinline{d_identity}. Next, you need to visit the statement in reverse order to accumulate the derivatives. For \lstinline{mutate_var}, I recommend returning a Python \lstinline{dict} that maps variable ID (string) to its adjoint expression (\lstinline{_dreturn} in this case) -- by returning a dictionary for each expression, we can obtain all the variables used in an expression and their adjoints. Finally, for \lstinline{mutate_return}, you want to get the dictionary from the expression, and accumulate the derivatives to the corresponding variables. 
+You will need to implement \lstinline{mutate_function_def}, \lstinline{mutate_return}, and \lstinline{mutate_var} for the transformation. For \lstinline{mutate_function_def}, you need to come up with the new argument types of \lstinline{d_identity}. Next, you need to visit the statement in reverse order to accumulate the derivatives. For \lstinline{mutate_var}, I recommend returning a Python \lstinline{list} that contains a statement for the adjoint accumulation. Something like 
+\begin{lstlisting}[language=Python]
+return [loma_ir.Assign(loma_ir.Var('_dx'), loma_ir.BinaryOp(loma_ir.Add(), loma_ir.Var('_dx'), loma_ir.Var('_dreturn')))]
+\end{lstlisting}
+I used a class variable \lstinline{self.adjoint} to pass around the adjoint from the return statement.
+Finally, for \lstinline{mutate_return}, you want to setup the adjoint \lstinline{self.adjoint}, and get the accumulation statements from the expression and return them.
 
 \paragraph{test_constant} This one should be easy: given the following constant function
 \begin{lstlisting}[language=Python]
@@ -168,22 +173,7 @@ def divide(x : float, y : float) -> float:
 d_divide = rev_diff(divide)
 \end{lstlisting}
 
-You'll need to implement \lstinline{mutate_add}, \lstinline{mutate_sub}, \lstinline{mutate_mul}, and \lstinline{mutate_div}. Like \lstinline{mutate_var}, I recommend you implement it so that each of them returns a dictionary that maps the variable ID to the adjoint expression. I find the following dictionary merging function to be useful:
-\begin{lstlisting}[language=Python]
-def merge_dicts(x, y):
-    for key, y_value in y.items():
-        if key in x:
-            x_value = x[key]
-            x[key] = loma_ir.BinaryOp(\
-                loma_ir.Add(),
-                x_value,
-                y_value,
-                lineno = x_value.lineno,
-                t = x_value.t)
-        else:
-            x[key] = y_value
-    return x
-\end{lstlisting}
+You'll need to implement \lstinline{mutate_add}, \lstinline{mutate_sub}, \lstinline{mutate_mul}, and \lstinline{mutate_div}. Like \lstinline{mutate_var}, I recommend you implement it so that each of them returns a list of adjoint accumulation statements. For example, \lstinline{mutate_add} should pass the adjoint from the parent expression to the two children, and return all the adjoint accumulation statements it gets from the children.
 
 We provide our output for \lstinline{d_plus} as an example:
 \begin{lstlisting}[language=Python]
@@ -263,57 +253,70 @@ My implementation would generate the following code:
 \begin{lstlisting}[language=Python]
 def d_assign2(x : In[float], _dx : Out[float], y : In[float], _dy : Out[float], _dreturn : In[float]):
 	# Forward pass
-	_t_float : Array[float, 2] # cache the values into an array
-	_stack_ptr_float : int = 0 # pointer of the array
+	_t_float : Array[float, 2]
+	_stack_ptr_float : int
 	z : float
-	_dz : float
-	_t_float[_stack_ptr_float] = z # cache z before it's overwritten
+	_dz_ : float
+	# cache z's value in a stack _t_float before it's overwritten
+	_t_float[_stack_ptr_float] = z
 	_stack_ptr_float = _stack_ptr_float + 1 # advance pointer
 	z = 2.5 * x - 3.0 * y
-	_t_float[_stack_ptr_float] = z # cache z before it's overwritten
+	# cache z's value in a stack _t_float before it's overwritten
+	_t_float[_stack_ptr_float] = z
 	_stack_ptr_float = _stack_ptr_float + 1 # advance pointer
 	z = z + x * y
-	
 	# Reverse pass
+	_adj_0 : float # some tmp variables for later use
+	_adj_1 : float
+	_adj_2 : float
+	_adj_3 : float
+	_adj_4 : float
 	# Backprop "return z"
-	_dz = _dz + _dreturn
+	_dz_ = _dz_ + _dreturn_
 	# Backprop "z = z + x * y"
+	# First, recover the value of z before overwrite
+	# by poping the value from the stack "_t_float"
 	_stack_ptr_float = _stack_ptr_float - 1
-	z = _t_float[_stack_ptr_float] # First, recover the value of z before overwrite
-	# the adjoints for z, x, y, respectively, these are the three
-	# variables used in the expression z + x * y
-	_adj_float_1_0 : float = _dz
-	_adj_float_1_1 : float = y * _dz
-	_adj_float_1_2 : float = x * _dz
-	# zero the differential of z first (to account for the overwrite)
-	_dz = 0.0
-	# accumulate the adjoints to z, x, y
-	_dz = _dz + _adj_float_1_0
-	_dx = _dx + _adj_float_1_1
-	_dy = _dy + _adj_float_1_2
+	z = _t_float[_stack_ptr_float]
+	# Next, compute the adjoints of the three inputs:
+	# z, x, and y and store them into _adj_0, _adj_1, and _adj_2
+	_adj_0 = _dz_
+	_adj_1 = y * _dz_
+	_adj_2 = x * _dz_
+	# Zero the differential of z to account for the effect of
+	# overwrite
+	_dz_ = 0.0
+	# Accumulate the adjoints _adj_0, _adj_1, and _adj_2
+	# to z, x, y's differentials respectively
+	_dz_ = (_dz_) + (_adj_0);
+	(*_dx_) = ((*_dx_)) + (_adj_1);
+	(*_dy_) = ((*_dy_)) + (_adj_2);
 	# Backprop "z = 2.5 * x - 3.0 * y"
-	_stack_ptr_float = _stack_ptr_float - 1
-	z.val = _t_float[_stack_ptr_float] # recover the value of z before overwrite
-	# The adjoints for x and y respectively.
-	_adj_float_0_0 : float = 2.5 * _dz
-	_adj_float_0_1 : float = 3.0 * (0.0 - _dz)
-	# zero the differential of z first
-	_dz = 0.0
-	# accumulate the adjoints to x and y
-	_dx = _dx + _adj_float_0_0
-	_dy = _dy + _adj_float_0_1
+	# Recover the value of z from the stack
+	_stack_ptr_float = (_stack_ptr_float) - ((int)(1));
+	z = (_t_float)[_stack_ptr_float];
+	# Compute the adjoints and store them into
+	# temporary variables
+	_adj_3 = ((float)(2.5)) * (_dz_);
+	_adj_4 = ((float)(3.0)) * (((float)(0.0)) - (_dz_));
+	# Zero the differential of z
+	_dz_ = (float)(0.0);
+	# Accumulate the adjoints
+	(*_dx_) = ((*_dx_)) + (_adj_3);
+	(*_dy_) = ((*_dy_)) + (_adj_4);
 \end{lstlisting}
 
 The generated code is a bit involved. Let's look at them line by line. Firstly, in the forward pass, we
-first allocate an array \lstinline{_t_float} for each assign statement (line 3). We also declare a ``pointer'' to indicate the current writing position (line 4). Before each assign statement, we cache the left hand side values to the array, so that we don't lose the values (line 7 and 10).
+first allocate an array \lstinline{_t_float}, acting as a stack for storing the values from forward pass (line 3). We also declare a ``pointer'' integer to indicate the current writing position (line 4). Before each assign statement, we cache the left hand side values to the array, so that we don't lose the values (line 8-9 and 12-13).
 
 In the reverse pass, for each assign statement \lstinline{z = f(x0, x1, ... z)}, we need to to the following:
 \begin{enumerate}
-	\item First, pop from the cache: \lstinline{z = cached_z} (line 19 and 33).
-	\item Next, declare new adjoint variables for all the inputs to \lstinline{f}: \lstinline{_adj_x0 = ...}, \lstinline{_adj_x1 = ...}, and \lstinline{_adj_z = ...}. (line 22-24 and line 35-36).
-	\item Next, zero the differential of z: \lstinline{_dz = 0} (line 26 and 38).
-	\item Next, accumulate the adjoint variables to their corresponding differentials: \lstinline{_dx0 += _adj_x0}, \lstinline{_dx1 += _adj_x1}, ... \lstinline{_dz += _adj_z}. (line 28-30 and 40-41)
+	\item First, pop from the cache: \lstinline{z = stack.pop()} (line 26-27 and 43-44).
+	\item Next, store the adjoints for all the inputs to \lstinline{f}: \lstinline{_adj_x0 = ...}, \lstinline{_adj_x1 = ...}, and \lstinline{_adj_z = ...}. (line 30-32 and line 47-48).
+	\item Next, zero the differential of z: \lstinline{_dz = 0} (line 35 and 50).
+	\item Next, accumulate the adjoint variables to their corresponding differentials: \lstinline{_dx0 += _adj_x0}, \lstinline{_dx1 += _adj_x1}, ... \lstinline{_dz += _adj_z}. (line 38-40 and 52-53)
 \end{enumerate}
+(Think: what happens if we don't first store the adjoints in these temporary variables, and directly accumulate them to the target differentials?)
 
 You'll need to modify \lstinline{mutate_function_def} and add implementation to \lstinline{mutate_assign} to pass these tests.
 
@@ -332,8 +335,22 @@ def type_to_string(t):
         case _:
             assert False
 \end{lstlisting}
+You can find it in \lstinline{reverse_diff.py}.
 
-\paragraph{test_refs_out} This test checks if you handles an output argument correctly.
+\paragraph{test_refs_out} This test checks if you handles an output argument correctly. If the left hand side of an assign statement is an output argument in the primal function, you should ignore it in the forward pass (since we don't have an output argument to write to). I used the following function to determine if the left hand side of an assign statement is part of the output arguments:
+\begin{lstlisting}[language=Python]
+def check_lhs_is_output_arg(lhs, output_args):
+    match lhs:
+        case loma_ir.Var():
+            return lhs.id in output_args
+        case loma_ir.StructAccess():
+            return check_lhs_is_output_arg(lhs.struct, output_args)
+        case loma_ir.ArrayAccess():
+            return check_lhs_is_output_arg(lhs.array, output_args)
+        case _:
+            assert False
+\end{lstlisting}
+Here, \lstinline{output_args} is a Python \lstinline{set} that contains a list of strings that are the output arguments of the function.
 
 \paragraph{test_call_sin, test_call_cos, test_call_sqrt, test_call_pow, test_call_exp, test_call_log, test_call} You'll implement \lstinline{mutate_call} to handle these tests. They should not be that different from the binary operations.
 
@@ -374,13 +391,16 @@ def assign_zero(target):
 \end{lstlisting}
 Next, you need a way to accumulate derivatives to a struct. I use the following function:
 \begin{lstlisting}[language=Python]
-def accum_deriv(target, deriv):
+def accum_deriv(target, deriv, overwrite):
     match target.t:
         case loma_ir.Int():
             return []
         case loma_ir.Float():
-            return [loma_ir.Assign(target,
-                loma_ir.BinaryOp(loma_ir.Add(), target, deriv))]
+            if overwrite:
+                return [loma_ir.Assign(target, deriv)]
+            else:
+                return [loma_ir.Assign(target,
+                    loma_ir.BinaryOp(loma_ir.Add(), target, deriv))]
         case loma_ir.Struct():
             s = target.t
             stmts = []
@@ -390,11 +410,11 @@ def accum_deriv(target, deriv):
                 deriv_m = loma_ir.StructAccess(
                     deriv, m.id, t = m.t)
                 if isinstance(m.t, loma_ir.Float):
-                    stmts += accum_deriv(target_m, deriv_m)
+                    stmts += accum_deriv(target_m, deriv_m, overwrite)
                 elif isinstance(m.t, loma_ir.Int):
                     pass
                 elif isinstance(m.t, loma_ir.Struct):
-                    stmts += accum_deriv(target_m, deriv_m)
+                    stmts += accum_deriv(target_m, deriv_m, overwrite)
                 else:
                     assert isinstance(m.t, loma_ir.Array)
                     assert m.t.static_size is not None
@@ -403,11 +423,12 @@ def accum_deriv(target, deriv):
                             target_m, loma_ir.ConstInt(i), t = m.t.t)
                         deriv_m = loma_ir.ArrayAccess(
                             deriv_m, loma_ir.ConstInt(i), t = m.t.t)
-                        stmts += assign_zero(deriv_m)
+                        stmts += accum_deriv(target_m, deriv_m, overwrite)
             return stmts
         case _:
             assert False
 \end{lstlisting}
+If \lstinline{overwrite} argument is true, \lstinline{accum_deriv} would just overwrite the derivatives (this is for things like the \lstinline{_adj} temporary variables we create during the handling of assign statements). Otherwise it accumulates on the existing derivatives. 
 
 \paragraph{test_multivariate} This test demonstrates how reverse mode would usually be used in loma code:
 \begin{lstlisting}[language=Python]

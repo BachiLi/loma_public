@@ -145,7 +145,6 @@ class Homework2Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/assign1.so')
-        _dfloat = structs['_dfloat']
         x = -3.0
         _dx = ctypes.c_float(0)
         y = 5.0
@@ -161,7 +160,6 @@ class Homework2Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/assign2.so')
-        _dfloat = structs['_dfloat']
         x = 2.0
         _dx = ctypes.c_float(0)
         y = -6.0
@@ -177,7 +175,6 @@ class Homework2Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/assign3.so')
-        _dfloat = structs['_dfloat']
         x = 2.0
         _dx = ctypes.c_float(0)
         y = -6.0
@@ -193,7 +190,6 @@ class Homework2Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/assign4.so')
-        _dfloat = structs['_dfloat']
         x = 2.0
         _dx = ctypes.c_float(0)
         y = -6.0
@@ -219,7 +215,6 @@ class Homework2Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/assign5.so')
-        _dfloat = structs['_dfloat']
         x = -3.0
         _dx = ctypes.c_float(0)
         y = 5.0
@@ -256,7 +251,6 @@ class Homework2Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/assign_args.so')
-        _dfloat = structs['_dfloat']
         w = -1.3
         _dw = ctypes.c_float(0)
         x = -3.0
@@ -299,14 +293,11 @@ class Homework2Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/refs_out.so')
-        _dfloat = structs['_dfloat']
         x = 0.7
         _dx = ctypes.c_float(0)
-        y = ctypes.c_float(0)
         _dy = 0.1
         lib.d_refs_out(x,
                        ctypes.byref(_dx),
-                       y,
                        _dy)
 
         assert abs(_dx.value - 0.1 * 2 * x) < epsilon
@@ -316,7 +307,6 @@ class Homework2Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/call_sin.so')
-        _dfloat = structs['_dfloat']
         x = 1.5
         _dx = ctypes.c_float(0)
         dout = -0.3
@@ -329,7 +319,6 @@ class Homework2Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/call_cos.so')
-        _dfloat = structs['_dfloat']
         x = 1.5
         _dx = ctypes.c_float(0)
         dout = -0.3
@@ -342,7 +331,6 @@ class Homework2Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/call_sqrt.so')
-        _dfloat = structs['_dfloat']
         x = 1.5
         _dx = ctypes.c_float(0)
         dout = -0.3
@@ -355,7 +343,6 @@ class Homework2Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/call_pow.so')
-        _dfloat = structs['_dfloat']
         x = 1.5
         _dx = ctypes.c_float(0)
         y = 0.7
@@ -371,7 +358,6 @@ class Homework2Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/call_exp.so')
-        _dfloat = structs['_dfloat']
         x = 1.5
         _dx = ctypes.c_float(0)
         dout = -0.3
@@ -384,7 +370,6 @@ class Homework2Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/call_log.so')
-        _dfloat = structs['_dfloat']
         x = 1.5
         _dx = ctypes.c_float(0)
         dout = -0.3
@@ -397,7 +382,6 @@ class Homework2Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/call.so')
-        _dfloat = structs['_dfloat']
         x = 1.5
         _dx = ctypes.c_float(0)
         y = 0.7
@@ -431,7 +415,6 @@ class Homework2Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/int_input.so')
-        _dfloat = structs['_dfloat']
         x = 1.23
         _dx = ctypes.c_float(0)
         y = 3
@@ -446,7 +429,6 @@ class Homework2Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/int_output.so')
-        _dfloat = structs['_dfloat']
         x = 1.23
         _dx = ctypes.c_float(0)
         y = 3
@@ -459,7 +441,6 @@ class Homework2Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/int_assign.so')
-        _dfloat = structs['_dfloat']
         x = 1.23
         _dx = ctypes.c_float(0)
         y = 0
@@ -484,7 +465,7 @@ class Homework2Test(unittest.TestCase):
         y = (ctypes.c_float * len(py_y))(*py_y)
         py_dy = [0.3, 0.5]
         _dy = (ctypes.c_float * len(py_dy))(*py_dy)
-        lib.d_array_output(x, _dx, y, _dy)
+        lib.d_array_output(x, _dx, _dy)
         assert abs(_dx.value - (0.3 * 2 * x + 0.5 * 3 * x * x)) < epsilon
 
     def test_array_input(self):
@@ -553,12 +534,10 @@ class Homework2Test(unittest.TestCase):
         _di = ctypes.c_int(0)
         j = 3.5
         _dj = ctypes.c_float(0)
-        py_y = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        y = (ctypes.c_float * len(py_y))(*py_y)
         py_dy = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
         _dy = (ctypes.c_float * len(py_dy))(*py_dy)
         lib.d_array_output_indexing(\
-            x, ctypes.byref(_dx), i, ctypes.byref(_di), j, ctypes.byref(_dj), y, _dy)
+            x, ctypes.byref(_dx), i, ctypes.byref(_di), j, ctypes.byref(_dj), _dy)
         # y[1] = x
         # y[3] = 2 * x
         # y[2] = 3 * x
@@ -663,7 +642,7 @@ class Homework2Test(unittest.TestCase):
         f = Foo(a=1.23, b=3)
         _df = Foo(a=0.0, b=0)
         dout = Foo(a=0.3,b=100)
-        lib.d_struct_assign(f,ctypes.byref(_df), dout)
+        lib.d_struct_assign(f, ctypes.byref(_df), dout)
         assert abs(_df.a - dout.a * 2) < epsilon
 
     def test_multivariate(self):

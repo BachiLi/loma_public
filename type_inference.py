@@ -306,8 +306,7 @@ class TypeInferencer(irmutator.IRMutator):
                         f_args.append(loma_ir.Arg('_d' + arg.id, arg.t, i = loma_ir.Out()))
                     else:
                         assert arg.i == loma_ir.Out()
-                        f_args.append(arg)
-                        f_args.append(loma_ir.Arg('_d' + dvar_id, arg.t, i = loma_ir.In()))
+                        f_args.append(loma_ir.Arg(arg.id, arg.t, i = loma_ir.In()))
                 if primal_f.ret_type is not None:
                     self.return_var_id = '_dreturn'
                     f_args.append(loma_ir.Arg('_dreturn', primal_f.ret_type, i = loma_ir.In()))
