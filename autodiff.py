@@ -224,7 +224,9 @@ class CallFuncVisitor(irvisitor.IRVisitor):
             node.id == 'exp' or \
             node.id == 'log' or \
             node.id == 'int2float' or \
-            node.id == 'float2int':
+            node.id == 'float2int' or \
+            node.id == 'thread_id' or \
+            node.id == 'atomic_add':
             return
 
         self.called_func_ids.add(node.id)

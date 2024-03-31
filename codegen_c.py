@@ -194,6 +194,10 @@ class CCodegenVisitor(irvisitor.IRVisitor):
             case loma_ir.Call():
                 if node.id == 'thread_id':
                     return '__work_id'
+                elif node.id == 'atomic_add':
+                    arg0_str = self.visit_expr(node.args[0])
+                    arg1_str = self.visit_expr(node.args[1])
+                    return f'{arg0_str} += {arg1_str}'
                 func_id = node.id
                 # call the single precision versions of the intrinsic functions
                 if func_id == 'sin':

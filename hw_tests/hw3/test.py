@@ -10,6 +10,7 @@ import math
 import gpuctypes.opencl as cl
 import cl_utils
 import unittest
+import numpy as np
 
 epsilon = 1e-4
 
@@ -126,6 +127,31 @@ class Homework3Test(unittest.TestCase):
         assert abs(z.val - 2 * (x.val * x.val * y.val + y.val * y.val)) < epsilon and \
             abs(z.dval - 2 * (2 * x.dval * x.val * y.val + x.val * x.val * y.dval + 2 * y.dval * y.val)) < epsilon
 
+    def test_chained_calls_fwd(self):
+        with open('loma_code/chained_calls_fwd.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/chained_calls_fwd.so')
+        _dfloat = structs['_dfloat']
+        x = _dfloat(0.67, 0.4)
+        out = lib.fwd_chained_calls(x)
+
+        # out = sin(2 * x * x)
+        # dout = dx * cos(2 * x * x) * 4 * x 
+        assert abs(out.dval - (x.dval * math.cos(2 * x.val * x.val) * 4 * x.val)) < epsilon
+
+    def test_call_stmt_fwd(self):
+        with open('loma_code/call_stmt_fwd.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/call_stmt_fwd.so')
+        _dfloat = structs['_dfloat']
+        x = _dfloat(0.67, 0.4)
+        z = lib.fwd_call_stmt(x)
+        # z = 2 * (x * x + x)
+        # dout = 2 * dx * (2 * x + 1)
+        assert abs(z.dval - (2 * x.dval * (2 * x.val + 1))) < epsilon
+
     def test_func_call_rev(self):
         with open('loma_code/func_call_rev.py') as f:
             structs, lib = compiler.compile(f.read(),
@@ -177,11 +203,11 @@ class Homework3Test(unittest.TestCase):
         assert abs(_dx.value - dout * 4 * x * y * y) < epsilon and \
             abs(_dy.value - dout * 4 * x * x * y) < epsilon
 
-    def test_call_stmt(self):
-        with open('loma_code/call_stmt.py') as f:
+    def test_call_stmt_rev(self):
+        with open('loma_code/call_stmt_rev.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call_stmt.so')
+                                            output_filename = '_code/call_stmt_rev.so')
         x = 0.67
         _dx = ctypes.c_float(0)
         dout = 0.3
@@ -221,8 +247,8 @@ class Homework3Test(unittest.TestCase):
         assert abs(_dx.value - (dout * (2 * (2 * x + 1) + 0.25 * y * y))) < epsilon and \
             abs(_dy.value - (dout * (0.5 * y * x))) < epsilon
 
-    def test_chained_calls(self):
-        with open('loma_code/chained_calls.py') as f:
+    def test_chained_calls_rev(self):
+        with open('loma_code/chained_calls_rev.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
                                             output_filename = '_code/chained_calls.so')
@@ -294,8 +320,8 @@ class Homework3Test(unittest.TestCase):
         lib.rev_nested_while_loop(x, _dx, n, _dn, dout)
 
         # out = x + (n * (n-1)) * x^2
-        # dx = dout * (1 + 2 * x * (n * (n - 1)))
-        assert abs(_dx.value - dout * (1 + 2 * x * (n * (n - 1)))) < epsilon
+        # dx = dout * (1 + x * (n * (n - 1)))
+        assert abs(_dx.value - dout * (x * (n * (n - 1)))) < epsilon
 
     def test_three_level_while_loop_rev(self):
         with open('loma_code/three_level_while_loop_rev.py') as f:
@@ -312,6 +338,23 @@ class Homework3Test(unittest.TestCase):
         # out = x + n^3 * x^2
         # dx = dout * (1 + 2 * x * n^3))
         assert abs(_dx.value - dout * (1 + 2 * x * n * n * n)) < epsilon
+
+    def test_parallel_copy(self):
+        with open('loma_code/parallel_copy.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'ispc',
+                                            output_filename = '_code/parallel_copy.so')
+        x = 0.123
+        n = 10000
+        _dx = ctypes.c_float(0)
+        np.random.seed(1234)
+        _dz = np.random.random(n).astype('f') / n
+        lib.rev_parallel_copy(x,
+            ctypes.byref(_dx),
+            _dz.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            n)
+
+        assert abs(_dx.value - np.sum(_dz)) < epsilon
 
 if __name__ == '__main__':
     unittest.main()

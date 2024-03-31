@@ -283,6 +283,10 @@ class TypeInferencer(irmutator.IRMutator):
             if len(args) != 0:
                 raise error.CallTypeMismatch(call.id, call.lineno)
             inf_type = loma_ir.Int()
+        elif call.id == 'atomic_add':
+            if len(args) != 2:
+                raise error.CallTypeMismatch(call.id, call.lineno)
+            inf_type = None
         else:
             if call.id not in self.funcs:
                 raise error.CallIDNotFound(call.id, call.lineno)

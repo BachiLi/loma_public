@@ -116,6 +116,17 @@ def compile(loma_code : str,
             print(log.stderr)
     elif target == 'ispc':
         code = codegen_ispc.codegen_ispc(structs, funcs)
+        # add atomic add
+        code = """
+void atomic_add(float *ptr, float val) {
+    float found = *ptr;
+    float expected;
+    do {
+        expected = found;
+        found = atomic_compare_exchange_global(ptr, expected, expected + val);
+    } while (found != expected);
+}
+        \n""" + code
 
         print(code)
 
@@ -146,6 +157,30 @@ def compile(loma_code : str,
             print(log.stderr)
     elif target == 'opencl':
         code = codegen_opencl.codegen_opencl(structs, funcs)
+        # add atomic add (taken from https://gist.github.com/PolarNick239/9dffaf365b332b4442e2ac63b867034f)
+        code = """
+static float atomic_cmpxchg_f32(volatile __global float *p, float cmp, float val) {
+    union {
+        unsigned int u32;
+        float        f32;
+    } cmp_union, val_union, old_union;
+
+    cmp_union.f32 = cmp;
+    val_union.f32 = val;
+    old_union.u32 = atomic_cmpxchg((volatile __global unsigned int *) p, cmp_union.u32, val_union.u32);
+    return old_union.f32;
+}
+
+static float cl_atomic_add(volatile __global float *p, float val) {
+    float found = *p;
+    float expected;
+    do {
+        expected = found;
+        found = atomic_cmpxchg_f32(p, expected, expected + val);
+    } while (found != expected);
+    return found;
+}
+        \n""" + code
 
         print(code)
         
@@ -172,6 +207,10 @@ def compile(loma_code : str,
     if target == 'c' or target == 'ispc':
         lib = CDLL(output_filename)
         for f in funcs.values():
+            if target == 'ispc':
+                # only process SIMD functions
+                if not f.is_simd:
+                    continue
             c_func = getattr(lib, f.id)
             c_func.argtypes = \
                 [loma_to_ctypes_type(arg, ctypes_structs) for arg in f.args]

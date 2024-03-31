@@ -29,6 +29,8 @@ class OpenCLCodegenVisitor(codegen_c.CCodegenVisitor):
 
         self.byref_args = set([arg.id for arg in node.args if \
             arg.i == loma_ir.Out() and (not isinstance(arg.t, loma_ir.Array))])
+        self.output_args = set([arg.id for arg in node.args if \
+            arg.i == loma_ir.Out()])
 
         self.tab_count += 1
         for stmt in node.body:
@@ -38,17 +40,27 @@ class OpenCLCodegenVisitor(codegen_c.CCodegenVisitor):
         self.emit_tabs()
         self.code += '}\n'
 
-    def visit_expr(self, expr):
-        match expr:
+    def is_output_arg(self, node):
+        match node:
+            case loma_ir.Var():
+                return node.id in self.output_args
+            case loma_ir.ArrayAccess():
+                return is_output_arg(self, node.array)
+            case loma_ir.StructAccess():
+                return is_output_arg(self, node.struct)
+        return False
+
+    def visit_expr(self, node):
+        match node:
             case loma_ir.Call():
-                if expr.id == 'thread_id':
+                if node.id == 'thread_id':
                     return 'get_global_id(0)'
-                else:
-                    return super().visit_expr(expr)
-            case _:
-                return super().visit_expr(expr)
-
-
+                elif node.id == 'atomic_add':
+                    if self.is_output_arg(node.args[0]):
+                        arg0_str = self.visit_expr(node.args[0])
+                        arg1_str = self.visit_expr(node.args[1])
+                        return f'cl_atomic_add(&({arg0_str}), {arg1_str})'
+        return super().visit_expr(node)
 
 def codegen_opencl(structs : dict[str, loma_ir.Struct],
                    funcs : dict[str, loma_ir.func]) -> str:

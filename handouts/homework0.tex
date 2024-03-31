@@ -20,6 +20,13 @@ The design principles of loma are:
 Loma requires Python version to be at least 3.10.14. 
 Use \lstinline{pip install -r requirements.txt} to install the dependent packages.
 
+You further need to install the following compilers:
+\begin{itemize}
+    \item \textbf{GCC or Clang}: make sure you have \lstinline{gcc} in your environment paths. For Windows users, you can install \href{https://www.mingw-w64.org/}{MinGW}.
+    \item \textbf{ISPC}: we use \href{https://ispc.github.io/}{ISPC} to generate parallel and vectorized CPU code. Make sure \lstinline{ispc} is in your environment paths.
+    \item \textbf{OpenCL}: we use OpenCL for generating parallel GPU code. OpenCL should come with your GPU drivers. Run the following Python code to check: \lstinline{python -c "import ctypes, ctypes.util; l = ctypes.util.find_library('OpenCL'); assert(l != None); ctypes.CDLL(l)"}.
+\end{itemize}
+
 \section{Hello, loma}
 
 An example loma program looks like this (the file is located in \lstinline{examples/loma_code/sum_array.py}):
@@ -354,11 +361,16 @@ Notice that there is a \lstinline{max_iter} attribute in the loma while statemen
 We will omit most of the specifications of expressions since it's very standard. Except for \lstinline{Call} which we provide a list of intrinsic functions. We have the follow list of intrinsic functions:
 
 \begin{itemize}
-\item \lstinline{sin(x : float) -> float}, \lstinline{cos(x : float) -> float}, \lstinline{exp(x: float) -> float}, \lstinline{log(x : float)}, \lstinline{pow(x : float, y : float) -> float}: standard math functions that takes \lstinline{float}(s) and returns a \lstinline{float}.
-\item \lstinline{int2float(x : int) -> float}: type cast an integer to a float.
-\item \lstinline{float2int(x : float) -> int}: type cast a float to an integer. The effect is the same as C typecasting, i.e., it will take the floor of the float.
+\item \lstinline{sin(x : In[float]) -> float}, \lstinline{cos(x : In[float]) -> float}, \lstinline{exp(x: In[float]) -> float}, \lstinline{log(x : In[float])}, \lstinline{pow(x : In[float], y : In[float]) -> float}: standard math functions that takes \lstinline{float}(s) and returns a \lstinline{float}.
+\item \lstinline{int2float(x : In[int]) -> float}: type cast an integer to a float.
+\item \lstinline{float2int(x : In[float]) -> int}: type cast a float to an integer. The effect is the same as C typecasting, i.e., it will take the floor of the float.
 \item \lstinline{thread_id() -> int}: for SIMD parallelism. Will be explained later.
 \end{itemize}
+
+All call expression with \lstinline{Out} arguments can only appear in a call statement (described below). This is to make implementing differentiation easier. \TODO{Add the check.}
+
+\paragraph{Call statements.}
+In loma, you can have a statement that only contains a single call expression. You can make these call statements to receive the outputs from a function.
 
 \section{Frontend and Parsing}
 As hinted at the beginning, loma is embedded in Python. That is, we borrow the Python syntax (but not the semantics), so that we can reuse Python's parser, and we can exploit on people's familiarity of Python's syntax. 
@@ -792,7 +804,7 @@ Choice [0]:2
 
 Set the environment variable OPENCL_CTX='0:2' to avoid being asked again.
 \end{lstlisting}
-Here, we choose our device to be the AMD GPU on my Apple machine.
+Here, we choose our device to be the AMD GPU on my Apple machine. As mentioned in the prompt, we can use \lstinline{OPENCL_CTX='0:2' python ...} in the future to avoid having this input again.
 
 The lines 
 \begin{lstlisting}[language=python]
@@ -855,6 +867,16 @@ cl.clEnqueueReadBuffer(cl_cmd_queue,
 
 assert z[0] == 9 and z[1] == 14 and z[2] == 18
 \end{lstlisting}
+
+\paragraph{Atomic add.} loma further provides an \lstinline{atomic_add} built-in function (this turns out to be crucial for reverse mode automatic differentiation for parallel code). Here is an example use:
+\begin{lstlisting}[language=python]
+@simd
+def my_atomic_add(x : In[Array[float]],
+                  z : Out[float]):
+    i : int = thread_id()
+    atomic_add(z, x[i])
+\end{lstlisting}
+This loma code will sum up all elements of \lstinline{x} up until the number of threads launched. Internally, for C backend, this just turns into \lstinline{z = z + x[i]}. For the ISPC and OpenCL backends, we use an atomic \href{https://en.wikipedia.org/wiki/Compare-and-swap}{Compare and Swap} loop to implement atomic add (note that this is known to be very slow, however faster instructions require specific hardware like an NVIDIA GPU), if the first argument is an output variable. If the first argument is not an output variable (i.e., it's a local variable declared per thread), then it still turns into \lstinline{z = z + x[i]} even for ISPC/OpenCL backends.
 
 \section{An example of a small ray tracer}
 \begin{figure}

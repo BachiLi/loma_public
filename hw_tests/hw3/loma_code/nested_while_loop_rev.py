@@ -1,7 +1,7 @@
 def nested_while_loop(x : In[float], n : In[int]) -> float:
     i : int = 0
     j : int = 0
-    z : float = x
+    z : float = 0.0
 
     while (i < n, max_iter := 10):
         j = 0

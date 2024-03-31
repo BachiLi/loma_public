@@ -28,6 +28,8 @@ class ISPCCodegenVisitor(codegen_c.CCodegenVisitor):
 
             self.byref_args = set([arg.id for arg in node.args if \
                 arg.i == loma_ir.Out() and (not isinstance(arg.t, loma_ir.Array))])
+            self.output_args = set([arg.id for arg in node.args if \
+                arg.i == loma_ir.Out()])
 
             self.tab_count += 1
             self.emit_tabs()
@@ -82,11 +84,34 @@ class ISPCCodegenVisitor(codegen_c.CCodegenVisitor):
 
             self.byref_args = set([arg.id for arg in node.args if \
                 arg.i == loma_ir.Out() and (not isinstance(arg.t, loma_ir.Array))])
-            
+            self.output_args = set([arg.id for arg in node.args if \
+                arg.i == loma_ir.Out()])
+
             for stmt in node.body:
                 self.visit_stmt(stmt)
             self.tab_count -= 1
             self.code += '}\n'
+
+    def is_output_arg(self, node):
+        match node:
+            case loma_ir.Var():
+                return node.id in self.output_args
+            case loma_ir.ArrayAccess():
+                return is_output_arg(self, node.array)
+            case loma_ir.StructAccess():
+                return is_output_arg(self, node.struct)
+        return False
+
+    def visit_expr(self, node):
+        if isinstance(node, loma_ir.Call):
+            if node.id == 'atomic_add':
+                if self.is_output_arg(node.args[0]):
+                    arg0_str = self.visit_expr(node.args[0])
+                    arg1_str = self.visit_expr(node.args[1])
+                    return f'atomic_add(&({arg0_str}), {arg1_str})'
+                else:
+                    return super().visit_expr(node)
+        return super().visit_expr(node)
 
 def codegen_ispc(structs : dict[str, loma_ir.Struct],
                  funcs : dict[str, loma_ir.func]) -> str:

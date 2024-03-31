@@ -1,6 +1,6 @@
 .PHONY: FORCE
 
-all: pdf/homework0.pdf pdf/homework1.pdf pdf/homework2.pdf
+all: pdf/homework0.pdf pdf/homework1.pdf pdf/homework2.pdf pdf/homework3.pdf
 
 pdf/homework0.pdf: FORCE
 	mkdir -p pdf
