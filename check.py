@@ -234,6 +234,52 @@ def check_declares_are_outmost(node : loma_ir.func):
 
     DeclareScopeChecker().visit_function(node)
 
+def check_call_in_call_stmt(node : loma_ir.func,
+                            funcs : list[loma_ir.func]):
+    """ Check if all function calls with output arguments are inside CallStmt.
+        For example, the following loma code is illegal:
+        def f(x : Out[int]) -> int
+            x = 10
+            return 20
+
+        def g():
+            y : int
+            z : int = f(y)
+    """
+
+    class CallChecker(irvisitor.IRVisitor):
+        def __init__(self):
+            self.in_call_stmt = False
+
+        def visit_call_stmt(self, node):
+            self.in_call_stmt = True
+            self.visit_expr(node.call)
+            self.in_call_stmt = False
+
+        def visit_call(self, node):
+            # ignore built in functions
+            if node.id == 'sin' or \
+                node.id == 'cos' or \
+                node.id == 'sqrt' or \
+                node.id == 'exp' or \
+                node.id == 'log' or \
+                node.id == 'int2float' or \
+                node.id == 'float2int' or \
+                node.id == 'pow' or \
+                node.id == 'thread_id' or \
+                node.id == 'atomic_add':
+                return
+
+            if not self.in_call_stmt:
+                f = funcs[node.id]
+                for arg in f.args:
+                    if arg.i == loma_ir.Out():
+                        raise error.CallWithOutArgNotInCallStmt(node)
+                for arg in node.args:
+                    self.visit_expr(arg)
+
+    CallChecker().visit_function(node)
+
 def check_unhandled_differentiation(node : loma_ir.func):
     """ Check if there are ForwardDiff or ReverseDiff
         functions that are not resolved into a FunctionDef
@@ -279,5 +325,6 @@ def check_ir(structs : dict[str, loma_ir.Struct],
         check_return_is_last(f)
         check_declare_bounded(f)
         check_declares_are_outmost(f)
+        check_call_in_call_stmt(f, funcs)
 
     type_inference.check_and_infer_types(structs, diff_structs, funcs)

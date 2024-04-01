@@ -680,6 +680,15 @@ def test_declare_in_ifelse():
     except error.DeclarationNotOutmostLevel as e:
         assert e.stmt.lineno == 3
 
+def test_call_not_in_call_stmt():
+    try:
+        with open('loma_code/call_not_in_call_stmt.py') as f:
+            _, lib = compiler.compile(f.read(),
+                                      target = 'c',
+                                      output_filename = '_code/call_not_in_call_stmt.so')
+    except error.CallWithOutArgNotInCallStmt as e:
+        assert e.expr.lineno == 7
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
@@ -722,3 +731,4 @@ if __name__ == '__main__':
     test_deadcode()
     test_declare_unbounded_array()
     test_declare_in_ifelse()
+    test_call_not_in_call_stmt()

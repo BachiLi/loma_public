@@ -16,12 +16,10 @@ def type_to_string(node : loma_ir.type) -> str:
         case loma_ir.Float():
             return 'float'
         case loma_ir.Array():
-            t_str = type_to_string(node.t)
-            if node.static_size is not None:
-                t_str += f'[{node.static_size}]'
+            if node.static_size != None:
+                return f'Array[{type_to_string(node.t)}, node.static_size]'
             else:
-                t_str += '[]'
-            return t_str
+                return f'Array[{type_to_string(node.t)}]'
         case loma_ir.Struct():
             return node.id
         case loma_ir.Diff():
@@ -33,9 +31,9 @@ def type_to_string(node : loma_ir.type) -> str:
 
 def arg_to_string(arg : loma_ir.arg) -> str:
     if arg.i == loma_ir.In():
-        return f'In[{type_to_string(arg.t)}] {arg.id}'
+        return f'{arg.id} : In[{type_to_string(arg.t)}]'
     else:
-        return f'Out[{type_to_string(arg.t)}] {arg.id}'
+        return f'{arg.id} : Out[{type_to_string(arg.t)}]'
 
 @attrs.define()
 class PrettyPrintVisitor(irvisitor.IRVisitor):
@@ -49,29 +47,18 @@ class PrettyPrintVisitor(irvisitor.IRVisitor):
         self.code += '\t' * self.tab_count
 
     def visit_function_def(self, node):
-        self.code += f'{type_to_string(node.ret_type)} {node.id}('
+        if node.is_simd:
+            self.code += '@simd\n'
+        self.code += f'def {node.id}('
         for i, arg in enumerate(node.args):
             if i > 0:
                 self.code += ', '
             self.code += arg_to_string(arg)
-        if node.is_simd:
-            if len(node.args) > 0:
-                self.code += ', '
-            self.code += 'int __total_work'
-        self.code += ') {\n'
+        self.code += f') -> {type_to_string(node.ret_type)}:\n'
         self.tab_count += 1
-        if node.is_simd:
-            self.emit_tabs()
-            self.code += 'for (int __work_id = 0; __work_id < __total_work; __work_id++) {\n'
-            self.tab_count += 1
         for stmt in node.body:
             self.visit_stmt(stmt)
-        if node.is_simd:
-            self.tab_count -= 1
-            self.emit_tabs()
-            self.code += '}\n'
         self.tab_count -= 1
-        self.code += '}\n'
 
     def visit_forward_diff(self, node):
         self.code += f'{node.id} = fwd_diff({node.primal_func})'
@@ -81,19 +68,14 @@ class PrettyPrintVisitor(irvisitor.IRVisitor):
 
     def visit_return(self, node):
         self.emit_tabs()
-        self.code += f'return {self.visit_expr(node.val)};\n'
+        self.code += f'return {self.visit_expr(node.val)}\n'
 
     def visit_declare(self, node):
         self.emit_tabs()
-        if not isinstance(node.t, loma_ir.Array):
-            self.code += f'{type_to_string(node.t)} {node.target}'
-        else:
-            # Special rule for arrays
-            self.code += f'{type_to_string(node.t.t)} {node.target}[{node.t.static_size}]'
+        self.code += f'{node.target} : {type_to_string(node.t)}'
         if node.val is not None:
-            self.code += f' = {self.visit_expr(node.val)};\n'
-        else:
-            self.code += ';\n'
+            self.code += f' = {self.visit_expr(node.val)}'
+        self.code += '\n'
 
     def visit_assign(self, node):
         self.emit_tabs()
@@ -101,37 +83,34 @@ class PrettyPrintVisitor(irvisitor.IRVisitor):
         expr_str = self.visit_expr(node.val)
         if expr_str != '':
             self.code += f' = {expr_str}'
-        self.code += ';\n'
+        self.code += '\n'
 
     def visit_ifelse(self, node):
         self.emit_tabs()
-        self.code += f'if ({self.visit_expr(node.cond)}) {{\n'
+        self.code += f'if {self.visit_expr(node.cond)}:\n'
         self.tab_count += 1
         for stmt in node.then_stmts:
             self.visit_stmt(stmt)
         self.tab_count -= 1
-        self.emit_tabs()
-        self.code += f'}} else {{\n'
-        self.tab_count += 1
-        for stmt in node.else_stmts:
-            self.visit_stmt(stmt)
-        self.tab_count -= 1
-        self.emit_tabs()
-        self.code += '}\n'
+        if len(node.else_stmts) > 0:
+            self.emit_tabs()
+            self.code += f'else:\n'
+            self.tab_count += 1
+            for stmt in node.else_stmts:
+                self.visit_stmt(stmt)
+            self.tab_count -= 1
 
     def visit_call_stmt(self, node):
         self.emit_tabs()
-        self.code += self.visit_expr(node.call) + ';\n'
+        self.code += self.visit_expr(node.call) + '\n'
 
     def visit_while(self, node):
         self.emit_tabs()
-        self.code += f'while ({self.visit_expr(node.cond)}) {{\n'
+        self.code += f'while {self.visit_expr(node.cond)} :\n'
         self.tab_count += 1
         for stmt in node.body:
             self.visit_stmt(stmt)
         self.tab_count -= 1
-        self.emit_tabs()
-        self.code += '}\n'
 
     def visit_expr(self, node):
         match node:
@@ -172,8 +151,6 @@ class PrettyPrintVisitor(irvisitor.IRVisitor):
                     case _:
                         assert False
             case loma_ir.Call():
-                if node.id == 'thread_id':
-                    return '__work_id'
                 func_id = node.id
                 ret = f'{func_id}('
                 ret += ','.join([self.visit_expr(arg) for arg in node.args])
@@ -185,14 +162,10 @@ class PrettyPrintVisitor(irvisitor.IRVisitor):
                 assert False, f'Visitor error: unhandled expression {expr}'
 
 def struct_to_str(s : loma_ir.Struct) -> str:
-    code = f'struct {s.id}{{\n'
+    code = f'class {s.id}:\n'
     for m in s.members:
         # Special rule for arrays
-        if isinstance(m.t, loma_ir.Array) and m.t.static_size is not None:
-            code += f'\t{type_to_string(m.t.t)} {m.id}[{m.t.static_size}];\n'
-        else:
-            code += f'\t{type_to_string(m.t)} {m.id};\n'
-    code += f'}};\n'
+        code += f'\t{m.id} : {type_to_string(m.t)}'
     return code
 
 def func_to_str(f : loma_ir.func) -> str:

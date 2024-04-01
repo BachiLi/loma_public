@@ -71,6 +71,16 @@ class DeclarationNotOutmostLevel(UserError):
                 f'Statement (line {self.stmt.lineno}): {pretty_print.loma_to_str(self.stmt)}')
 
 @attrs.define(frozen=True)
+class CallWithOutArgNotInCallStmt(UserError):
+    # the call expr
+    expr : loma_ir.expr
+
+    def to_string(self):
+        return (f'[Error] Function calls with output arguments must be inside CallStmt.\n'
+                f'Expr (line {self.stmt.lineno}): {pretty_print.loma_to_str(self.expr)}')
+
+
+@attrs.define(frozen=True)
 class ArrayAccessTypeMismatch(UserError):
     # line number where the array access happens
     lineno : int

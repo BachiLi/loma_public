@@ -106,6 +106,7 @@ def compile(loma_code : str,
 #include <math.h>
         \n""" + code
 
+        print('Generated C code:')
         print(code)
 
         log = run(['gcc', '-shared', '-fPIC', '-o', output_filename, '-O2', '-x', 'c', '-'],
@@ -128,6 +129,7 @@ void atomic_add(float *ptr, float val) {
 }
         \n""" + code
 
+        print('Generated ISPC code:')
         print(code)
 
         obj_filename = output_filename + '.o'
@@ -182,6 +184,7 @@ static float cl_atomic_add(volatile __global float *p, float val) {
 }
         \n""" + code
 
+        print('Generated OpenCL code:')
         print(code)
         
         kernel_names = [func_name for func_name, func in funcs.items() if func.is_simd]
