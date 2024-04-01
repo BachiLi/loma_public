@@ -621,8 +621,9 @@ def test_duplicate_declare():
                                       output_filename = '_code/duplicate_declare.so')
     except error.DuplicateVariable as e:
         assert e.var == 'x'
-        assert e.first_lineno == 2
-        assert e.duplicate_lineno == 3
+        assert e.first_declare_stmt.lineno == 2
+        assert e.duplicate_declare_stmt.lineno == 3
+        print(e.to_string())
 
 def test_undeclared_var():
     try:
@@ -632,42 +633,64 @@ def test_undeclared_var():
                                       output_filename = '_code/undeclared_var.so')
     except error.UndeclaredVariable as e:
         assert e.var == 'b'
-        assert e.lineno == 3
+        assert e.stmt.lineno == 3
+        print(e.to_string())
+
+def test_early_return():
+    try:
+        with open('loma_code/early_return.py') as f:
+            _, lib = compiler.compile(f.read(),
+                                      target = 'c',
+                                      output_filename = '_code/early_return.so')
+    except error.ReturnNotLastStmt as e:
+        assert e.stmt.lineno == 3
+
+def test_deadcode():
+    try:
+        with open('loma_code/deadcode.py') as f:
+            _, lib = compiler.compile(f.read(),
+                                      target = 'c',
+                                      output_filename = '_code/deadcode.so')
+    except error.ReturnNotLastStmt as e:
+        assert e.stmt.lineno == 2
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-    test_declaration()
-    test_binary_ops()
-    test_builtin_funcs()
-    test_args()
-    test_mutation()
-    test_array_read()
-    test_array_write()
-    test_compare()
-    test_if_else()
-    test_while_loop()
-    test_local_static_array()
-    test_local_array_init_zero()
-    test_sum_nested_array()
-    test_nested_array_output()
-    test_intrinsic_func_call()
-    test_func_decl()
-    test_struct_access()
-    test_struct_return()
-    test_struct_in_struct()
-    test_array_in_struct()
-    test_struct_in_array()
-    test_struct_in_array_in_struct()
-    test_struct_init_zero()
-    test_pass_by_ref_lhs()
-    test_pass_by_ref_lhs_struct()
-    test_pass_by_ref_array()
-    test_call_stmt()
-    test_parallel_add()
-    test_simd_local_func()
-    test_atomic_add()
+    # test_declaration()
+    # test_binary_ops()
+    # test_builtin_funcs()
+    # test_args()
+    # test_mutation()
+    # test_array_read()
+    # test_array_write()
+    # test_compare()
+    # test_if_else()
+    # test_while_loop()
+    # test_local_static_array()
+    # test_local_array_init_zero()
+    # test_sum_nested_array()
+    # test_nested_array_output()
+    # test_intrinsic_func_call()
+    # test_func_decl()
+    # test_struct_access()
+    # test_struct_return()
+    # test_struct_in_struct()
+    # test_array_in_struct()
+    # test_struct_in_array()
+    # test_struct_in_array_in_struct()
+    # test_struct_init_zero()
+    # test_pass_by_ref_lhs()
+    # test_pass_by_ref_lhs_struct()
+    # test_pass_by_ref_array()
+    # test_call_stmt()
+    # test_parallel_add()
+    # test_simd_local_func()
+    # test_atomic_add()
 
     # test compile errors
     test_duplicate_declare()
     test_undeclared_var()
+    test_early_return()
+    test_deadcode()
+

@@ -1,4 +1,8 @@
 import attrs
+import ir
+ir.generate_asdl_file()
+import _asdl.loma as loma_ir
+import pretty_print
 
 class UserError(Exception):
     pass
@@ -7,17 +11,37 @@ class UserError(Exception):
 class DuplicateVariable(UserError):
     # the name of the variable that is duplicated
     var : str
-    # the line number where the variable is first declared
-    first_lineno : int
-    # the line number where the variable is duplicatedly declared
-    duplicate_lineno : int
+    # the first declare statement (or arg)
+    first_declare_stmt : loma_ir.stmt | loma_ir.arg
+    # the duplicate statement (or arg)
+    duplicate_declare_stmt : loma_ir.stmt | loma_ir.arg
+
+    def to_string(self):
+        return (f'[Error] Duplicated variable declaration detected.\n'
+                f'Variable name: {self.var}.\n'
+                f'First declared (line {self.first_declare_stmt.lineno}): {pretty_print.loma_to_str(self.first_declare_stmt)}'
+                f'Duplicated declared (line {self.duplicate_declare_stmt.lineno}): {pretty_print.loma_to_str(self.duplicate_declare_stmt)}')
 
 @attrs.define(frozen=True)
 class UndeclaredVariable(UserError):
     # the name of the variable that is undeclared
     var : str
-    # line number where the variable is assigned
-    lineno : int
+    # the statement or expr which this occurs
+    stmt : loma_ir.stmt | loma_ir.expr
+
+    def to_string(self):
+        return (f'[Error] Undeclared variable use detected.\n'
+                f'Variable name: {self.var}.\n'
+                f'Statement/Expr (line {self.stmt.lineno}): {pretty_print.loma_to_str(self.stmt)}')
+
+@attrs.define(frozen=True)
+class ReturnNotLastStmt(UserError):
+    # the return statement
+    stmt : loma_ir.stmt
+
+    def to_string(self):
+        return (f'[Error] Return is not the last statement, or is inside an if/while statement.\n'
+                f'Statement (line {self.stmt.lineno}): {pretty_print.loma_to_str(self.stmt)}')
 
 @attrs.define(frozen=True)
 class ArrayAccessTypeMismatch(UserError):

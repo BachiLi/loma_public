@@ -1,6 +1,6 @@
 .PHONY: FORCE
 
-all: pdf/homework0.pdf pdf/homework1.pdf pdf/homework2.pdf pdf/homework3.pdf
+all: pdf/homework0.pdf pdf/homework1.pdf pdf/homework2.pdf pdf/homework3.pdf pdf/final_project.pdf
 
 pdf/homework0.pdf: FORCE
 	mkdir -p pdf
@@ -22,10 +22,10 @@ pdf/homework3.pdf: FORCE
 	./latexrun homework3.tex
 	mv homework3.pdf pdf/homework3.pdf
 
-pdf/homework4.pdf: FORCE
+pdf/final_project.pdf: FORCE
 	mkdir -p pdf
-	./latexrun homework4.tex
-	mv homework4.pdf pdf/homework4.pdf
+	./latexrun final_project.tex
+	mv final_project.pdf pdf/final_project.pdf
 
 .PHONY: clean
 clean:

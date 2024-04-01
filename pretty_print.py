@@ -31,6 +31,12 @@ def type_to_string(node : loma_ir.type) -> str:
         case _:
             assert False
 
+def arg_to_string(arg : loma_ir.arg) -> str:
+    if arg.i == loma_ir.In():
+        return f'In[{type_to_string(arg.t)}] {arg.id}'
+    else:
+        return f'Out[{type_to_string(arg.t)}] {arg.id}'
+
 @attrs.define()
 class PrettyPrintVisitor(irvisitor.IRVisitor):
     """ Generates pseudo code from loma IR.
@@ -47,10 +53,7 @@ class PrettyPrintVisitor(irvisitor.IRVisitor):
         for i, arg in enumerate(node.args):
             if i > 0:
                 self.code += ', '
-            if arg.i == loma_ir.In():
-                self.code += f'In[{type_to_string(arg.t)}] {arg.id}'
-            else:
-                self.code += f'Out[{type_to_string(arg.t)}] {arg.id}'
+            self.code += arg_to_string(arg)
         if node.is_simd:
             if len(node.args) > 0:
                 self.code += ', '
@@ -216,6 +219,8 @@ def loma_to_str(node) -> str:
             return stmt_to_str(node)
         case loma_ir.expr():
             return expr_to_str(node)
+        case loma_ir.arg():
+            return arg_to_str(node)
         case _:
             assert False
 

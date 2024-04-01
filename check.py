@@ -5,7 +5,6 @@ import error
 import irvisitor
 import type_inference
 
-# TODO: add scope
 def check_duplicate_declare(node : loma_ir.func):
     """ Check if there are duplicated declaration of variables in loma code.
         For example, the following loma code is illegal:
@@ -16,20 +15,24 @@ def check_duplicate_declare(node : loma_ir.func):
     """
 
     class DuplicateChecker(irvisitor.IRVisitor):
-        ids_lineno_map = {}
+        ids_stmt_map = {}
 
         def visit_function_def(self, node):
             for arg in node.args:
-                self.ids_lineno_map[arg.id] = node.lineno
+                if arg.id in self.ids_stmt_map:
+                    raise error.DuplicateVariable(arg.id,
+                                                  self.ids_stmt_map[arg.id],
+                                                  arg)
+                self.ids_stmt_map[arg.id] = arg
             for stmt in node.body:
                 self.visit_stmt(stmt)
 
         def visit_declare(self, node):
-            if node.target in self.ids_lineno_map:
+            if node.target in self.ids_stmt_map:
                 raise error.DuplicateVariable(node.target,
-                                              self.ids_lineno_map[node.target],
-                                              node.lineno)
-            self.ids_lineno_map[node.target] = node.lineno
+                                              self.ids_stmt_map[node.target],
+                                              node)
+            self.ids_stmt_map[node.target] = node
 
     DuplicateChecker().visit_function(node)
 
@@ -51,16 +54,115 @@ def check_undeclared_vars(node : loma_ir.func):
             for stmt in node.body:
                 self.visit_stmt(stmt)
 
+        def visit_return(self, node):
+            ret = self.visit_expr(node.val)
+            if ret != None:
+                raise error.UndeclaredVariable(ret, node)
+
         def visit_declare(self, node):
+            if node.val != None:
+                ret = self.visit_expr(node.val)
+                if ret != None:
+                    raise error.UndeclaredVariable(ret, node)
             self.ids.add(node.target)
 
         def visit_assign(self, node):
-            ref = node.target
-            if isinstance(ref, loma_ir.Var):
-                if ref.id not in self.ids:
-                    raise error.UndeclaredVariable(ref.id, node.lineno)
+            ret = self.visit_expr(node.target)
+            if ret != None:
+                raise error.UndeclaredVariable(ret, node)
+            ret = self.visit_expr(node.val)
+            if ret != None:
+                raise error.UndeclaredVariable(ret, node)
+
+        def visit_ifelse(self, node):
+            ret = self.visit_expr(node.cond)
+            if ret != None:
+                raise error.UndeclaredVariable(ret, node.cond)
+            for stmt in node.then_stmts:
+                self.visit_stmt(stmt)
+            for stmt in node.else_stmts:
+                self.visit_stmt(stmt)
+
+        def visit_expr(self, node):
+            match node:
+                case loma_ir.Var():
+                    return self.visit_var(node)
+                case loma_ir.ArrayAccess():
+                    return self.visit_array_access(node)
+                case loma_ir.StructAccess():
+                    return self.visit_struct_access(node)
+                case loma_ir.ConstFloat():
+                    return self.visit_const_float(node)
+                case loma_ir.ConstInt():
+                    return self.visit_const_int(node)
+                case loma_ir.BinaryOp():
+                    return self.visit_binary_op(node)
+                case loma_ir.Call():
+                    return self.visit_call(node)
+                case _:
+                    assert False, f'Visitor error: unhandled expression {node}'
+
+        def visit_var(self, node):
+            if node.id not in self.ids:
+                return node.id
+            else:
+                return None
+
+        def visit_while(self, node):
+            ret = self.visit_expr(node.cond)
+            if ret != None:
+                raise error.UndeclaredVariable(ret, node.cond)
+            for stmt in node.body:
+                self.visit_stmt(stmt)
+
+        def visit_array_access(self, node):
+            ret = self.visit_expr(node.array)
+            if ret != None:
+                return ret
+            return self.visit_expr(node.index)
+
+        def visit_struct_access(self, node):
+            return self.visit_expr(node.struct)
+
+        def visit_binary_op(self, node):
+            ret = self.visit_expr(node.left)
+            if ret != None:
+                return ret
+            return self.visit_expr(node.right)
+
+        def visit_call(self, node):
+            for arg in node.args:
+                ret = self.visit_expr(arg)
+                if ret != None:
+                    return ret
+            return None
 
     UndeclaredChecker().visit_function(node)
+
+def check_return_is_last(node : loma_ir.func):
+    """ Check if the return statement is the last statement in the function,
+        and is not in an if/while statement.
+        For example, the following loma code is illegal:
+        def f(x : In[int]) -> int:
+            return 2 * x
+            y : int = x
+        The following loma code is also illegal:
+        def f(x : In[int]) -> int:
+            if x > 0:
+                return 2 * x
+    """
+
+    class ReturnChecker(irvisitor.IRVisitor):
+        def visit_function_def(self, node):
+            for i, stmt in enumerate(node.body):
+                self.is_last_statement = i == len(node.body) - 1
+                self.visit_stmt(stmt)
+
+        def visit_return(self, node):
+            if not self.is_last_statement:
+                raise error.ReturnNotLastStmt(node)
+
+    ReturnChecker().visit_function(node)
 
 def check_unhandled_differentiation(node : loma_ir.func):
     """ Check if there are ForwardDiff or ReverseDiff
@@ -104,5 +206,6 @@ def check_ir(structs : dict[str, loma_ir.Struct],
             check_unhandled_differentiation(f)
         check_duplicate_declare(f)
         check_undeclared_vars(f)
+        check_return_is_last(f)
 
     type_inference.check_and_infer_types(structs, diff_structs, funcs)
