@@ -272,6 +272,9 @@ def check_call_in_call_stmt(node : loma_ir.func,
 
             if not self.in_call_stmt:
                 f = funcs[node.id]
+                # ignore ForwardDiff & ReverseDiff
+                if not isinstance(f, loma_ir.FunctionDef):
+                    return
                 for arg in f.args:
                     if arg.i == loma_ir.Out():
                         raise error.CallWithOutArgNotInCallStmt(node)
