@@ -89,7 +89,6 @@ class PrettyPrintVisitor(irvisitor.IRVisitor):
             self.code += f'{type_to_string(node.t)} {node.target}'
         else:
             # Special rule for arrays
-            assert node.t.static_size != None
             self.code += f'{type_to_string(node.t.t)} {node.target}[{node.t.static_size}]'
         if node.val is not None:
             self.code += f' = {self.visit_expr(node.val)};\n'

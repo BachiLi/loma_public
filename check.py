@@ -164,6 +164,43 @@ def check_return_is_last(node : loma_ir.func):
 
     ReturnChecker().visit_function(node)
 
+def check_declare_bounded(node : loma_ir.func):
+    """ Check if all variable declaration has bounded size.
+        For example, the following loma code is illegal:
+        def f():
+            x : Array[float]
+        The following loma code is also illegal
+        class Foo:
+            x : Array[float]
+        def f():
+            y : Foo
+    """
+
+    def is_bounded_size_type(t):
+        match t:
+            case loma_ir.Int():
+                return True
+            case loma_ir.Float():
+                return True
+            case loma_ir.Array():
+                if t.static_size == None:
+                    return False
+                return is_bounded_size_type(t.t)
+            case loma_ir.Struct():
+                for m in t.members:
+                    if not is_bounded_size_type(m.t):
+                        return False
+                return True
+            case loma_ir.Diff():
+                return is_bounded_size_type(t.t)
+
+    class DeclareBoundChecker(irvisitor.IRVisitor):
+        def visit_declare(self, node):
+            if not is_bounded_size_type(node.t):
+                raise error.DeclareUnboundedArray(node)
+
+    DeclareBoundChecker().visit_function(node)
+
 def check_unhandled_differentiation(node : loma_ir.func):
     """ Check if there are ForwardDiff or ReverseDiff
         functions that are not resolved into a FunctionDef
@@ -207,5 +244,6 @@ def check_ir(structs : dict[str, loma_ir.Struct],
         check_duplicate_declare(f)
         check_undeclared_vars(f)
         check_return_is_last(f)
+        check_declare_bounded(f)
 
     type_inference.check_and_infer_types(structs, diff_structs, funcs)

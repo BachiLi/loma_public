@@ -53,6 +53,15 @@ class ReturnNotLastStmt(UserError):
                 f'Statement (line {self.stmt.lineno}): {pretty_print.loma_to_str(self.stmt)}')
 
 @attrs.define(frozen=True)
+class DeclareUnboundedArray(UserError):
+    # the declare statement
+    stmt : loma_ir.stmt
+
+    def to_string(self):
+        return (f'[Error] Variable declaration with unbounded size detected.\n'
+                f'Statement (line {self.stmt.lineno}): {pretty_print.loma_to_str(self.stmt)}')
+
+@attrs.define(frozen=True)
 class ArrayAccessTypeMismatch(UserError):
     # line number where the array access happens
     lineno : int
