@@ -57,13 +57,17 @@ def ray_color(ray : In[Ray]) -> Vec3:
 
     ret_color : Vec3
     t : float = sphere_isect(sph, ray)
+
+    N : Vec3
+    white : Vec3 = make_vec3(1, 1, 1)
+    blue : Vec3 = make_vec3(0.5, 0.7, 1)
+    a : float
+
     if t > 0:
-        N : Vec3 = normalize(sub(add(ray.org, mul(t, ray.dir)), sph.center))
+        N = normalize(sub(add(ray.org, mul(t, ray.dir)), sph.center))
         ret_color = make_vec3(0.5 * (N.x + 1), 0.5 * (N.y + 1), 0.5 * (N.z + 1))
     else:
-        a : float = 0.5 * ray.dir.y + 1
-        white : Vec3 = make_vec3(1, 1, 1)
-        blue : Vec3 = make_vec3(0.5, 0.7, 1)
+        a = 0.5 * ray.dir.y + 1
         ret_color = add(mul((1 - a), white), mul(a, blue))
     return ret_color
 
@@ -88,8 +92,9 @@ def raytrace(w : In[int], h : In[int], image : Out[Array[Vec3]]):
     pixel00_loc.y = pixel00_loc.y - pixel_delta_v.y / 2
 
     y : int = 0
+    x : int
     while (y < h, max_iter := 4096):
-        x : int = 0
+        x = 0
         while (x < w, max_iter := 4096):
             pixel_center : Vec3 = add(add(pixel00_loc, mul(x, pixel_delta_u)), mul(y, pixel_delta_v))
             ray : Ray

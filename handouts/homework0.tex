@@ -283,7 +283,9 @@ int x = 5;
 
 The \lstinline{val} part is optional. If it is \lstinline{None}, the variable is initialized to zero.
 
-All the variable declaration needs to have a static size known at compile time. For example, a declaration of a struct object with an unbounded array member is not a valid loma program. \TODO{implement the check.}
+All the variable declaration needs to have a static size known at compile time. For example, a declaration of a struct object with an unbounded array member is not a valid loma program.
+
+All the variable declaration needs to happen at the outmost level of a function. That is, you cannot have a variable declaration inside an if/else statement or a while loop. 
 
 \paragraph{Variable assignment.}
 The following \lstinline{Assign} statement in loma IR
@@ -322,7 +324,7 @@ has the same meaning as the following C code
 return 0;
 \end{lstlisting}
 
-To make differentiation easy, a \lstinline{Return} statement in loma IR can only be at the last statement, and can only appear once. \TODO{implement this}
+To make differentiation easy, a \lstinline{Return} statement in loma IR can only be at the last statement, and can only appear once.
 
 \paragraph{Condition.}
 The following \lstinline{IfElse} statement in loma IR

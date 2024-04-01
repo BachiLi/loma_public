@@ -62,6 +62,15 @@ class DeclareUnboundedArray(UserError):
                 f'Statement (line {self.stmt.lineno}): {pretty_print.loma_to_str(self.stmt)}')
 
 @attrs.define(frozen=True)
+class DeclarationNotOutmostLevel(UserError):
+    # the declare statement 
+    stmt : loma_ir.stmt
+
+    def to_string(self):
+        return (f'[Error] Variable declarations must be at outmost level of a function.\n'
+                f'Statement (line {self.stmt.lineno}): {pretty_print.loma_to_str(self.stmt)}')
+
+@attrs.define(frozen=True)
 class ArrayAccessTypeMismatch(UserError):
     # line number where the array access happens
     lineno : int

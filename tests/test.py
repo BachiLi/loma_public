@@ -671,6 +671,15 @@ def test_declare_unbounded_array():
     except error.DeclareUnboundedArray as e:
         assert e.stmt.lineno == 2
 
+def test_declare_in_ifelse():
+    try:
+        with open('loma_code/declare_in_ifelse.py') as f:
+            _, lib = compiler.compile(f.read(),
+                                      target = 'c',
+                                      output_filename = '_code/declare_in_ifelse.so')
+    except error.DeclarationNotOutmostLevel as e:
+        assert e.stmt.lineno == 3
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
@@ -712,3 +721,4 @@ if __name__ == '__main__':
     test_early_return()
     test_deadcode()
     test_declare_unbounded_array()
+    test_declare_in_ifelse()

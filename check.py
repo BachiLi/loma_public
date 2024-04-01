@@ -201,6 +201,39 @@ def check_declare_bounded(node : loma_ir.func):
 
     DeclareBoundChecker().visit_function(node)
 
+def check_declares_are_outmost(node : loma_ir.func):
+    """ Check if all variable declaratios are at the outmost level.
+        That is, you can't declare variables inside if/else or while.
+        For example, the following loma code is illegal:
+        def f(x : In[int]):
+            if x > 0:
+                y : int = 2 * x
+    """
+
+    class DeclareScopeChecker(irvisitor.IRVisitor):
+        def __init__(self):
+            self.in_outmost_level = True
+
+        def visit_declare(self, node):
+            if not self.in_outmost_level:
+                raise error.DeclarationNotOutmostLevel(node)
+
+        def visit_ifelse(self, node):
+            self.in_outmost_level = False
+            for stmt in node.then_stmts:
+                self.visit_stmt(stmt)
+            for stmt in node.else_stmts:
+                self.visit_stmt(stmt)
+            self.in_outmost_level = True
+
+        def visit_while(self, node):
+            self.in_outmost_level = False
+            for stmt in node.body:
+                self.visit_stmt(stmt)
+            self.in_outmost_level = True
+
+    DeclareScopeChecker().visit_function(node)
+
 def check_unhandled_differentiation(node : loma_ir.func):
     """ Check if there are ForwardDiff or ReverseDiff
         functions that are not resolved into a FunctionDef
@@ -245,5 +278,6 @@ def check_ir(structs : dict[str, loma_ir.Struct],
         check_undeclared_vars(f)
         check_return_is_last(f)
         check_declare_bounded(f)
+        check_declares_are_outmost(f)
 
     type_inference.check_and_infer_types(structs, diff_structs, funcs)
