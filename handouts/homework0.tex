@@ -579,7 +579,6 @@ def visit_FunctionDef(node) -> loma_ir.FunctionDef:
 \section{Type and semantic checks}
 After the parsing, the compiler will go through a type and semantic analysis phase. The code is mostly in \lstinline{check.py} and \lstinline{type_inference.py}. The entry point is the \lstinline{check_ir} function in \lstinline{check.py}:
 
-\TODO{update this code snippet after we implement more checking.}
 \begin{lstlisting}[language=Python]
 def check_ir(structs : dict[str, loma_ir.Struct],
              diff_structs : dict[str, loma_ir.Struct],
@@ -606,6 +605,7 @@ def check_ir(structs : dict[str, loma_ir.Struct],
             check_unhandled_differentiation(f)
         check_duplicate_declare(f)
         check_undeclared_vars(f)
+        # ...
 
     type_inference.check_and_infer_types(structs, diff_structs, funcs)
 \end{lstlisting}

@@ -104,7 +104,7 @@ class TypeInferencer(irmutator.IRMutator):
             new_val = loma_ir.Call('float2int',
                 [new_val], lineno = new_val.lineno, t = loma_ir.Int())
         if new_val.t != self.current_func_ret:
-            raise error.ReturnTypeMismatch(new_val.lineno)
+            raise error.ReturnTypeMismatch(ret)
         return loma_ir.Return(\
             new_val,
             lineno = ret.lineno)
@@ -124,7 +124,7 @@ class TypeInferencer(irmutator.IRMutator):
                     new_val = loma_ir.Call('float2int',
                         [new_val], lineno = new_val.lineno, t = loma_ir.Int())
                 if new_val.t != t:
-                    raise error.DeclareTypeMismatch(dec.lineno)
+                    raise error.DeclareTypeMismatch(dec)
         else:
             new_val = None
         return loma_ir.Declare(\
@@ -146,7 +146,7 @@ class TypeInferencer(irmutator.IRMutator):
             new_val = loma_ir.Call('float2int',
                 [new_val], lineno = new_val.lineno, t = loma_ir.Int())
         if new_val.t != ref_type:
-            raise error.AssignTypeMismatch(new_val.lineno)
+            raise error.AssignTypeMismatch(ass)
         return loma_ir.Assign(\
             self.mutate_expr(ass.target),
             new_val,
@@ -156,7 +156,7 @@ class TypeInferencer(irmutator.IRMutator):
         new_ifelse = super().mutate_ifelse(ifelse)
         if new_ifelse.cond.t != loma_ir.Int() and \
                 new_ifelse.cond.t != loma_ir.Float():
-            raise error.IfElseCondTypeMismatch(new_ifelse.cond.lineno)
+            raise error.IfElseCondTypeMismatch(new_ifelse.cond)
         return new_ifelse
 
     def mutate_var(self, var):
@@ -169,7 +169,7 @@ class TypeInferencer(irmutator.IRMutator):
     def mutate_array_access(self, acc):
         arr = self.mutate_expr(acc.array)
         if not isinstance(arr.t, loma_ir.Array):
-            raise error.ArrayAccessTypeMismatch(arr.lineno)
+            raise error.ArrayAccessTypeMismatch(acc)
         return loma_ir.ArrayAccess(\
             arr,
             self.mutate_expr(acc.index),
@@ -179,7 +179,7 @@ class TypeInferencer(irmutator.IRMutator):
     def mutate_struct_access(self, s):
         struct = self.mutate_expr(s.struct)
         if not isinstance(struct.t, loma_ir.Struct):
-            raise error.StructAccessTypeMismatch(struct.lineno)
+            raise error.StructAccessTypeMismatch(s)
         if len(struct.t.members) == 0:
             # fill in struct information
             struct = attrs.evolve(struct, t=self.structs[struct.t.id])
@@ -190,7 +190,7 @@ class TypeInferencer(irmutator.IRMutator):
                 member_type = m.t
                 break
         if member_type is None:
-            raise error.StructMemberNotFound(s.lineno)
+            raise error.StructMemberNotFound(s)
         if isinstance(member_type, loma_ir.Struct):
             if len(member_type.members) == 0:
                 # fill in struct information
@@ -234,7 +234,7 @@ class TypeInferencer(irmutator.IRMutator):
         elif left.t == loma_ir.Float() and right.t == loma_ir.Float():
             inferred_type = loma_ir.Float()
         else:
-            raise error.BinaryOpTypeMismatch(expr.lineno)
+            raise error.BinaryOpTypeMismatch(expr)
 
         return loma_ir.BinaryOp(\
             expr.op,
@@ -254,42 +254,42 @@ class TypeInferencer(irmutator.IRMutator):
                 call.id == 'exp' or \
                 call.id == 'log':
             if len(args) != 1:
-                raise error.CallTypeMismatch(call.id, call.lineno)
+                raise error.CallTypeMismatch(call)
             if args[0].t == loma_ir.Int():
                 args[0] = loma_ir.Call('int2float',
                     [args[0]], lineno = args[0].lineno, t = loma_ir.Float())
             if args[0].t != loma_ir.Float():
-                raise error.CallTypeMismatch(call.id, call.lineno)
+                raise error.CallTypeMismatch(call)
             inf_type = loma_ir.Float()
         elif call.id == 'int2float':
             if len(args) != 1 or args[0].t != loma_ir.Int():
-                raise error.CallTypeMismatch(call.id, call.lineno)
+                raise error.CallTypeMismatch(call)
             inf_type = loma_ir.Float()
         elif call.id == 'float2int':
             if len(args) != 1 or args[0].t != loma_ir.Float():
-                raise error.CallTypeMismatch(call.id, call.lineno)
+                raise error.CallTypeMismatch(call)
             inf_type = loma_ir.Int()
         elif call.id == 'pow':
             if len(args) != 2:
-                raise error.CallTypeMismatch(call.id, call.lineno)
+                raise error.CallTypeMismatch(call)
             for i in range(2):
                 if args[i].t == loma_ir.Int():
                     args[i] = loma_ir.Call('int2float',
                         [args[i]], lineno = args[i].lineno, t = loma_ir.Float())
                 if args[i].t != loma_ir.Float():
-                    raise error.CallTypeMismatch(call.id, call.lineno)
+                    raise error.CallTypeMismatch(call)
             inf_type = loma_ir.Float()
         elif call.id == 'thread_id':
             if len(args) != 0:
-                raise error.CallTypeMismatch(call.id, call.lineno)
+                raise error.CallTypeMismatch(call)
             inf_type = loma_ir.Int()
         elif call.id == 'atomic_add':
             if len(args) != 2:
-                raise error.CallTypeMismatch(call.id, call.lineno)
+                raise error.CallTypeMismatch(call)
             inf_type = None
         else:
             if call.id not in self.funcs:
-                raise error.CallIDNotFound(call.id, call.lineno)
+                raise error.CallIDNotFound(call)
             f = self.funcs[call.id]
             if isinstance(f, loma_ir.FunctionDef):
                 f_args = f.args
@@ -316,7 +316,7 @@ class TypeInferencer(irmutator.IRMutator):
                     f_args.append(loma_ir.Arg('_dreturn', primal_f.ret_type, i = loma_ir.In()))
                 ret_type = None
             if len(args) != len(f_args):
-                raise error.CallTypeMismatch(call.id, call.lineno)
+                raise error.CallTypeMismatch(call)
             for i, (call_arg, f_arg) in enumerate(zip(args, f_args)):
                 if call_arg.t == loma_ir.Int() and f_arg.t == loma_ir.Float():
                     args[i] = loma_ir.Call('int2float',
@@ -328,7 +328,7 @@ class TypeInferencer(irmutator.IRMutator):
                     call_arg = args[i]
 
                 if call_arg.t != f_arg.t:
-                    raise error.CallTypeMismatch(call.id, call.lineno)
+                    raise error.CallTypeMismatch(call)
             inf_type = ret_type
 
         return loma_ir.Call(\

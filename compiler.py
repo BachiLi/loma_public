@@ -85,16 +85,26 @@ def compile(loma_code : str,
 
     # The compiler passes
     # first parse the frontend code
-    structs, funcs = parser.parse(loma_code)
-    # next figure out the types related to differentiation
-    structs, diff_structs, funcs = autodiff.resolve_diff_types(structs, funcs)
-    # next check if the resulting code is valid, barring from the derivative code
-    check.check_ir(structs, diff_structs, funcs, check_diff = False)
+    try:
+        structs, funcs = parser.parse(loma_code)
+        # next figure out the types related to differentiation
+        structs, diff_structs, funcs = autodiff.resolve_diff_types(structs, funcs)
+        # next check if the resulting code is valid, barring from the derivative code
+        check.check_ir(structs, diff_structs, funcs, check_diff = False)
+    except UserError as e:
+        print('[Error] error found before automatic differentiation:')
+        print(e.to_string())
+        exit()
     # next actually differentiate the functions
     funcs = autodiff.differentiate(structs, diff_structs, funcs)
-    # next check if the derivative code is valid
-    check.check_ir(structs, diff_structs, funcs, check_diff = True)
-    
+    try:
+        # next check if the derivative code is valid
+        check.check_ir(structs, diff_structs, funcs, check_diff = True)
+    except UserError as e:
+        print('[Error] error found after automatic differentiation:')
+        print(e.to_string())
+        exit()
+
     if output_filename is not None:
         pathlib.Path(os.path.dirname(output_filename)).mkdir(parents=True, exist_ok=True)
 

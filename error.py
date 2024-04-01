@@ -5,7 +5,10 @@ ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 import pretty_print
 
-class UserError(Exception):
+class CompileError(Exception):
+    pass
+
+class UserError(CompileError):
     pass
 
 @attrs.define(frozen=True)
@@ -13,7 +16,7 @@ class FuncArgNotAnnotated(UserError):
     node : ast.AST # Python AST Node
 
     def to_string(self):
-        return (f'[Error] Function argument not annotated as In/Out.\n'
+        return (f'Function argument not annotated as In/Out.\n'
                 f'Line {self.node.lineno}: {ast.unparse(self.node)}')
 
 @attrs.define(frozen=True)
@@ -26,7 +29,7 @@ class DuplicateVariable(UserError):
     duplicate_declare_stmt : loma_ir.stmt | loma_ir.arg
 
     def to_string(self):
-        return (f'[Error] Duplicated variable declaration detected.\n'
+        return (f'Duplicated variable declaration detected.\n'
                 f'Variable name: {self.var}.\n'
                 f'First declared (line {self.first_declare_stmt.lineno}): {pretty_print.loma_to_str(self.first_declare_stmt)}'
                 f'Duplicated declared (line {self.duplicate_declare_stmt.lineno}): {pretty_print.loma_to_str(self.duplicate_declare_stmt)}')
@@ -39,7 +42,7 @@ class UndeclaredVariable(UserError):
     stmt : loma_ir.stmt | loma_ir.expr
 
     def to_string(self):
-        return (f'[Error] Undeclared variable use detected.\n'
+        return (f'Undeclared variable use detected.\n'
                 f'Variable name: {self.var}.\n'
                 f'Statement/Expr (line {self.stmt.lineno}): {pretty_print.loma_to_str(self.stmt)}')
 
@@ -49,7 +52,7 @@ class ReturnNotLastStmt(UserError):
     stmt : loma_ir.stmt
 
     def to_string(self):
-        return (f'[Error] Return is not the last statement, or is inside an if/while statement.\n'
+        return (f'Return is not the last statement, or is inside an if/while statement.\n'
                 f'Statement (line {self.stmt.lineno}): {pretty_print.loma_to_str(self.stmt)}')
 
 @attrs.define(frozen=True)
@@ -58,7 +61,7 @@ class DeclareUnboundedArray(UserError):
     stmt : loma_ir.stmt
 
     def to_string(self):
-        return (f'[Error] Variable declaration with unbounded size detected.\n'
+        return (f'Variable declaration with unbounded size detected.\n'
                 f'Statement (line {self.stmt.lineno}): {pretty_print.loma_to_str(self.stmt)}')
 
 @attrs.define(frozen=True)
@@ -67,7 +70,7 @@ class DeclarationNotOutmostLevel(UserError):
     stmt : loma_ir.stmt
 
     def to_string(self):
-        return (f'[Error] Variable declarations must be at outmost level of a function.\n'
+        return (f'Variable declarations must be at outmost level of a function.\n'
                 f'Statement (line {self.stmt.lineno}): {pretty_print.loma_to_str(self.stmt)}')
 
 @attrs.define(frozen=True)
@@ -76,70 +79,108 @@ class CallWithOutArgNotInCallStmt(UserError):
     expr : loma_ir.expr
 
     def to_string(self):
-        return (f'[Error] Function calls with output arguments must be inside CallStmt.\n'
-                f'Expr (line {self.stmt.lineno}): {pretty_print.loma_to_str(self.expr)}')
+        return (f'Function calls with output arguments must be inside CallStmt.\n'
+                f'Expr (line {self.expr.lineno}): {pretty_print.loma_to_str(self.expr)}')
 
 
 @attrs.define(frozen=True)
 class ArrayAccessTypeMismatch(UserError):
-    # line number where the array access happens
-    lineno : int
+    # the access expr
+    expr : loma_ir.expr
+
+    def to_string(self):
+        return (f'Detected an expression that index from a variable that is not an array.\n'
+                f'Expr (line {self.expr.lineno}): {pretty_print.loma_to_str(self.expr)}')
 
 @attrs.define(frozen=True)
 class StructAccessTypeMismatch(UserError):
-    # line number where the struct access happens
-    lineno : int
+    # the access expr
+    expr : loma_ir.expr
+
+    def to_string(self):
+        return (f'Detected an expression that access members from a variable that is not a struct.\n'
+                f'Expr (line {self.expr.lineno}): {pretty_print.loma_to_str(self.expr)}')
 
 @attrs.define(frozen=True)
 class StructMemberNotFound(UserError):
-    # line number where the struct access happens
-    lineno : int
+    # the access expr
+    expr : loma_ir.expr
+
+    def to_string(self):
+        return (f'The struct member does not exist in the struct access expression.\n'
+                f'Expr (line {self.expr.lineno}): {pretty_print.loma_to_str(self.expr)}')
+
 
 @attrs.define(frozen=True)
 class BinaryOpTypeMismatch(UserError):
-    # line number where the binary op happens
-    lineno : int
+    # the access expr
+    expr : loma_ir.expr
+
+    def to_string(self):
+        return (f'Invalid BinaryOp expression.\n'
+                f'Expr (line {self.expr.lineno}): {pretty_print.loma_to_str(self.expr)}')
 
 @attrs.define(frozen=True)
 class CallTypeMismatch(UserError):
-    # The function ID of the call
-    call_id : str
-    # line number where the call op happens
-    lineno : int
+    # the call expr
+    expr : loma_ir.expr
+
+    def to_string(self):
+        return (f'Invalid Call arguments.\n'
+                f'Expr (line {self.expr.lineno}): {pretty_print.loma_to_str(self.expr)}')
 
 @attrs.define(frozen=True)
 class ReturnTypeMismatch(UserError):
-    # line number where the return op happens
-    lineno : int
+    # the return statement
+    stmt : loma_ir.stmt
+
+    def to_string(self):
+        return (f'Invalid Return type.\n'
+                f'Stmt (line {self.stmt.lineno}): {pretty_print.loma_to_str(self.stmt)}')
 
 @attrs.define(frozen=True)
 class AssignTypeMismatch(UserError):
-    # line number where the assign op happens
-    lineno : int
+    # the assign statement
+    stmt : loma_ir.stmt
+
+    def to_string(self):
+        return (f'Invalid Assign type.\n'
+                f'Stmt (line {self.stmt.lineno}): {pretty_print.loma_to_str(self.stmt)}')    
 
 @attrs.define(frozen=True)
 class DeclareTypeMismatch(UserError):
-    # line number where the declare op happens
-    lineno : int
+    # the assign statement
+    stmt : loma_ir.stmt
+
+    def to_string(self):
+        return (f'Invalid Declare type.\n'
+                f'Stmt (line {self.stmt.lineno}): {pretty_print.loma_to_str(self.stmt)}')   
 
 @attrs.define(frozen=True)
 class IfElseCondTypeMismatch(UserError):
-    # line number where the IfElse op happens
-    lineno : int
+    # the ifelse cond expr
+    expr : loma_ir.expr
+
+    def to_string(self):
+        return (f'Invalid IfElse condition.\n'
+                f'Expr (line {self.expr.lineno}): {pretty_print.loma_to_str(self.expr)}')
 
 @attrs.define(frozen=True)
 class CallIDNotFound(UserError):
-    # The function ID of the call
-    call_id : str
-    # line number where the call op happens
-    lineno : int
+    # the call expr
+    expr : loma_ir.expr
 
-class InternalError(Exception):
+    def to_string(self):
+        return (f'Call ID not found.\n'
+                f'Expr (line {self.expr.lineno}): {pretty_print.loma_to_str(self.expr)}')
+
+class InternalError(CompileError):
     pass
 
 @attrs.define(frozen=True)
 class UnhandledDifferentiation(InternalError):
-    # ID of the derivative function
-    diff_func_id : str
-    # line number where the differentiation is declared
-    lineno : int
+    func : loma_ir.func
+
+    def to_string(self):
+        return (f'Unhandled Differentiation.\n'
+                f'Func (line {self.func.lineno}): {pretty_print.loma_to_str(self.func)}')

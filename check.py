@@ -293,10 +293,10 @@ def check_unhandled_differentiation(node : loma_ir.func):
 
     class UnhandledDiffChecker(irvisitor.IRVisitor):
         def visit_forward_diff(self, node):
-            raise error.UnhandledDifferentiation(node.id, node.lineno)
+            raise error.UnhandledDifferentiation(node)
 
         def visit_reverse_diff(self, node):
-            raise error.UnhandledDifferentiation(node.id, node.lineno)
+            raise error.UnhandledDifferentiation(node)
 
     UnhandledDiffChecker().visit_function(node)
 
