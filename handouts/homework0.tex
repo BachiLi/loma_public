@@ -384,15 +384,15 @@ The frontend has an almost one-to-one relationship to the IR. Below we list how 
 \subsection{Function definition.} 
 The following Python frontend code:
 \begin{lstlisting}[language=Python]
-def plus(x : int, y : int, z : Array[float], w : Ref[int]) -> int:
+def plus(x : In[int], y : In[int], z : In[Array[float]], w : Out[int]) -> int:
 \end{lstlisting}
 will be translated to the following loma IR:
 \begin{lstlisting}
 FunctionDef(id='plus',
-            args=(Arg(id='x', t=Int(), is_byref=False),
-                  Arg(id='y', t=Int(), is_byref=False),
-                  Arg(id='z', t=Array(t=Float(), static_size=None), is_byref=False),
-                  Arg(id='w', t=Int(), is_byref=True)),
+            args=(Arg(id='x', t=Int(), i=In()),
+                  Arg(id='y', t=Int(), i=In()),
+                  Arg(id='z', t=Array(t=Float(), static_size=None), i=In()),
+                  Arg(id='w', t=Int(), i=Out())),
             body=None,
             is_simd=False,
             ret_type=Int())
