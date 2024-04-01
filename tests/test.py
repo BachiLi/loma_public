@@ -670,7 +670,6 @@ def test_declare_unbounded_array():
                                       output_filename = '_code/declare_unbounded_array.so')
     except error.DeclareUnboundedArray as e:
         assert e.stmt.lineno == 2
-        print(e.to_string())
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
