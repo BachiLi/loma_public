@@ -1,3 +1,4 @@
+import ast
 import attrs
 import ir
 ir.generate_asdl_file()
@@ -6,6 +7,14 @@ import pretty_print
 
 class UserError(Exception):
     pass
+
+@attrs.define(frozen=True)
+class FuncArgNotAnnotated(UserError):
+    node : ast.AST # Python AST Node
+
+    def to_string(self):
+        return (f'[Error] Function argument not annotated as In/Out.\n'
+                f'Line {self.node.lineno}: {ast.unparse(self.node)}')
 
 @attrs.define(frozen=True)
 class DuplicateVariable(UserError):

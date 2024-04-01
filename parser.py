@@ -4,20 +4,22 @@ import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 import attrs
+import error
 
-def annotation_to_inout(node) -> loma_ir.inout:
+def annotation_to_inout(arg) -> loma_ir.inout:
     """ Determine whether the function argument
         is input or output.
         In[float] -> input
         Out[int] -> output
     """
-
-    # TODO: error messages
-    assert type(node) == ast.Subscript
-    assert type(node.value) == ast.Name
-    if node.value.id == 'In':
+    annotation = arg.annotation
+    if type(annotation) != ast.Subscript:
+        raise error.FuncArgNotAnnotated(arg)
+    # TODO: error message
+    assert type(annotation.value) == ast.Name
+    if annotation.value.id == 'In':
         return loma_ir.In()
-    elif node.value.id == 'Out':
+    elif annotation.value.id == 'Out':
         return loma_ir.Out()
     else:
         # TODO: error message
@@ -116,7 +118,7 @@ def visit_FunctionDef(node) -> loma_ir.FunctionDef:
     assert node_args.kwarg is None
     args = [loma_ir.Arg(arg.arg,
                         annotation_to_type(arg.annotation),
-                        annotation_to_inout(arg.annotation)) for arg in node_args.args]
+                        annotation_to_inout(arg)) for arg in node_args.args]
     body = [visit_stmt(b) for b in node.body]
     ret_type = None
     if node.returns:
