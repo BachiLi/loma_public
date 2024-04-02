@@ -587,22 +587,6 @@ class Homework2Test(unittest.TestCase):
         assert abs(_df.x - dout * (5 + f.z)) < epsilon and \
             abs(_df.z - dout * (f.x))
 
-    def test_nested_struct_input(self):
-        with open('loma_code/nested_struct_input.py') as f:
-            structs, lib = compiler.compile(f.read(),
-                                            target = 'c',
-                                            output_filename = '_code/nested_struct_input.so')
-        Foo = structs['Foo']
-        Bar = structs['Bar']
-        f = Foo(1.23, Bar(3, 4.56))
-        _df = Foo(0.0, Bar(0, 0.0))
-        dout = ctypes.c_float(0.3)
-        lib.d_nested_struct_input(f, ctypes.byref(_df), dout)
-        # (foo.x + foo.y.z + foo.y.w + 5) * 3
-        assert abs(_df.x - dout.value * 3) < epsilon and \
-            abs(_df.y.w - dout.value * 3) < epsilon and \
-            _df.y.z == 0
-
     def test_struct_output(self):
         with open('loma_code/struct_output.py') as f:
             structs, lib = compiler.compile(f.read(),

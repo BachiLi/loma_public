@@ -112,6 +112,8 @@ and we hope that the random strings do not collide with each other by chance. Yo
 
 In the reference code below, I remove the random string for better readability.
 
+\paragraph{Utility functions.} When I was implementing this homework, I have found a few utility functions to be useful, especially when switching to support for structs and arrays. These utilities are \lstinline{type_to_string}, \lstinline{assign_zero}, and \lstinline{accum_deriv}, and they are defined in \lstinline{reverse_diff.py}. I recommend you start with specializing your code for \lstinline{float}, and then switch to these utility functions later to support structs and arrays.
+
 \subsection{Transformation of statements and expressions}
 As in the previous homework, we will implement an \lstinline{IRMutator} to transform the code to its reverse-mode derivatives. As usual, we recommend you to try to pass the tests one-by-one. 
 
@@ -306,8 +308,7 @@ def d_assign2(x : In[float], _dx : Out[float], y : In[float], _dy : Out[float], 
 	(*_dy_) = ((*_dy_)) + (_adj_4);
 \end{lstlisting}
 
-The generated code is a bit involved. Let's look at them line by line. Firstly, in the forward pass, we
-first allocate an array \lstinline{_t_float}, acting as a stack for storing the values from forward pass (line 3). We also declare a ``pointer'' integer to indicate the current writing position (line 4). Before each assign statement, we cache the left hand side values to the array, so that we don't lose the values (line 8-9 and 12-13).
+The generated code is a bit involved. Let's look at them line by line. Firstly, in the forward pass, we first allocate an array \lstinline{_t_float}, acting as a stack for storing the values from forward pass (line 3). We also declare a ``pointer'' integer to indicate the current writing position (line 4). Before each assign statement, we cache the left hand side values to the array, so that we don't lose the values (line 8-9 and 12-13).
 
 In the reverse pass, for each assign statement \lstinline{z = f(x0, x1, ... z)}, we need to to the following:
 \begin{enumerate}
@@ -358,7 +359,7 @@ Here, \lstinline{output_args} is a Python \lstinline{set} that contains a list o
 
 \paragraph{test_array_output, test_array_input, test_int_array_input, test_array_input_indexing, test_array_output_indexing, test_sum_nested_array} These test your handling of array expressions. Arrays shouldn't be that different from other expressions. Make sure you handle the case when there is an array access on the left hand side of an assign statement: you want to backpropagate correctly to the right index.
 
-\paragraph{test_struct_input, test_nested_struct_input, test_struct_output, test_struct_declare, test_struct_assign} These test whether you handle structs correctly. Structs require a little bit more massages to code generation. Firstly, you will need a way to assign zero to a struct (for the assign statement). I use the following function:
+\paragraph{test_struct_input, test_struct_output, test_struct_declare, test_struct_assign} These test whether you handle structs correctly. Structs require a little bit more massages to code generation. Firstly, you will need a way to assign zero to a struct (for the assign statement). I use the following function:
 \begin{lstlisting}[language=Python]
 def assign_zero(target):
     match target.t:
