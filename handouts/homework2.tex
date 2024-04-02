@@ -58,7 +58,7 @@ Like in the forward mode, we need the list of ``terminal'' cases:
 \begin{equation}
 \begin{aligned}
 \text{DTConstant}(c, dz) &= \left[dc \leftarrow 0\right] \\
-\text{DTVariable}(x, dz) &= \left[dx \leftarrow dz\right] \\
+\text{DTVariable}(x, dz) &= \left[dx += dz\right] \\
 \text{DTAdd}(x, y, dz) &= \left[dx += dz, dy += dz\right] \\
 \text{DTSub}(x, y, dz) &= \left[dx += dz, dy += -dz\right] \\
 \text{DTMul}(x, y, dz) &= \left[dx += dz \cdot y, dy += dz \cdot x\right] \\
@@ -66,7 +66,7 @@ Like in the forward mode, we need the list of ``terminal'' cases:
 \text{DTSin}(x, dz) &= \left(dx += dz \cdot \cos(x)\right) \\
 \text{DTCos}(x, dz) &= \left(dx += -dz \cdot \sin(x)\right) \\
 \text{DSqrt}(x, dz) &= \left(dx += \frac{dz}{2\sqrt{x}} \right) \\
-\text{DPow}(x, y, dz) &= \left(dx += dz \cdot y \cdot x^{y-1}, dy += x^y \log(x) \right) \\
+\text{DPow}(x, y, dz) &= \left(dx += dz \cdot y \cdot x^{y-1}, dy += dz \cdot x^y \log(x) \right) \\
 \text{DExp}(x, dz) &= \left(dx += dz \cdot \exp(x) \right) \\
 \text{DLog}(x, dz) &= \left(dx += \frac{dz}{x} \right) \\
 \text{Dfloat2int}(x, dz) &= \left(dx += 0\right)
@@ -88,7 +88,7 @@ The transformation will happen in \lstinline{autodiff.py} and \lstinline{reverse
 \subsection{Function type after reverse mode transformation.}
 \label{sec:reversemodespec}
 
-Given a function \lstinline{f(x0 : In[T0], x1 : Out[T1], ...) -> T}, reverse mode will transform the signature to \lstinline{DTf(x0 : In[T0], _dx0 : Out[T0], x1 : In[T1], ..., _dout : T)}. For an input argument \lstinline{x}, there are two cases:
+Given a function \lstinline{f(x0 : In[T0], x1 : Out[T1], ...) -> T}, reverse mode will transform the signature to \lstinline{DTf(x0 : In[T0], _dx0 : Out[T0], x1 : In[T1], ..., _dout : In[T])}. For an input argument \lstinline{x}, there are two cases:
 \begin{itemize}
 	\item \lstinline{x : In[T]} is only used as an input. We will append the adjoint output \lstinline{_dx : Out[T]} right after \lstinline{x}. Importantly, we will add the derivatives to the existing differential in \lstinline{_dx}, instead of overwriting it. This eliminates the need to initialize the data structure to zero, which can be costly in some cases.
 	\item \lstinline{x : Out[T]} is only used as an output. We transform the argument to an adjoint input \lstinline{x : In[T]]}. The original output argument is removed.
