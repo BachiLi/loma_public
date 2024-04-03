@@ -1,10 +1,10 @@
-name: Python Package using Conda
+name: MacOS test
 
 on: [push]
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
+  test-macos:
+    runs-on: macos-latest
     strategy:
       max-parallel: 5
 
@@ -16,10 +16,9 @@ jobs:
         python-version: '3.10.14'
     - name: Install dependencies
       run: |
-        /__t/Python/3.10.14/x64/pip install -r requirements.txt
-        apt update
-        apt install snapd
-        snap install ispc
+        brew install ispc
+        python -m ensurepip --upgrade
+        pip install -r requirements.txt
     - name: Running tests
       run: |
         cd tests
