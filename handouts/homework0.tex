@@ -371,7 +371,7 @@ We will omit most of the specifications of expressions since it's very standard.
 \item \lstinline{thread_id() -> int}: for SIMD parallelism. Will be explained later.
 \end{itemize}
 
-All call expression with \lstinline{Out} arguments can only appear in a call statement (described below). This is to make implementing differentiation easier.
+All call expression with \lstinline{Out} arguments can only appear in a call statement (described below). This is to make implementing differentiation easier. Loma disallow recursion, so function calls cannot form a cycle.
 
 \paragraph{Call statements.}
 In loma, you can have a statement that only contains a single call expression. You can make these call statements to receive the outputs from a function.
