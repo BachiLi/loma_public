@@ -1,10 +1,10 @@
-name: Python Package using Conda
+name: Linux test
 
 on: [push]
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
+  test-macos:
+    runs-on: macos-latest
     strategy:
       max-parallel: 5
 
@@ -16,9 +16,7 @@ jobs:
         python-version: '3.10.14'
     - name: Install dependencies
       run: |
-        sudo apt update -y
-        sudo apt install -y snapd ocl-icd-opencl-dev libpocl2 mesa-opencl-icd
-        sudo snap install ispc
+        brew install ispc
         python -m ensurepip --upgrade
         pip install -r requirements.txt
     - name: Running tests
