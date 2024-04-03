@@ -15,7 +15,8 @@ def check_duplicate_declare(node : loma_ir.func):
     """
 
     class DuplicateChecker(irvisitor.IRVisitor):
-        ids_stmt_map = {}
+        def __init__(self):
+            self.ids_stmt_map = {}
 
         def visit_function_def(self, node):
             for arg in node.args:
@@ -46,7 +47,8 @@ def check_undeclared_vars(node : loma_ir.func):
     """
 
     class UndeclaredChecker(irvisitor.IRVisitor):
-        ids = set()
+        def __init__(self):
+            self.ids = set()
 
         def visit_function_def(self, node):
             for arg in node.args:
