@@ -5,7 +5,6 @@ on: [push]
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-    container: streamhpc/opencl-sdk-base:ubuntu-18.04-20220127
     strategy:
       max-parallel: 5
 
@@ -18,7 +17,7 @@ jobs:
     - name: Install dependencies
       run: |
         apt update -y
-        apt install -y snapd libc6
+        apt install -y snapd ocl-icd-opencl-dev libpocl2 mesa-opencl-icd
         snap install ispc
         python -m ensurepip --upgrade
         pip install -r requirements.txt
