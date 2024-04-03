@@ -16,9 +16,9 @@ jobs:
         python-version: '3.10.14'
     - name: Install dependencies
       run: |
-        apt update -y
-        apt install -y snapd ocl-icd-opencl-dev libpocl2 mesa-opencl-icd
-        snap install ispc
+        sudo apt update -y
+        sudo apt install -y snapd ocl-icd-opencl-dev libpocl2 mesa-opencl-icd
+        sudo snap install ispc
         python -m ensurepip --upgrade
         pip install -r requirements.txt
     - name: Running tests
