@@ -1,0 +1,26 @@
+name: Python Package using Conda
+
+on: [push]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 5
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10.14
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10.14'
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        sudo apt update
+        sudo apt install snapd
+        sudo snap install ispc
+    - name: Running tests
+      run: |
+        cd tests
+        OPENCL_CTX='0:0' python test.py
