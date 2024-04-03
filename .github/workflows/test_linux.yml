@@ -18,7 +18,7 @@ jobs:
       run: |
         pip install -r requirements.txt
         sudo apt update
-        sudo apt install snapd
+        sudo apt install snapd ocl-icd-opencl-dev
         sudo snap install ispc
     - name: Running tests
       run: |
