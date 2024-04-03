@@ -5,6 +5,7 @@ on: [push]
 jobs:
   build-linux:
     runs-on: ubuntu-latest
+    container: streamhpc/opencl-sdk-base:ubuntu-18.04-20220127
     strategy:
       max-parallel: 5
 
