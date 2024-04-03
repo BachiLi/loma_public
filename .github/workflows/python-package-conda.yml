@@ -17,7 +17,9 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
-        sudo apt-get install ispc
+        sudo apt update
+        sudo apt install snapd
+        sudo snap install ispc
     - name: Running tests
       run: |
         cd tests
