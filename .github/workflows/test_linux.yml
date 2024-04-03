@@ -17,8 +17,8 @@ jobs:
         python-version: '3.10.14'
     - name: Install dependencies
       run: |
-        apt update
-        apt install snapd libc6
+        apt update -y
+        apt install -y snapd libc6
         snap install ispc
         python -m ensurepip --upgrade
         pip install -r requirements.txt
