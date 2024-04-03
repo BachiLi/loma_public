@@ -17,11 +17,11 @@ jobs:
         python-version: '3.10.14'
     - name: Install dependencies
       run: |
+        apt update
+        apt install snapd libc6
+        snap install ispc
         python -m ensurepip --upgrade
         pip install -r requirements.txt
-        apt update
-        apt install snapd
-        snap install ispc
     - name: Running tests
       run: |
         cd tests
