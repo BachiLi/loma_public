@@ -60,4 +60,4 @@ def generate_asdl_file():
     """,
     header= '',
     ext_types = {},
-    memoize = ['Var'])
+    memoize = [])

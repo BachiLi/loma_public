@@ -619,7 +619,8 @@ def test_missing_annotation():
         with open('loma_code/missing_annotation.py') as f:
             _, lib = compiler.compile(f.read(),
                                       target = 'c',
-                                      output_filename = '_code/missing_annotation.so')
+                                      output_filename = '_code/missing_annotation.so',
+                                      print_error = False)
     except error.FuncArgNotAnnotated as e:
         pass
 
@@ -628,7 +629,8 @@ def test_duplicate_declare():
         with open('loma_code/duplicate_declare.py') as f:
             _, lib = compiler.compile(f.read(),
                                       target = 'c',
-                                      output_filename = '_code/duplicate_declare.so')
+                                      output_filename = '_code/duplicate_declare.so',
+                                      print_error = False)
     except error.DuplicateVariable as e:
         assert e.var == 'x'
         assert e.first_declare_stmt.lineno == 2
@@ -639,7 +641,8 @@ def test_undeclared_var():
         with open('loma_code/undeclared_var.py') as f:
             _, lib = compiler.compile(f.read(),
                                       target = 'c',
-                                      output_filename = '_code/undeclared_var.so')
+                                      output_filename = '_code/undeclared_var.so',
+                                      print_error = False)
     except error.UndeclaredVariable as e:
         assert e.var == 'b'
         assert e.stmt.lineno == 3
@@ -649,7 +652,8 @@ def test_early_return():
         with open('loma_code/early_return.py') as f:
             _, lib = compiler.compile(f.read(),
                                       target = 'c',
-                                      output_filename = '_code/early_return.so')
+                                      output_filename = '_code/early_return.so',
+                                      print_error = False)
     except error.ReturnNotLastStmt as e:
         assert e.stmt.lineno == 3
 
@@ -658,7 +662,8 @@ def test_deadcode():
         with open('loma_code/deadcode.py') as f:
             _, lib = compiler.compile(f.read(),
                                       target = 'c',
-                                      output_filename = '_code/deadcode.so')
+                                      output_filename = '_code/deadcode.so',
+                                      print_error = False)
     except error.ReturnNotLastStmt as e:
         assert e.stmt.lineno == 2
 
@@ -667,7 +672,8 @@ def test_declare_unbounded_array():
         with open('loma_code/declare_unbounded_array.py') as f:
             _, lib = compiler.compile(f.read(),
                                       target = 'c',
-                                      output_filename = '_code/declare_unbounded_array.so')
+                                      output_filename = '_code/declare_unbounded_array.so',
+                                      print_error = False)
     except error.DeclareUnboundedArray as e:
         assert e.stmt.lineno == 2
 
@@ -676,7 +682,8 @@ def test_declare_in_ifelse():
         with open('loma_code/declare_in_ifelse.py') as f:
             _, lib = compiler.compile(f.read(),
                                       target = 'c',
-                                      output_filename = '_code/declare_in_ifelse.so')
+                                      output_filename = '_code/declare_in_ifelse.so',
+                                      print_error = False)
     except error.DeclarationNotOutmostLevel as e:
         assert e.stmt.lineno == 3
 
@@ -685,7 +692,8 @@ def test_call_not_in_call_stmt():
         with open('loma_code/call_not_in_call_stmt.py') as f:
             _, lib = compiler.compile(f.read(),
                                       target = 'c',
-                                      output_filename = '_code/call_not_in_call_stmt.so')
+                                      output_filename = '_code/call_not_in_call_stmt.so',
+                                      print_error = False)
     except error.CallWithOutArgNotInCallStmt as e:
         assert e.expr.lineno == 7
 

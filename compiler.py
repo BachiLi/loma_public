@@ -17,6 +17,7 @@ import _asdl.loma as loma_ir
 import numpy as np
 import cl_utils
 import pathlib
+import error
 
 def loma_to_ctypes_type(t : loma_ir.type | loma_ir.arg,
                         ctypes_structs : dict[str, ctypes.Structure]) -> ctypes.Structure:
@@ -68,7 +69,8 @@ def compile(loma_code : str,
             output_filename : str = None,
             opencl_context = None,
             opencl_device = None,
-            opencl_command_queue = None):
+            opencl_command_queue = None,
+            print_error = True):
     """ Given loma frontend code represented as a string,
         compiles it to either C, ISPC, or OpenCL code.
         Furthermore, generates a library from the compiled code,
@@ -81,6 +83,7 @@ def compile(loma_code : str,
                     when target == 'opencl', this argument is ignored.
         opencl_context, opencl_device, opencl_command_queue - see cl_utils.create_context()
                     only used by the opencl backend
+        print_error - whether it prints compile errors or not
     """
 
     # The compiler passes
@@ -91,19 +94,21 @@ def compile(loma_code : str,
         structs, diff_structs, funcs = autodiff.resolve_diff_types(structs, funcs)
         # next check if the resulting code is valid, barring from the derivative code
         check.check_ir(structs, diff_structs, funcs, check_diff = False)
-    except UserError as e:
-        print('[Error] error found before automatic differentiation:')
-        print(e.to_string())
-        exit()
+    except error.UserError as e:
+        if print_error:
+            print('[Error] error found before automatic differentiation:')
+            print(e.to_string())
+        raise e
     # next actually differentiate the functions
     funcs = autodiff.differentiate(structs, diff_structs, funcs)
     try:
         # next check if the derivative code is valid
         check.check_ir(structs, diff_structs, funcs, check_diff = True)
-    except UserError as e:
-        print('[Error] error found after automatic differentiation:')
-        print(e.to_string())
-        exit()
+    except error.UserError as e:
+        if print_error:
+            print('[Error] error found after automatic differentiation:')
+            print(e.to_string())
+        raise e
 
     if output_filename is not None:
         pathlib.Path(os.path.dirname(output_filename)).mkdir(parents=True, exist_ok=True)

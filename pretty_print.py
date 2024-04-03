@@ -180,7 +180,7 @@ def stmt_to_str(s : loma_ir.stmt) -> str:
 
 def expr_to_str(e : loma_ir.expr) -> str:
     ppv = PrettyPrintVisitor()
-    ppv.visit_stmt(e)
+    ppv.visit_expr(e)
     return ppv.code
 
 def loma_to_str(node) -> str:
