@@ -17,7 +17,8 @@ jobs:
         python-version: '3.10.14'
     - name: Install dependencies
       run: |
-        /__t/Python/3.10.14/x64/pip install -r requirements.txt
+        python -m ensurepip --upgrade
+        pip install -r requirements.txt
         apt update
         apt install snapd
         snap install ispc
