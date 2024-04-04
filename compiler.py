@@ -183,7 +183,6 @@ void atomic_add(float *ptr, float val) {
         print('_code folder')
         print(listdir('./_code'))
         print('cwd')
-        import os
         print(os.getcwd())
     elif target == 'opencl':
         code = codegen_opencl.codegen_opencl(structs, funcs)
