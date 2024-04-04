@@ -15,11 +15,9 @@ jobs:
         python-version: "3.10"
     - name: Set up OpenCL
       run: |
-        Invoke-WebRequest -Uri https://cseweb.ucsd.edu/~tzli/cse291/w_opencl_runtime_p_2024.1.0.968.msi -OutFile 'D:\opencl.msi'
-        Start-Process -FilePath 'D:\opencl.msi'
-        python -c "import ctypes, ctypes.util; l = ctypes.util.find_library('OpenCL'); assert(l != None); ctypes.CDLL(l)"
-        reg ADD HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors /v "C:\Program Files (x86)\Common Files\Intel\Shared Libraries\bin\intelocl64.dll" /t REG_DWORD /d 0
-        reg ADD HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Khronos\OpenCL\Vendors /v "C:\Program Files (x86)\Common Files\Intel\Shared Libraries\bin32\intelocl32.dll" /t REG_DWORD /d 0
+        Invoke-WebRequest -Uri 'https://registrationcenter-download.intel.com/akdlm/IRC_NAS/f8f09106-6d86-41b5-83c8-02892bbb7f29/w_opencl_runtime_p_2023.1.0.46319.exe' -OutFile 'D:\igfx.exe'
+        7z x "D:\igfx.exe" -o"D:\igfx" -y
+        D:\igfx\w_opencl_runtime_p_2023.1.0.46319.msi /quiet
     - name: Set up ISPC 1.23
       uses: ScatteredRay/install-ispc-action@main
       with:
