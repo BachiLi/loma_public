@@ -128,12 +128,12 @@ def compile(loma_code : str,
         if platform.system() == 'Windows':
           with open('_tmp.c', 'w') as f:
             f.write(code)
-          log = run(['cl.exe', '_tmp.c', '/LD', '/O2', '/D_USRDLL', '/D_WINDLL', f'/Fe:{output_filename}'],
+          run(['cl.exe', '_tmp.c', '/LD', '/O2', '/D_USRDLL', '/D_WINDLL', f'/Fe:{output_filename}'],
               input = code,
               encoding='utf-8',
-              capture_output=True)
-          if log.returncode != 0:
-              print(log.stderr)
+              capture_output=False)
+          #if log.returncode != 0:
+          #    print(log.stderr)
           os.remove('_tmp.c')
         else:
           log = run(['gcc', '-shared', '-fPIC', '-o', output_filename, '-O2', '-x', 'c', '-'],
