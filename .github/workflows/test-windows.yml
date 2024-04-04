@@ -18,7 +18,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         Invoke-WebRequest -Uri 'https://github.com/ispc/ispc/releases/download/v1.23.0/ispc-v1.23.0-windows.zip' -OutFile 'D:\ispc.zip'
-        7z x "D:\ispc.zip" -o "D:\ispc" -y
+        7z x "D:\ispc.zip" -o"D:\ispc" -y
         setx /M PATH "%PATH%;D:\ispc\bin"
         
     - name: Test
