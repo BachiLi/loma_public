@@ -164,7 +164,7 @@ void atomic_add(float *ptr, float val) {
         tasksys_obj_path = os.path.join(output_dir, 'tasksys.o')
         tasksys_define = ''
         if platform.system() == 'Windows':
-            tasksys_define = '-DISPC_USE_PTHREADS'
+            tasksys_define = '-DISPC_USE_CONCRT'
         log = run(['g++', tasksys_define, '-fPIC', '-c', '-o', output_filename, '-O2', '-o', tasksys_obj_path, tasksys_path],
             encoding='utf-8',
             capture_output=True)
