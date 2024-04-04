@@ -9,10 +9,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.10"
     - name: Set up OpenCL
       run: |
         Invoke-WebRequest -Uri 'https://registrationcenter-download.intel.com/akdlm/IRC_NAS/f8f09106-6d86-41b5-83c8-02892bbb7f29/w_opencl_runtime_p_2023.1.0.46319.exe' -OutFile 'D:\igfx.exe'
@@ -27,7 +23,7 @@ jobs:
     - name: Install dependencies
       shell: msys2 {0}
       run: |
-        pacman --noconfirm -S mingw-w64-x86_64-tbb
+        pacman --noconfirm -S mingw-w64-x86_64-tbb mingw-w64-x86_64-python
         python -m pip install --upgrade pip
         pip install -r requirements.txt       
     - name: Test
