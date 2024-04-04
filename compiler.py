@@ -125,12 +125,21 @@ def compile(loma_code : str,
         #print('Generated C code:')
         #print(code)
 
-        log = run(['gcc', '-shared', '-fPIC', '-o', output_filename, '-O2', '-x', 'c', '-'],
-            input = code,
-            encoding='utf-8',
-            capture_output=True)
-        if log.returncode != 0:
-            print(log.stderr)
+        if platform.system() == 'Windows':
+          # /LD /O2 /D_USRDLL /D_WINDLL /Fe:lib.dll
+          log = run(['cl.exe', '/LD', '/O2', '/D_USRDLL', '/D_WINDLL', f'/Fe:{output_filename}'],
+              input = code,
+              encoding='utf-8',
+              capture_output=True)
+          if log.returncode != 0:
+              print(log.stderr)
+        else:
+          log = run(['gcc', '-shared', '-fPIC', '-o', output_filename, '-O2', '-x', 'c', '-'],
+              input = code,
+              encoding='utf-8',
+              capture_output=True)
+          if log.returncode != 0:
+              print(log.stderr)
     elif target == 'ispc':
         code = codegen_ispc.codegen_ispc(structs, funcs)
         # add atomic add
