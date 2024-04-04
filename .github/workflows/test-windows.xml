@@ -1,5 +1,7 @@
 name: test_windows
 
+on: [push]
+
 jobs:
   build:
 
