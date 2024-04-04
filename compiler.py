@@ -171,19 +171,11 @@ void atomic_add(float *ptr, float val) {
         if log.returncode != 0:
             print(log.stderr)        
 
-        log = run(['g++', '-fopenmp', '-fPIC', '-shared', '-o', output_filename, '-O2', obj_filename, tasksys_obj_path],
+        run(['g++', '-fopenmp', '-fPIC', '-shared', '-o', output_filename, '-O2', obj_filename, tasksys_obj_path],
             encoding='utf-8',
-            capture_output=True)
-        if log.returncode != 0:
-            print(log.stderr)
-
-        from os import listdir
-        print('Current folder')
-        print(listdir('.'))
-        print('_code folder')
-        print(listdir('./_code'))
-        print('cwd')
-        print(os.getcwd())
+            capture_output=False)
+        #if log.returncode != 0:
+        #    print(log.stderr)
     elif target == 'opencl':
         code = codegen_opencl.codegen_opencl(structs, funcs)
         # add atomic add (taken from https://gist.github.com/PolarNick239/9dffaf365b332b4442e2ac63b867034f)
