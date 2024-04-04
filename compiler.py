@@ -122,8 +122,8 @@ def compile(loma_code : str,
 #include <math.h>
         \n""" + code
 
-        print('Generated C code:')
-        print(code)
+        #print('Generated C code:')
+        #print(code)
 
         log = run(['gcc', '-shared', '-fPIC', '-o', output_filename, '-O2', '-x', 'c', '-'],
             input = code,
@@ -145,8 +145,8 @@ void atomic_add(float *ptr, float val) {
 }
         \n""" + code
 
-        print('Generated ISPC code:')
-        print(code)
+        #print('Generated ISPC code:')
+        #print(code)
 
         obj_filename = output_filename + '.o'
         log = run(['ispc', '--pic', '-o', obj_filename, '-O2', '-'],
