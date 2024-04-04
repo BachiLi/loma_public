@@ -235,7 +235,7 @@ static float cl_atomic_add(volatile __global float *p, float val) {
 
     # load the dynamic library
     if target == 'c' or target == 'ispc':
-        lib = CDLL(output_filename)
+        lib = CDLL(os.path.join(os.getcwd(), output_filename))
         for f in funcs.values():
             if target == 'ispc':
                 # only process SIMD functions
