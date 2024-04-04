@@ -15,8 +15,8 @@ jobs:
         python-version: "3.10"
     - name: Set up OpenCL
       run: |
-        Invoke-WebRequest -Uri https://registrationcenter-download.intel.com/akdlm/IRC_NAS/0e6849e6-2c56-480b-afcf-be8331d5c4f6-opencl/w_opencl_runtime_p_2024.1.0.968.exe -OutFile 'D:\opencl.exe'
-        Start-Process -FilePath 'D:\opencl.exe'
+        Invoke-WebRequest -Uri https://cseweb.ucsd.edu/~tzli/cse291/w_opencl_runtime_p_2024.1.0.968.msi -OutFile 'D:\opencl.msi'
+        Start-Process -FilePath 'D:\opencl.msi'
     - name: Set up ISPC 1.23
       uses: ScatteredRay/install-ispc-action@main
       with:
