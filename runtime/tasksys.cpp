@@ -52,7 +52,7 @@
 
 #if !(defined ISPC_USE_CONCRT || defined ISPC_USE_GCD || defined ISPC_USE_PTHREADS ||                                  \
       defined ISPC_USE_PTHREADS_FULLY_SUBSCRIBED || defined ISPC_USE_TBB_TASK_GROUP ||                                 \
-      defined ISPC_USE_TBB_PARALLEL_FOR || defined ISPC_USE_OMP || defined ISPC_USE_HPX)
+      defined ISPC_USE_TBB_PARALLEL_FOR || defined ISPC_USE_OMP || defined ISPC_USE_HPX || defined ISPC_USE_CPPTHREADS)
 
 // If no task model chosen from the compiler cmdline, pick a reasonable default
 #if defined(_WIN32) || defined(_WIN64)
@@ -125,6 +125,12 @@ using namespace Concurrency;
 #include <hpx/include/async.hpp>
 #include <hpx/lcos/wait_all.hpp>
 #endif // ISPC_USE_HPX
+#ifdef ISPC_USE_CPPTHREADS
+#include <algorithm>
+#include <thread>
+#include <functional>
+#include <vector>
+#endif
 #ifdef ISPC_IS_LINUX
 #include <stdlib.h>
 #endif // ISPC_IS_LINUX
@@ -439,6 +445,16 @@ class TaskGroup : public TaskGroupBase {
 };
 
 #endif // ISPC_USE_HPX
+
+#ifdef ISPC_USE_CPPTHREADS
+
+class TaskGroup : public TaskGroupBase {
+  public:
+    void Launch(int baseIndex, int count);
+    void Sync();
+};
+
+#endif // ISPC_USE_CPPTHREADS
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -935,6 +951,35 @@ inline void TaskGroup::Sync() {
     futures.clear();
 }
 #endif
+
+#ifdef ISPC_USE_CPPTHREADS
+
+static void InitTaskSystem() {
+    // No initialization needed
+}
+
+inline void TaskGroup::Launch(int baseIndex, int count) {
+    unsigned int num_threads = 4 * std::thread::hardware_concurrency();
+    if (num_threads == 0) {
+        num_threads = 8;
+    }
+    std::vector<std::thread> threads(num_threads);
+    for (int thread_id = 0; thread_id < (int)num_threads; thread_id++) {
+        threads[thread_id] = std::thread([&]() {
+            for (int i = 0; i < count; i++) {
+                TaskInfo *ti = GetTaskInfo(baseIndex + i);
+
+                // Actually run the task.
+                ti->func(ti->data, thread_id, num_threads, ti->taskIndex, ti->taskCount(), ti->taskIndex0(),
+                         ti->taskIndex1(), ti->taskIndex2(), ti->taskCount0(), ti->taskCount1(), ti->taskCount2());
+            }
+        });
+    }
+    std::for_each(threads.begin(), threads.end(), std::mem_fn(&std::thread::join));
+}
+
+inline void TaskGroup::Sync() {}
+#endif // ISPC_USE_CPPTHREADS
 ///////////////////////////////////////////////////////////////////////////
 
 #ifndef ISPC_USE_PTHREADS_FULLY_SUBSCRIBED

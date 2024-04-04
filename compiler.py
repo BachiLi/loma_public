@@ -172,9 +172,8 @@ void atomic_add(float *ptr, float val) {
         output_dir = os.path.dirname(output_filename)
         tasksys_obj_path = os.path.join(output_dir, 'tasksys.o')
         tasksys_define = ''
-        if platform.system() == 'Windows':
-            tasksys_define = '-DISPC_USE_OMP'
-        run(['g++', tasksys_define, '-fPIC', '-c', '-o', output_filename, '-O2', '-o', tasksys_obj_path, tasksys_path],
+        tasksys_define = '-DISPC_USE_CPPTHREADS'
+        run(['g++', tasksys_define, '-fPIC', '-std=c++17', '-c', '-o', output_filename, '-O2', '-o', tasksys_obj_path, tasksys_path],
             encoding='utf-8',
             capture_output=False)
         #if log.returncode != 0:
