@@ -120,11 +120,10 @@ def compile(loma_code : str,
         # add standard headers
         code = """
 #include <math.h>
-extern "C" {
-        \n""" + code + '}\n'
+        \n""" + code
 
-        print('Generated C code:')
-        print(code)
+        # print('Generated C code:')
+        # print(code)
 
         if platform.system() == 'Windows':
           with open('_tmp.c', 'w') as f:
@@ -136,6 +135,9 @@ extern "C" {
           #if log.returncode != 0:
           #    print(log.stderr)
           os.remove('_tmp.c')
+          run(['dumpbin', '/exports', f'{output_filename}'],
+              encoding='utf-8',
+              capture_output=False)
         else:
           log = run(['gcc', '-shared', '-fPIC', '-o', output_filename, '-O2', '-x', 'c', '-'],
               input = code,
