@@ -490,7 +490,7 @@ def test_parallel_add():
     with open('loma_code/parallel_add.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'ispc',
-                                  output_filename = os.path.join('_code', 'parallel_add_ispc.dll'))
+                                  output_filename = os.path.join('_code', 'parallel_add_ispc.so'))
     py_x = [2, 3, 5]
     x = (ctypes.c_int * len(py_x))(*py_x)
     py_y = [7, 11, 13]
