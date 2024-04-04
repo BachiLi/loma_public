@@ -123,8 +123,8 @@ def compile(loma_code : str,
 extern "C" {
         \n""" + code + '}\n'
 
-        #print('Generated C code:')
-        #print(code)
+        print('Generated C code:')
+        print(code)
 
         if platform.system() == 'Windows':
           with open('_tmp.c', 'w') as f:
