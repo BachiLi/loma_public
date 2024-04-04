@@ -23,7 +23,7 @@ jobs:
     - name: Install dependencies
       shell: msys2 {0}
       run: |
-        pacman --noconfirm -S mingw-w64-x86_64-tbb mingw-w64-x86_64-python mingw-w64-x86_64-python-pip
+        pacman --noconfirm -S mingw-w64-x86_64-tbb mingw-w64-x86_64-python mingw-w64-x86_64-python-pip mingw-w64-x86_64-cmake
         python -m pip install --upgrade pip
         pip install -r requirements.txt       
     - name: Test
