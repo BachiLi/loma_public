@@ -474,23 +474,10 @@ def test_simd_local_func():
     assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
 def test_parallel_add():
-    # with open('loma_code/parallel_add.py') as f:
-    #     _, lib = compiler.compile(f.read(),
-    #                               target = 'c',
-    #                               output_filename = '_code/parallel_add.so')
-    # py_x = [2, 3, 5]
-    # x = (ctypes.c_int * len(py_x))(*py_x)
-    # py_y = [7, 11, 13]
-    # y = (ctypes.c_int * len(py_y))(*py_y)
-    # py_z = [0, 0, 0]
-    # z = (ctypes.c_int * len(py_z))(*py_z)
-    # lib.parallel_add(x, y, z, len(py_z))
-    # assert z[0] == 9 and z[1] == 14 and z[2] == 18
-
     with open('loma_code/parallel_add.py') as f:
         _, lib = compiler.compile(f.read(),
-                                  target = 'ispc',
-                                  output_filename = '_code/parallel_add_ispc.so')
+                                  target = 'c',
+                                  output_filename = '_code/parallel_add.so')
     py_x = [2, 3, 5]
     x = (ctypes.c_int * len(py_x))(*py_x)
     py_y = [7, 11, 13]
@@ -499,6 +486,19 @@ def test_parallel_add():
     z = (ctypes.c_int * len(py_z))(*py_z)
     lib.parallel_add(x, y, z, len(py_z))
     assert z[0] == 9 and z[1] == 14 and z[2] == 18
+
+    # with open('loma_code/parallel_add.py') as f:
+    #     _, lib = compiler.compile(f.read(),
+    #                               target = 'ispc',
+    #                               output_filename = '_code/parallel_add_ispc.so')
+    # py_x = [2, 3, 5]
+    # x = (ctypes.c_int * len(py_x))(*py_x)
+    # py_y = [7, 11, 13]
+    # y = (ctypes.c_int * len(py_y))(*py_y)
+    # py_z = [0, 0, 0]
+    # z = (ctypes.c_int * len(py_z))(*py_z)
+    # lib.parallel_add(x, y, z, len(py_z))
+    # assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
     # cl_ctx, cl_device, cl_cmd_queue = cl_utils.create_context()
 
