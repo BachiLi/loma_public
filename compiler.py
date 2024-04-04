@@ -176,6 +176,12 @@ void atomic_add(float *ptr, float val) {
             capture_output=True)
         if log.returncode != 0:
             print(log.stderr)
+
+        from os import listdir
+        print('Current folder')
+        print(listdir('.'))
+        print('_code folder')
+        print(listdir('./_code'))
     elif target == 'opencl':
         code = codegen_opencl.codegen_opencl(structs, funcs)
         # add atomic add (taken from https://gist.github.com/PolarNick239/9dffaf365b332b4442e2ac63b867034f)
