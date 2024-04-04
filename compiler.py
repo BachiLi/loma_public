@@ -122,22 +122,17 @@ def compile(loma_code : str,
 #include <math.h>
         \n""" + code
 
-        # print('Generated C code:')
-        # print(code)
+        #print('Generated C code:')
+        #print(code)
 
         if platform.system() == 'Windows':
-          with open('_tmp.c', 'w') as f:
-            f.write(code)
-          run(['cl.exe', '_tmp.c', '/LD', '/O2', '/D_USRDLL', '/D_WINDLL', f'/Fe:{output_filename}'],
+          # /LD /O2 /D_USRDLL /D_WINDLL /Fe:lib.dll
+          log = run(['cl.exe', '/LD', '/O2', '/D_USRDLL', '/D_WINDLL', f'/Fe:{output_filename}'],
               input = code,
               encoding='utf-8',
-              capture_output=False)
-          #if log.returncode != 0:
-          #    print(log.stderr)
-          os.remove('_tmp.c')
-          run(['dumpbin', '/exports', f'{output_filename}'],
-              encoding='utf-8',
-              capture_output=False)
+              capture_output=True)
+          if log.returncode != 0:
+              print(log.stderr)
         else:
           log = run(['gcc', '-shared', '-fPIC', '-o', output_filename, '-O2', '-x', 'c', '-'],
               input = code,
@@ -178,14 +173,14 @@ void atomic_add(float *ptr, float val) {
         tasksys_obj_path = os.path.join(output_dir, 'tasksys.o')
         tasksys_define = ''
         if platform.system() == 'Windows':
-            tasksys_define = '-DISPC_USE_TBB_TASK_GROUP'
-        run(['g++', tasksys_define, '-fPIC', '-c', '-o', output_filename, '-O2', '-o', tasksys_obj_path, tasksys_path],
+            tasksys_define = '-DISPC_USE_OMP'
+        run(['g++', tasksys_define, '-fPIC', '-fopenmp', '-c', '-o', output_filename, '-O2', '-o', tasksys_obj_path, tasksys_path],
             encoding='utf-8',
             capture_output=False)
         #if log.returncode != 0:
         #    print(log.stderr)        
 
-        run(['g++', '-fPIC', '-shared', '-o', output_filename, '-O2', obj_filename, tasksys_obj_path],
+        run(['g++', '-fPIC', '-fopenmp', '-shared', '-o', output_filename, '-O2', obj_filename, tasksys_obj_path],
             encoding='utf-8',
             capture_output=False)
         #if log.returncode != 0:
