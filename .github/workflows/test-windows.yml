@@ -18,6 +18,8 @@ jobs:
         Invoke-WebRequest -Uri https://cseweb.ucsd.edu/~tzli/cse291/w_opencl_runtime_p_2024.1.0.968.msi -OutFile 'D:\opencl.msi'
         Start-Process -FilePath 'D:\opencl.msi'
         python -c "import ctypes, ctypes.util; l = ctypes.util.find_library('OpenCL'); assert(l != None); ctypes.CDLL(l)"
+        reg ADD HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors /v "C:\Program Files (x86)\Common Files\Intel\Shared Libraries\bin\intelocl64.dll" /t REG_DWORD /d 0
+        reg ADD HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Khronos\OpenCL\Vendors /v "C:\Program Files (x86)\Common Files\Intel\Shared Libraries\bin32\intelocl32.dll" /t REG_DWORD /d 0
     - name: Set up ISPC 1.23
       uses: ScatteredRay/install-ispc-action@main
       with:
