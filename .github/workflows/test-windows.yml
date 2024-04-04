@@ -20,13 +20,10 @@ jobs:
         version: 1.23.0
         platform: windows
     - name: Install dependencies
-      shell: msys2 {0}
       run: |
-        pacman --noconfirm -S mingw-w64-x86_64-tbb mingw-w64-x86_64-python mingw-w64-x86_64-python-pip mingw-w64-x86_64-python-numpy
         python -m pip install --upgrade pip
         pip install -r requirements.txt       
     - name: Test
-      shell: msys2 {0}
       run: |
         cd tests
         setx OPENCL_CTX "0:0"
