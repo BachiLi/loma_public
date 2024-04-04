@@ -490,7 +490,7 @@ def test_parallel_add():
     with open('loma_code/parallel_add.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'ispc',
-                                  output_filename = '_code/parallel_add.so')
+                                  output_filename = '_code/parallel_add_ispc.so')
     py_x = [2, 3, 5]
     x = (ctypes.c_int * len(py_x))(*py_x)
     py_y = [7, 11, 13]
@@ -566,7 +566,7 @@ def test_atomic_add():
     with open('loma_code/atomic_add.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'ispc',
-                                  output_filename = '_code/atomic_add.so')
+                                  output_filename = '_code/atomic_add_ispc.so')
     z = ctypes.c_float(0)
     lib.my_atomic_add(ctypes_x, ctypes.byref(z), n)
     assert abs(z.value - np.sum(x)) < 1e-3
