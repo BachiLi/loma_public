@@ -17,6 +17,7 @@ jobs:
       run: |
         Invoke-WebRequest -Uri https://cseweb.ucsd.edu/~tzli/cse291/w_opencl_runtime_p_2024.1.0.968.msi -OutFile 'D:\opencl.msi'
         Start-Process -FilePath 'D:\opencl.msi'
+        python -c "import ctypes, ctypes.util; l = ctypes.util.find_library(’OpenCL’); assert(l != None); ctypes.CDLL(l)"
     - name: Set up ISPC 1.23
       uses: ScatteredRay/install-ispc-action@main
       with:
