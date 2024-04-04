@@ -120,7 +120,8 @@ def compile(loma_code : str,
         # add standard headers
         code = """
 #include <math.h>
-        \n""" + code
+extern "C" {
+        \n""" + code + '}\n'
 
         #print('Generated C code:')
         #print(code)
