@@ -18,6 +18,7 @@ import numpy as np
 import cl_utils
 import pathlib
 import error
+import platform
 
 def loma_to_ctypes_type(t : loma_ir.type | loma_ir.arg,
                         ctypes_structs : dict[str, ctypes.Structure]) -> ctypes.Structure:
@@ -161,7 +162,10 @@ void atomic_add(float *ptr, float val) {
 
         output_dir = os.path.dirname(output_filename)
         tasksys_obj_path = os.path.join(output_dir, 'tasksys.o')
-        log = run(['g++', '-fPIC', '-c', '-o', output_filename, '-O2', '-o', tasksys_obj_path, tasksys_path],
+        tasksys_define = ''
+        if platform.system() == 'Windows':
+            tasksys_define = '-DISPC_USE_OMP'
+        log = run(['g++', tasksys_define, '-fPIC', '-c', '-o', output_filename, '-O2', '-o', tasksys_obj_path, tasksys_path],
             encoding='utf-8',
             capture_output=True)
         if log.returncode != 0:
