@@ -134,17 +134,17 @@ def compile(loma_code : str,
             with open(tmp_c_filename, 'w') as f:
                 f.write(code)
             obj_filename = output_filename + '.o'
-            run(['cl.exe', '/c', '/O2', f'/Fe:{obj_filename}', tmp_c_filename],
+            log = run(['cl.exe', '/c', '/O2', f'/Fo:{obj_filename}', tmp_c_filename],
                 encoding='utf-8',
-                capture_output=False)
-            #if log.returncode != 0:
-            #    print(log.stderr)
+                capture_output=True)
+            if log.returncode != 0:
+                print(log.stderr)
             exports = [f'/EXPORT:{f.id}' for f in funcs.values()]
-            run(['link.exe', '/DLL', f'/OUT:{output_filename}', '/OPT:REF', '/OPT:ICF', *exports, obj_filename],
+            log = run(['link.exe', '/DLL', f'/OUT:{output_filename}', '/OPT:REF', '/OPT:ICF', *exports, obj_filename],
                 encoding='utf-8',
-                capture_output=False)
-            #if log.returncode != 0:
-            #    print(log.stderr)
+                capture_output=True)
+            if log.returncode != 0:
+                print(log.stderr)
             os.remove(tmp_c_filename)
         else:
             log = run(['gcc', '-shared', '-fPIC', '-o', output_filename, '-O2', '-x', 'c', '-'],
