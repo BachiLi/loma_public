@@ -130,7 +130,7 @@ def compile(loma_code : str,
         print(code)
 
         if platform.system() == 'Windows':
-            tmp_c_filename = f'_tmp_{output_filename}.c'
+            tmp_c_filename = f'_tmp.c'
             with open(tmp_c_filename, 'w') as f:
                 f.write(code)
             obj_filename = output_filename + '.o'
