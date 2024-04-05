@@ -192,7 +192,7 @@ void atomic_add(float *ptr, float val) {
             if log.returncode != 0:
                 print(log.stderr)
             exports = [f'/EXPORT:{f.id}' for f in funcs.values()]
-            log = run(['link.exe', '/DLL', f'/OUT:{output_filename}', '/OPT:REF', '/OPT:ICF', *export, obj_filename, tasksys_obj_path],
+            log = run(['link.exe', '/DLL', f'/OUT:{output_filename}', '/OPT:REF', '/OPT:ICF', *exports, obj_filename, tasksys_obj_path],
                 encoding='utf-8',
                 capture_output=True)
             if log.returncode != 0:
