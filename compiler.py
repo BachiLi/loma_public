@@ -157,8 +157,8 @@ void atomic_add(float *ptr, float val) {
         #print('Generated ISPC code:')
         #print(code)
 
-        obj_filename = output_filename + '.llvm'
-        log = run(['ispc', '--emit-llvm', '--pic', '-o', obj_filename, '-O2', '-'],
+        asm_filename = output_filename + '.s'
+        log = run(['ispc', '--emit-asm', '--x86-asm-syntax=intel', '--pic', '-o', llvm_filename, '-O2', '-'],
             input = code,
             encoding='utf-8',
             capture_output=True)
@@ -178,8 +178,8 @@ void atomic_add(float *ptr, float val) {
             capture_output=False)
         #if log.returncode != 0:
         #    print(log.stderr)        
-
-        run(['clang++', '-shared', '-o', output_filename, '-O2', obj_filename, tasksys_obj_path],
+      
+        run(['clang++', '-shared', '-o', output_filename, '-O2', asm_filename, tasksys_obj_path],
             encoding='utf-8',
             capture_output=False)
         #if log.returncode != 0:
