@@ -8,8 +8,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: GCC version
-      run: |
+    - uses: ilammy/msvc-dev-cmd@v1
     - uses: actions/checkout@v3
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
