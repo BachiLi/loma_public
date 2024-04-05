@@ -19,6 +19,7 @@ import cl_utils
 import pathlib
 import error
 import platform
+import distutils.ccompiler
 
 def loma_to_ctypes_type(t : loma_ir.type | loma_ir.arg,
                         ctypes_structs : dict[str, ctypes.Structure]) -> ctypes.Structure:
@@ -80,8 +81,9 @@ def compile(loma_code : str,
         Parameters:
         loma_code - a string representing loma code to be compiled
         target - 'c', 'ispc', or 'opencl'
-        output_filename - where to store the generated library for C and ISPC backends.
-                    when target == 'opencl', this argument is ignored.
+        output_filename - where to store the generated library for C and ISPC backends. 
+            Don't need the suffix (like '.so').
+            when target == 'opencl', this argument is ignored.
         opencl_context, opencl_device, opencl_command_queue - see cl_utils.create_context()
                     only used by the opencl backend
         print_error - whether it prints compile errors or not
@@ -112,6 +114,8 @@ def compile(loma_code : str,
         raise e
 
     if output_filename is not None:
+        # + .dll or + .so
+        output_filename = output_filename + distutils.ccompiler.new_compiler().shared_lib_extension
         pathlib.Path(os.path.dirname(output_filename)).mkdir(parents=True, exist_ok=True)
 
     # Generate and compile the code
@@ -122,24 +126,24 @@ def compile(loma_code : str,
 #include <math.h>
         \n""" + code
 
-        #print('Generated C code:')
-        #print(code)
+        print('Generated C code:')
+        print(code)
 
         if platform.system() == 'Windows':
-          # /LD /O2 /D_USRDLL /D_WINDLL /Fe:lib.dll
-          log = run(['cl.exe', '/LD', '/O2', '/D_USRDLL', '/D_WINDLL', f'/Fe:{output_filename}'],
-              input = code,
-              encoding='utf-8',
-              capture_output=True)
-          if log.returncode != 0:
-              print(log.stderr)
+            exports = [f'/EXPORT:{f.id}' for f in funcs.values()]
+            log = run(['cl.exe', '/LD', '/O2', '/D_USRDLL', '/D_WINDLL', f'/Fe:{output_filename}', *exports],
+                input = code,
+                encoding='utf-8',
+                capture_output=True)
+            if log.returncode != 0:
+                print(log.stderr)
         else:
-          log = run(['gcc', '-shared', '-fPIC', '-o', output_filename, '-O2', '-x', 'c', '-'],
-              input = code,
-              encoding='utf-8',
-              capture_output=True)
-          if log.returncode != 0:
-              print(log.stderr)
+            log = run(['gcc', '-shared', '-fPIC', '-o', output_filename, '-O2', '-x', 'c', '-'],
+                input = code,
+                encoding='utf-8',
+                capture_output=True)
+            if log.returncode != 0:
+                print(log.stderr)
     elif target == 'ispc':
         code = codegen_ispc.codegen_ispc(structs, funcs)
         # add atomic add
@@ -154,8 +158,8 @@ void atomic_add(float *ptr, float val) {
 }
         \n""" + code
 
-        #print('Generated ISPC code:')
-        #print(code)
+        print('Generated ISPC code:')
+        print(code)
 
         obj_filename = output_filename + '.o'
         log = run(['ispc', '--pic', '-o', obj_filename, '-O2', '-'],
@@ -171,26 +175,28 @@ void atomic_add(float *ptr, float val) {
 
         output_dir = os.path.dirname(output_filename)
         tasksys_obj_path = os.path.join(output_dir, 'tasksys.o')
-        tasksys_define = ''
-        tasksys_define = '-DISPC_USE_CPPTHREADS'
-        # run(['clang++', tasksys_define, '-std=c++17', '-c', '-O2', '-o', tasksys_obj_path, tasksys_path],
-        #     encoding='utf-8',
-        #     capture_output=False)
-        #if log.returncode != 0:
-        #    print(log.stderr)     
-        run(['cl.exe', '/std:c++17', '/c', '/O2', f'/Fo:{tasksys_obj_path}', tasksys_path],
-            encoding='utf-8',
-            capture_output=False)
-      
-        # run(['clang++', '-shared', '-o', output_filename, '-O2', obj_filename, tasksys_obj_path],
-        #     encoding='utf-8',
-        #     capture_output=False)
-        run(['link.exe', '/DLL', f'/OUT:{output_filename}', '/EXPORT:parallel_add', '/OPT:REF', '/OPT:ICF', obj_filename, tasksys_obj_path],
-            encoding='utf-8',
-            capture_output=False)
-        #if log.returncode != 0:
-        #    print(log.stderr)
-        #run(['objdump.exe', '--private-headers', output_filename], encoding='utf-8', capture_output=False)
+
+        if platform.system() == 'Windows':
+            log = run(['cl.exe', '/std:c++17', '/c', '/O2', f'/Fo:{tasksys_obj_path}', tasksys_path],
+                encoding='utf-8',
+                capture_output=True)
+            if log.returncode != 0:
+                print(log.stderr)
+            exports = [f'/EXPORT:{f.id}' for f in funcs.values()]
+            log = run(['link.exe', '/DLL', f'/OUT:{output_filename}', '/OPT:REF', '/OPT:ICF', *export, obj_filename, tasksys_obj_path],
+                encoding='utf-8',
+                capture_output=True)
+            if log.returncode != 0:
+                print(log.stderr)
+        else:
+            log = run(['g++', '-std=c++17', '-c', '-O2', '-o', tasksys_obj_path, tasksys_path],
+                encoding='utf-8',
+                capture_output=True)
+            if log.returncode != 0:
+               print(log.stderr)
+            log = run(['g++', '-fPIC', '-shared', '-o', output_filename, '-O2', obj_filename, tasksys_obj_path],
+                encoding='utf-8',
+                capture_output=True)
     elif target == 'opencl':
         code = codegen_opencl.codegen_opencl(structs, funcs)
         # add atomic add (taken from https://gist.github.com/PolarNick239/9dffaf365b332b4442e2ac63b867034f)

@@ -18,19 +18,19 @@ def test_declaration():
     with open('loma_code/declaration_float.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/declaration_float.so')
+                                  output_filename = '_code/declaration_float')
     assert abs(lib.declaration_float() - 5) < 1e-6
     with open('loma_code/declaration_int.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/declaration_int.so')
+                                  output_filename = '_code/declaration_int')
     assert lib.declaration_int() == 4
 
 def test_binary_ops():
     with open('loma_code/binary_ops.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/binary_ops.so')
+                                  output_filename = '_code/binary_ops')
     # a = x + y = 5 + 6 = 11
     # b = a - x = 11 - 5 = 6
     # c = b * y = 6 * 6 = 36
@@ -41,7 +41,7 @@ def test_builtin_funcs():
     with open('loma_code/builtin_funcs.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/builtin_funcs.so')
+                                  output_filename = '_code/builtin_funcs')
 
     x = 1.5
     z0 = math.sin(x)
@@ -57,21 +57,21 @@ def test_args():
     with open('loma_code/args.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/args.so')
+                                  output_filename = '_code/args')
     assert lib.args(4.5, 3) == 7
 
 def test_mutation():
     with open('loma_code/mutation.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/mutation.so')
+                                  output_filename = '_code/mutation')
     assert abs(lib.mutation() - 6) < 1e-6
 
 def test_array_read():
     with open('loma_code/array_read.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/array_read.so')
+                                  output_filename = '_code/array_read')
     py_arr = [1.0, 2.0]
     arr = (ctypes.c_float * len(py_arr))(*py_arr)
     assert lib.array_read(arr) == 1.0
@@ -80,7 +80,7 @@ def test_array_write():
     with open('loma_code/array_write.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/array_write.so')
+                                  output_filename = '_code/array_write')
     py_arr = [0.0, 0.0]
     arr = (ctypes.c_float * len(py_arr))(*py_arr)
     lib.array_write(arr)
@@ -90,7 +90,7 @@ def test_compare():
     with open('loma_code/compare.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/compare.so')
+                                  output_filename = '_code/compare')
     py_arr = [0] * 7
     arr = (ctypes.c_int * len(py_arr))(*py_arr)
     # 5 < 6 : True
@@ -124,7 +124,7 @@ def test_if_else():
     with open('loma_code/if_else.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/if_else.so')
+                                  output_filename = '_code/if_else')
     assert lib.if_else(0.5) == 4.0
     assert lib.if_else(-0.5) == -4.0
 
@@ -132,28 +132,28 @@ def test_while_loop():
     with open('loma_code/while_loop.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/while_loop.so')
+                                  output_filename = '_code/while_loop')
     assert lib.while_loop() == 45
 
 def test_local_static_array():
     with open('loma_code/local_static_array.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/local_static_array.so')
+                                  output_filename = '_code/local_static_array')
     assert lib.local_static_array() == 55
 
 def test_local_array_init_zero():
     with open('loma_code/local_array_init_zero.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/local_array_init_zero.so')
+                                  output_filename = '_code/local_array_init_zero')
     assert lib.local_array_init_zero() == 13
 
 def test_sum_nested_array():
     with open('loma_code/sum_nested_array.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/sum_nested_array.so')
+                                  output_filename = '_code/sum_nested_array')
     
     pointer_arr = (ctypes.POINTER(ctypes.c_int) * 3)()
     arr0 = (ctypes.c_int * 5)(1,2,3,4,5)
@@ -171,7 +171,7 @@ def test_nested_array_output():
     with open('loma_code/nested_array_output.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/nested_array_output.so')
+                                  output_filename = '_code/nested_array_output')
     
     pointer_arr = (ctypes.POINTER(ctypes.c_int) * 3)()
     arr0 = (ctypes.c_int * 5)()
@@ -201,21 +201,21 @@ def test_intrinsic_func_call():
     with open('loma_code/intrinsic_func_call.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/intrinsic_func_call.so')
+                                  output_filename = '_code/intrinsic_func_call')
     assert abs(lib.intrinsic_func_call() - math.sin(3.0)) < 1e-6
 
 def test_func_decl():
     with open('loma_code/func_decl.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/func_decl.so')
+                                  output_filename = '_code/func_decl')
     assert lib.func_decl() == 42
 
 def test_struct_access():
     with open('loma_code/struct_access.py') as f:
         structs, lib = compiler.compile(f.read(),
                                         target = 'c',
-                                        output_filename = '_code/struct_access.so')
+                                        output_filename = '_code/struct_access')
     Foo = structs['Foo']
     foo = Foo(x=3, y=4.5)
     assert abs(lib.struct_access(foo) - 3 * 4.5 < 1e-6)
@@ -224,7 +224,7 @@ def test_struct_return():
     with open('loma_code/struct_return.py') as f:
         structs, lib = compiler.compile(f.read(),
                                         target = 'c',
-                                        output_filename = '_code/struct_return.so')
+                                        output_filename = '_code/struct_return')
     foo = lib.struct_return()
     assert foo.x == 5 and abs(foo.y - 3.5) < 1e-6
 
@@ -232,7 +232,7 @@ def test_struct_in_struct():
     with open('loma_code/struct_in_struct.py') as f:
         structs, lib = compiler.compile(f.read(),
                                         target = 'c',
-                                        output_filename = '_code/struct_in_struct.so')
+                                        output_filename = '_code/struct_in_struct')
     Bar = structs['Bar']
     bar = Bar(y=4.5, z=100)
     foo = lib.struct_in_struct(bar)
@@ -242,7 +242,7 @@ def test_array_in_struct():
     with open('loma_code/array_in_struct.py') as f:
         structs, lib = compiler.compile(f.read(),
                                         target = 'c',
-                                        output_filename = '_code/array_in_struct.so')
+                                        output_filename = '_code/array_in_struct')
     py_arr = [1, 2]
     arr = (ctypes.c_int * len(py_arr))(*py_arr)
     Foo = structs['Foo']
@@ -253,7 +253,7 @@ def test_struct_in_array():
     with open('loma_code/struct_in_array.py') as f:
         structs, lib = compiler.compile(f.read(),
                                         target = 'c',
-                                        output_filename = '_code/struct_in_array.so')
+                                        output_filename = '_code/struct_in_array')
     Foo = structs['Foo']
     py_arr = [Foo(x=1,y=2), Foo(x=3,y=4)]
     arr = (Foo * len(py_arr))(*py_arr)
@@ -263,7 +263,7 @@ def test_struct_in_array_in_struct():
     with open('loma_code/struct_in_array_in_struct.py') as f:
         structs, lib = compiler.compile(f.read(),
                                         target = 'c',
-                                        output_filename = '_code/struct_in_array_in_struct.so')
+                                        output_filename = '_code/struct_in_array_in_struct')
     Foo = structs['Foo']
     Bar = structs['Bar']
     bar_py_arr_0 = [Bar(y=2)]
@@ -278,14 +278,14 @@ def test_struct_init_zero():
     with open('loma_code/struct_init_zero.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/struct_init_zero.so')
+                                  output_filename = '_code/struct_init_zero')
     assert lib.struct_init_zero() == 0
 
 def test_pass_by_ref_lhs():
     with open('loma_code/pass_by_ref_lhs.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/pass_by_ref_lhs.so')
+                                  output_filename = '_code/pass_by_ref_lhs')
     x = ctypes.c_int32(100)
     lib.pass_by_ref_lhs(ctypes.byref(x))
     assert x.value == 5
@@ -294,7 +294,7 @@ def test_pass_by_ref_lhs_struct():
     with open('loma_code/pass_by_ref_lhs_struct.py') as f:
         structs, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/pass_by_ref_lhs_struct.so')
+                                  output_filename = '_code/pass_by_ref_lhs_struct')
     Foo = structs['Foo']
     f = Foo(x=0, y=0.0)
     lib.pass_by_ref_lhs_struct(ctypes.byref(f))
@@ -304,7 +304,7 @@ def test_pass_by_ref_array():
     with open('loma_code/pass_by_ref_array.py') as f:
         structs, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/pass_by_ref_array.so')
+                                  output_filename = '_code/pass_by_ref_array')
     py_arr_in = [1,2,3,4,5,6,7]
     arr_in = (ctypes.c_int * len(py_arr_in))(*py_arr_in)
     py_arr_out = [0,0,0,0,0,0,0]
@@ -316,35 +316,35 @@ def test_call_stmt():
     with open('loma_code/call_stmt.py') as f:
         structs, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/call_stmt.so')
+                                  output_filename = '_code/call_stmt')
     assert lib.call_stmt() == 5
 
 def test_parallel_add():
-    # with open('loma_code/parallel_add.py') as f:
-    #     structs, lib = compiler.compile(f.read(),
-    #                                     target = 'c',
-    #                                     output_filename = '_code/parallel_add.dll')
-    # py_x = [2, 3, 5]
-    # x = (ctypes.c_int * len(py_x))(*py_x)
-    # py_y = [7, 11, 13]
-    # y = (ctypes.c_int * len(py_y))(*py_y)
-    # py_z = [0, 0, 0]
-    # z = (ctypes.c_int * len(py_z))(*py_z)
-    # lib.parallel_add(x, y, z, len(py_z))
-    # assert z[0] == 9 and z[1] == 14 and z[2] == 18
+    with open('loma_code/parallel_add.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'c',
+                                        output_filename = '_code/parallel_add')
+    py_x = [2, 3, 5]
+    x = (ctypes.c_int * len(py_x))(*py_x)
+    py_y = [7, 11, 13]
+    y = (ctypes.c_int * len(py_y))(*py_y)
+    py_z = [0, 0, 0]
+    z = (ctypes.c_int * len(py_z))(*py_z)
+    lib.parallel_add(x, y, z, len(py_z))
+    assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
-    # with open('loma_code/parallel_add.py') as f:
-    #     structs, lib = compiler.compile(f.read(),
-    #                                     target = 'ispc',
-    #                                     output_filename = '_code/parallel_add.dll')
-    # py_x = [2, 3, 5]
-    # x = (ctypes.c_int * len(py_x))(*py_x)
-    # py_y = [7, 11, 13]
-    # y = (ctypes.c_int * len(py_y))(*py_y)
-    # py_z = [0, 0, 0]
-    # z = (ctypes.c_int * len(py_z))(*py_z)
-    # lib.parallel_add(x, y, z, len(py_z))
-    # assert z[0] == 9 and z[1] == 14 and z[2] == 18
+    with open('loma_code/parallel_add.py') as f:
+        structs, lib = compiler.compile(f.read(),
+                                        target = 'ispc',
+                                        output_filename = '_code/parallel_add')
+    py_x = [2, 3, 5]
+    x = (ctypes.c_int * len(py_x))(*py_x)
+    py_y = [7, 11, 13]
+    y = (ctypes.c_int * len(py_y))(*py_y)
+    py_z = [0, 0, 0]
+    z = (ctypes.c_int * len(py_z))(*py_z)
+    lib.parallel_add(x, y, z, len(py_z))
+    assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
     cl_ctx, cl_device, cl_cmd_queue = cl_utils.create_context()
 
@@ -400,7 +400,7 @@ def test_simd_local_func():
     with open('loma_code/simd_local_func.py') as f:
         structs, lib = compiler.compile(f.read(),
                                         target = 'c',
-                                        output_filename = '_code/simd_local_func.so')
+                                        output_filename = '_code/simd_local_func')
     py_x = [2, 3, 5]
     x = (ctypes.c_int * len(py_x))(*py_x)
     py_y = [7, 11, 13]
@@ -413,7 +413,7 @@ def test_simd_local_func():
     with open('loma_code/simd_local_func.py') as f:
         structs, lib = compiler.compile(f.read(),
                                         target = 'ispc',
-                                        output_filename = '_code/simd_local_func.so')
+                                        output_filename = '_code/simd_local_func')
     py_x = [2, 3, 5]
     x = (ctypes.c_int * len(py_x))(*py_x)
     py_y = [7, 11, 13]
@@ -477,7 +477,7 @@ def test_atomic_add():
     with open('loma_code/atomic_add.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/atomic_add.so')
+                                  output_filename = '_code/atomic_add')
     np.random.seed(seed=1234)
     n = 10000
     x = np.random.random(n).astype('f') / n
@@ -489,7 +489,7 @@ def test_atomic_add():
     with open('loma_code/atomic_add.py') as f:
         _, lib = compiler.compile(f.read(),
                                   target = 'ispc',
-                                  output_filename = '_code/atomic_add_ispc.so')
+                                  output_filename = '_code/atomic_add')
     z = ctypes.c_float(0)
     lib.my_atomic_add(ctypes_x, ctypes.byref(z), n)
     assert abs(z.value - np.sum(x)) < 1e-3
@@ -542,7 +542,7 @@ def test_missing_annotation():
         with open('loma_code/missing_annotation.py') as f:
             _, lib = compiler.compile(f.read(),
                                       target = 'c',
-                                      output_filename = '_code/missing_annotation.so',
+                                      output_filename = '_code/missing_annotation',
                                       print_error = False)
     except error.FuncArgNotAnnotated as e:
         pass
@@ -552,7 +552,7 @@ def test_duplicate_declare():
         with open('loma_code/duplicate_declare.py') as f:
             _, lib = compiler.compile(f.read(),
                                       target = 'c',
-                                      output_filename = '_code/duplicate_declare.so',
+                                      output_filename = '_code/duplicate_declare',
                                       print_error = False)
     except error.DuplicateVariable as e:
         assert e.var == 'x'
@@ -564,7 +564,7 @@ def test_undeclared_var():
         with open('loma_code/undeclared_var.py') as f:
             _, lib = compiler.compile(f.read(),
                                       target = 'c',
-                                      output_filename = '_code/undeclared_var.so',
+                                      output_filename = '_code/undeclared_var',
                                       print_error = False)
     except error.UndeclaredVariable as e:
         assert e.var == 'b'
@@ -575,7 +575,7 @@ def test_early_return():
         with open('loma_code/early_return.py') as f:
             _, lib = compiler.compile(f.read(),
                                       target = 'c',
-                                      output_filename = '_code/early_return.so',
+                                      output_filename = '_code/early_return',
                                       print_error = False)
     except error.ReturnNotLastStmt as e:
         assert e.stmt.lineno == 3
@@ -585,7 +585,7 @@ def test_deadcode():
         with open('loma_code/deadcode.py') as f:
             _, lib = compiler.compile(f.read(),
                                       target = 'c',
-                                      output_filename = '_code/deadcode.so',
+                                      output_filename = '_code/deadcode',
                                       print_error = False)
     except error.ReturnNotLastStmt as e:
         assert e.stmt.lineno == 2
@@ -595,7 +595,7 @@ def test_declare_unbounded_array():
         with open('loma_code/declare_unbounded_array.py') as f:
             _, lib = compiler.compile(f.read(),
                                       target = 'c',
-                                      output_filename = '_code/declare_unbounded_array.so',
+                                      output_filename = '_code/declare_unbounded_array',
                                       print_error = False)
     except error.DeclareUnboundedArray as e:
         assert e.stmt.lineno == 2
@@ -605,7 +605,7 @@ def test_declare_in_ifelse():
         with open('loma_code/declare_in_ifelse.py') as f:
             _, lib = compiler.compile(f.read(),
                                       target = 'c',
-                                      output_filename = '_code/declare_in_ifelse.so',
+                                      output_filename = '_code/declare_in_ifelse',
                                       print_error = False)
     except error.DeclarationNotOutmostLevel as e:
         assert e.stmt.lineno == 3
@@ -615,7 +615,7 @@ def test_call_not_in_call_stmt():
         with open('loma_code/call_not_in_call_stmt.py') as f:
             _, lib = compiler.compile(f.read(),
                                       target = 'c',
-                                      output_filename = '_code/call_not_in_call_stmt.so',
+                                      output_filename = '_code/call_not_in_call_stmt',
                                       print_error = False)
     except error.CallWithOutArgNotInCallStmt as e:
         assert e.expr.lineno == 7
@@ -623,43 +623,43 @@ def test_call_not_in_call_stmt():
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-    # test_declaration()
-    # test_binary_ops()
-    # test_builtin_funcs()
-    # test_args()
-    # test_mutation()
-    # test_array_read()
-    # test_array_write()
-    # test_compare()
-    # test_if_else()
-    # test_while_loop()
-    # test_local_static_array()
-    # test_local_array_init_zero()
-    # test_sum_nested_array()
-    # test_nested_array_output()
-    # test_intrinsic_func_call()
-    # test_func_decl()
-    # test_struct_access()
-    # test_struct_return()
-    # test_struct_in_struct()
-    # test_array_in_struct()
-    # test_struct_in_array()
-    # test_struct_in_array_in_struct()
-    # test_struct_init_zero()
-    # test_pass_by_ref_lhs()
-    # test_pass_by_ref_lhs_struct()
-    # test_pass_by_ref_array()
-    # test_call_stmt()
+    test_declaration()
+    test_binary_ops()
+    test_builtin_funcs()
+    test_args()
+    test_mutation()
+    test_array_read()
+    test_array_write()
+    test_compare()
+    test_if_else()
+    test_while_loop()
+    test_local_static_array()
+    test_local_array_init_zero()
+    test_sum_nested_array()
+    test_nested_array_output()
+    test_intrinsic_func_call()
+    test_func_decl()
+    test_struct_access()
+    test_struct_return()
+    test_struct_in_struct()
+    test_array_in_struct()
+    test_struct_in_array()
+    test_struct_in_array_in_struct()
+    test_struct_init_zero()
+    test_pass_by_ref_lhs()
+    test_pass_by_ref_lhs_struct()
+    test_pass_by_ref_array()
+    test_call_stmt()
     test_parallel_add()
-    # test_simd_local_func()
-    # test_atomic_add()
+    test_simd_local_func()
+    test_atomic_add()
 
-    # # test compile errors
-    # test_missing_annotation()
-    # test_duplicate_declare()
-    # test_undeclared_var()
-    # test_early_return()
-    # test_deadcode()
-    # test_declare_unbounded_array()
-    # test_declare_in_ifelse()
-    # test_call_not_in_call_stmt()
+    # test compile errors
+    test_missing_annotation()
+    test_duplicate_declare()
+    test_undeclared_var()
+    test_early_return()
+    test_deadcode()
+    test_declare_unbounded_array()
+    test_declare_in_ifelse()
+    test_call_not_in_call_stmt()
