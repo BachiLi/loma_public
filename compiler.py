@@ -173,13 +173,13 @@ void atomic_add(float *ptr, float val) {
         tasksys_obj_path = os.path.join(output_dir, 'tasksys.o')
         tasksys_define = ''
         tasksys_define = '-DISPC_USE_CPPTHREADS'
-        run(['clang++', tasksys_define, '-std=c++17', '-c', '-o', output_filename, '-O2', '-o', tasksys_obj_path, tasksys_path],
+        run(['g++', tasksys_define, '-fPIC', '-std=c++17', '-c', '-o', output_filename, '-O2', '-o', tasksys_obj_path, tasksys_path],
             encoding='utf-8',
             capture_output=False)
         #if log.returncode != 0:
         #    print(log.stderr)        
       
-        run(['clang++', '-shared', '-o', output_filename, '-O2', asm_filename, tasksys_obj_path],
+        run(['g++', '-fPIC', '-shared', '-o', output_filename, '-O2', asm_filename, tasksys_obj_path],
             encoding='utf-8',
             capture_output=False)
         #if log.returncode != 0:
