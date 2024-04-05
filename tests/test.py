@@ -336,7 +336,7 @@ def test_parallel_add():
     with open('loma_code/parallel_add.py') as f:
         structs, lib = compiler.compile(f.read(),
                                         target = 'ispc',
-                                        output_filename = '_code/parallel_add.so')
+                                        output_filename = '_code/parallel_add.dll')
     py_x = [2, 3, 5]
     x = (ctypes.c_int * len(py_x))(*py_x)
     py_y = [7, 11, 13]
