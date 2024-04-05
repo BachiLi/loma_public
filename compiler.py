@@ -173,13 +173,19 @@ void atomic_add(float *ptr, float val) {
         tasksys_obj_path = os.path.join(output_dir, 'tasksys.o')
         tasksys_define = ''
         tasksys_define = '-DISPC_USE_CPPTHREADS'
-        run(['clang++', tasksys_define, '-std=c++17', '-c', '-o', output_filename, '-O2', '-o', tasksys_obj_path, tasksys_path],
+        # run(['clang++', tasksys_define, '-std=c++17', '-c', '-O2', '-o', tasksys_obj_path, tasksys_path],
+        #     encoding='utf-8',
+        #     capture_output=False)
+        #if log.returncode != 0:
+        #    print(log.stderr)     
+        run(['cl.exe', '/std:c++17', '/c', '/O2', f'/Fo:{tasksys_obj_path}', tasksys_path],
             encoding='utf-8',
             capture_output=False)
-        #if log.returncode != 0:
-        #    print(log.stderr)        
       
-        run(['clang++', '-Wl,-export-all-symbols', '-fvisibility=default', '-shared', '-o', output_filename, '-O2', obj_filename, tasksys_obj_path],
+        # run(['clang++', '-shared', '-o', output_filename, '-O2', obj_filename, tasksys_obj_path],
+        #     encoding='utf-8',
+        #     capture_output=False)
+        run(['link.exe', '/DLL', f'/OUT:{output_filename}', '/OPT:REF', '/OPT:ICF', obj_filename, tasksys_obj_path],
             encoding='utf-8',
             capture_output=False)
         #if log.returncode != 0:
