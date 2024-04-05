@@ -157,8 +157,8 @@ void atomic_add(float *ptr, float val) {
         #print('Generated ISPC code:')
         #print(code)
 
-        obj_filename = output_filename + '.s'
-        log = run(['ispc', '--emit-asm', '--pic', '-o', obj_filename, '-O2', '-'],
+        obj_filename = output_filename + '.llvm'
+        log = run(['ispc', '--emit-llvm', '--pic', '-o', obj_filename, '-O2', '-'],
             input = code,
             encoding='utf-8',
             capture_output=True)
@@ -173,13 +173,13 @@ void atomic_add(float *ptr, float val) {
         tasksys_obj_path = os.path.join(output_dir, 'tasksys.o')
         tasksys_define = ''
         tasksys_define = '-DISPC_USE_CPPTHREADS'
-        run(['g++', tasksys_define, '-fPIC', '-std=c++17', '-c', '-o', output_filename, '-O2', '-o', tasksys_obj_path, tasksys_path],
+        run(['clang++', tasksys_define, '-fPIC', '-std=c++17', '-c', '-o', output_filename, '-O2', '-o', tasksys_obj_path, tasksys_path],
             encoding='utf-8',
             capture_output=False)
         #if log.returncode != 0:
         #    print(log.stderr)        
 
-        run(['g++', '-fPIC', '-shared', '-o', output_filename, '-O2', obj_filename, tasksys_obj_path],
+        run(['clang++', '-fPIC', '-shared', '-o', output_filename, '-O2', obj_filename, tasksys_obj_path],
             encoding='utf-8',
             capture_output=False)
         #if log.returncode != 0:
