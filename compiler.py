@@ -157,8 +157,8 @@ void atomic_add(float *ptr, float val) {
         #print('Generated ISPC code:')
         #print(code)
 
-        obj_filename = output_filename + '.o'
-        log = run(['ispc', '--pic', '-o', obj_filename, '-O2', '-'],
+        obj_filename = output_filename + '.s'
+        log = run(['ispc', '--emit-asm', '--pic', '-o', obj_filename, '-O2', '-'],
             input = code,
             encoding='utf-8',
             capture_output=True)
