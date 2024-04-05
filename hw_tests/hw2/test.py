@@ -21,7 +21,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/identity.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/identity.so')
+                                            output_filename = '_code/identity')
         _dx = ctypes.c_float(0.0)
         lib.d_identity(1.23, ctypes.byref(_dx), 4.56)
         assert abs(_dx.value - 4.56) < epsilon
@@ -30,7 +30,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/constant.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/constant.so')
+                                            output_filename = '_code/constant')
         _dx = ctypes.c_float(0.0)
         lib.d_constant(1.23, ctypes.byref(_dx), 4.56)
         assert abs(_dx.value - 0) < epsilon
@@ -39,7 +39,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/plus.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/plus.so')
+                                            output_filename = '_code/plus')
         x = 5.0
         _dx = ctypes.c_float(0)
         y = 6.0
@@ -53,7 +53,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/subtract.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/subtract.so')
+                                            output_filename = '_code/subtract')
         x = 5.0
         _dx = ctypes.c_float(0)
         y = 6.0
@@ -67,7 +67,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/multiply.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/multiply.so')
+                                            output_filename = '_code/multiply')
         x = 5.0
         _dx = ctypes.c_float(0)
         y = 6.0
@@ -81,7 +81,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/divide.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/divide.so')
+                                            output_filename = '_code/divide')
         x = 5.0
         _dx = ctypes.c_float(0)
         y = 6.0
@@ -95,7 +95,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/square.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/square.so')
+                                            output_filename = '_code/square')
         x = 5.0
         _dx = ctypes.c_float(0)
         dout = 3.0
@@ -106,7 +106,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/declare.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/declare.so')
+                                            output_filename = '_code/declare')
         x = 5.0
         _dx = ctypes.c_float(0)
         y = 6.0
@@ -144,7 +144,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/assign1.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/assign1.so')
+                                            output_filename = '_code/assign1')
         x = -3.0
         _dx = ctypes.c_float(0)
         y = 5.0
@@ -159,7 +159,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/assign2.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/assign2.so')
+                                            output_filename = '_code/assign2')
         x = 2.0
         _dx = ctypes.c_float(0)
         y = -6.0
@@ -174,7 +174,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/assign3.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/assign3.so')
+                                            output_filename = '_code/assign3')
         x = 2.0
         _dx = ctypes.c_float(0)
         y = -6.0
@@ -189,7 +189,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/assign4.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/assign4.so')
+                                            output_filename = '_code/assign4')
         x = 2.0
         _dx = ctypes.c_float(0)
         y = -6.0
@@ -214,7 +214,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/assign5.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/assign5.so')
+                                            output_filename = '_code/assign5')
         x = -3.0
         _dx = ctypes.c_float(0)
         y = 5.0
@@ -250,7 +250,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/assign_args.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/assign_args.so')
+                                            output_filename = '_code/assign_args')
         w = -1.3
         _dw = ctypes.c_float(0)
         x = -3.0
@@ -292,7 +292,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/refs_out.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/refs_out.so')
+                                            output_filename = '_code/refs_out')
         x = 0.7
         _dx = ctypes.c_float(0)
         _dy = 0.1
@@ -306,7 +306,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/call_sin.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call_sin.so')
+                                            output_filename = '_code/call_sin')
         x = 1.5
         _dx = ctypes.c_float(0)
         dout = -0.3
@@ -318,7 +318,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/call_cos.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call_cos.so')
+                                            output_filename = '_code/call_cos')
         x = 1.5
         _dx = ctypes.c_float(0)
         dout = -0.3
@@ -330,7 +330,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/call_sqrt.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call_sqrt.so')
+                                            output_filename = '_code/call_sqrt')
         x = 1.5
         _dx = ctypes.c_float(0)
         dout = -0.3
@@ -342,7 +342,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/call_pow.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call_pow.so')
+                                            output_filename = '_code/call_pow')
         x = 1.5
         _dx = ctypes.c_float(0)
         y = 0.7
@@ -357,7 +357,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/call_exp.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call_exp.so')
+                                            output_filename = '_code/call_exp')
         x = 1.5
         _dx = ctypes.c_float(0)
         dout = -0.3
@@ -369,7 +369,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/call_log.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call_log.so')
+                                            output_filename = '_code/call_log')
         x = 1.5
         _dx = ctypes.c_float(0)
         dout = -0.3
@@ -381,7 +381,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/call.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call.so')
+                                            output_filename = '_code/call')
         x = 1.5
         _dx = ctypes.c_float(0)
         y = 0.7
@@ -414,7 +414,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/int_input.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/int_input.so')
+                                            output_filename = '_code/int_input')
         x = 1.23
         _dx = ctypes.c_float(0)
         y = 3
@@ -428,7 +428,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/int_output.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/int_output.so')
+                                            output_filename = '_code/int_output')
         x = 1.23
         _dx = ctypes.c_float(0)
         y = 3
@@ -440,7 +440,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/int_assign.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/int_assign.so')
+                                            output_filename = '_code/int_assign')
         x = 1.23
         _dx = ctypes.c_float(0)
         y = 0
@@ -458,7 +458,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/array_output.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/array_output.so')
+                                            output_filename = '_code/array_output')
         x = 0.7
         _dx = ctypes.c_float(0)
         py_y = [0.0, 0.0]
@@ -472,7 +472,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/array_input.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/array_input.so')
+                                            output_filename = '_code/array_input')
         py_x = [0.7, 0.3]
         x = (ctypes.c_float * len(py_x))(*py_x)
         py_dx = [0.0, 0.0]
@@ -486,7 +486,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/int_array_input.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/int_array_input.so')
+                                            output_filename = '_code/int_array_input')
         py_x = [0.7, 0.3]
         x = (ctypes.c_float * len(py_x))(*py_x)
         py_dx = [0.0, 0.0]
@@ -504,7 +504,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/array_input_indexing.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/array_input_indexing.so')
+                                            output_filename = '_code/array_input_indexing')
         py_x = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
         x = (ctypes.c_float * len(py_x))(*py_x)
         py_dx = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -527,7 +527,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/array_output_indexing.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/array_output_indexing.so')
+                                            output_filename = '_code/array_output_indexing')
         x = 0.3
         _dx = ctypes.c_float(0)
         i = 1
@@ -549,7 +549,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/sum_nested_array.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/sum_nested_array.so')
+                                            output_filename = '_code/sum_nested_array')
         pointer_arr = (ctypes.POINTER(ctypes.c_float) * 3)()
         _dpointer_arr = (ctypes.POINTER(ctypes.c_float) * 3)()
         arr0 = (ctypes.c_float * 3)(0.1, 0.2, 0.3)
@@ -577,7 +577,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/struct_input.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/struct_input.so')
+                                            output_filename = '_code/struct_input')
         Foo = structs['Foo']
         f = Foo(1.23, 3, 4.56)
         _df = Foo(0.0, 0, 0.0)
@@ -591,7 +591,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/struct_output.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/struct_output.so')
+                                            output_filename = '_code/struct_output')
 
         Foo = structs['Foo']
         x = 1.23
@@ -607,7 +607,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/struct_declare.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/struct_declare.so')
+                                            output_filename = '_code/struct_declare')
 
         Foo = structs['Foo']
         f = Foo(a=1.23,b=3)
@@ -620,7 +620,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/struct_assign.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/struct_assign.so')
+                                            output_filename = '_code/struct_assign')
 
         Foo = structs['Foo']
         f = Foo(a=1.23, b=3)
@@ -633,7 +633,7 @@ class Homework2Test(unittest.TestCase):
         with open('loma_code/multivariate.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/poly.so')
+                                            output_filename = '_code/poly')
         x = ctypes.c_float(0.6)
         y = ctypes.c_float(0.7)
         dx = ctypes.c_float(0)

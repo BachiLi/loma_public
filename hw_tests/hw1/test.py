@@ -21,7 +21,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/identity.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/identity.so')
+                                            output_filename = '_code/identity')
         _dfloat = structs['_dfloat']
         x = _dfloat(1.23, 4.56)
         out = lib.d_identity(x)
@@ -31,7 +31,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/constant.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/constant.so')
+                                            output_filename = '_code/constant')
         _dfloat = structs['_dfloat']
         x = _dfloat(1.23, 4.56)
         out = lib.d_constant(x)
@@ -41,7 +41,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/plus.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/plus.so')
+                                            output_filename = '_code/plus')
         _dfloat = structs['_dfloat']
         x = _dfloat(5.0, 0.5)
         y = _dfloat(6.0, 1.5)
@@ -53,7 +53,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/subtract.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/subtract.so')
+                                            output_filename = '_code/subtract')
         _dfloat = structs['_dfloat']
         x = _dfloat(5.0, 0.5)
         y = _dfloat(6.0, 1.5)
@@ -65,7 +65,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/multiply.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/multiply.so')
+                                            output_filename = '_code/multiply')
         _dfloat = structs['_dfloat']
         x = _dfloat(5.0, 0.5)
         y = _dfloat(6.0, 1.5)
@@ -77,7 +77,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/divide.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/divide.so')
+                                            output_filename = '_code/divide')
         _dfloat = structs['_dfloat']
         x = _dfloat(5.0, 0.5)
         y = _dfloat(6.0, 1.5)
@@ -89,7 +89,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/declare.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/declare.so')
+                                            output_filename = '_code/declare')
         _dfloat = structs['_dfloat']
         x = _dfloat(5.0, 0.5)
         y = _dfloat(6.0, 1.5)
@@ -110,7 +110,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/assign.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/assign.so')
+                                            output_filename = '_code/assign')
         _dfloat = structs['_dfloat']
         x = _dfloat(-3.0, -1.0)
         y = _dfloat(5.0, 3.0)
@@ -123,7 +123,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/side_effect.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/side_effect.so')
+                                            output_filename = '_code/side_effect')
         _dfloat = structs['_dfloat']
         x = _dfloat(-3.5, -1.5)
         y = _dfloat(7.0, 2.0)
@@ -136,7 +136,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/call_sin.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call_sin.so')
+                                            output_filename = '_code/call_sin')
         _dfloat = structs['_dfloat']
         x = _dfloat(1.5, 0.3)
         out = lib.d_call_sin(x)
@@ -148,7 +148,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/call_cos.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call_cos.so')
+                                            output_filename = '_code/call_cos')
         _dfloat = structs['_dfloat']
         x = _dfloat(1.5, 0.3)
         out = lib.d_call_cos(x)
@@ -160,7 +160,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/call_sqrt.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call_sqrt.so')
+                                            output_filename = '_code/call_sqrt')
         _dfloat = structs['_dfloat']
         x = _dfloat(1.5, 0.3)
         out = lib.d_call_sqrt(x)
@@ -172,7 +172,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/call_pow.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call_pow.so')
+                                            output_filename = '_code/call_pow')
         _dfloat = structs['_dfloat']
         x = _dfloat(1.5, 0.3)
         y = _dfloat(0.7, 0.4)
@@ -186,7 +186,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/call_exp.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call_exp.so')
+                                            output_filename = '_code/call_exp')
         _dfloat = structs['_dfloat']
         x = _dfloat(1.5, 0.3)
         out = lib.d_call_exp(x)
@@ -198,7 +198,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/call_log.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call_log.so')
+                                            output_filename = '_code/call_log')
         _dfloat = structs['_dfloat']
         x = _dfloat(1.5, 0.3)
         out = lib.d_call_log(x)
@@ -210,7 +210,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/call.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call.so')
+                                            output_filename = '_code/call')
         _dfloat = structs['_dfloat']
         x = _dfloat(1.5, 1.2)
         # z0 : float = sin(x)
@@ -242,7 +242,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/int_input.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/int_input.so')
+                                            output_filename = '_code/int_input')
         _dfloat = structs['_dfloat']
         x = _dfloat(1.23, 4.56)
         y = 3
@@ -254,7 +254,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/int_output.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/int_output.so')
+                                            output_filename = '_code/int_output')
         _dfloat = structs['_dfloat']
         x = _dfloat(1.23, 4.56)
         y = 3
@@ -265,7 +265,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/array_output.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/array_output.so')
+                                            output_filename = '_code/array_output')
         _dfloat = structs['_dfloat']
         x = _dfloat(0.7, 0.8)
         py_y = [_dfloat(0.0, 0.0), _dfloat(0.0, 0.0)]
@@ -280,7 +280,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/array_input.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/array_input.so')
+                                            output_filename = '_code/array_input')
         _dfloat = structs['_dfloat']
         py_x = [_dfloat(0.7, 0.8), _dfloat(0.3, 0.5)]
         x = (_dfloat * len(py_x))(*py_x)
@@ -292,7 +292,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/int_array_input.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/int_array_input.so')
+                                            output_filename = '_code/int_array_input')
         _dfloat = structs['_dfloat']
         py_x = [_dfloat(0.7, 0.8), _dfloat(0.3, 0.5)]
         x = (_dfloat * len(py_x))(*py_x)
@@ -306,7 +306,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/array_input_indexing.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/array_input_indexing.so')
+                                            output_filename = '_code/array_input_indexing')
         _dfloat = structs['_dfloat']
         py_x = [_dfloat(0.1, 0.9),
                 _dfloat(0.2, 0.8),
@@ -326,7 +326,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/array_output_indexing.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/array_output_indexing.so')
+                                            output_filename = '_code/array_output_indexing')
         _dfloat = structs['_dfloat']
         x = _dfloat(0.3, 0.4)
         i = 1
@@ -353,7 +353,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/multiple_outputs.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/multiple_outputs.so')
+                                            output_filename = '_code/multiple_outputs')
         _dfloat = structs['_dfloat']
         x = _dfloat(0.7, 0.8)
         py_y = [_dfloat(0.0, 0.0), _dfloat(0.0, 0.0)]
@@ -371,7 +371,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/struct_input.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/struct_input.so')
+                                            output_filename = '_code/struct_input')
         _dfloat = structs['_dfloat']
         _dFoo = structs['_dFoo']
         f = _dFoo(_dfloat(1.23, 4.56), 3)
@@ -383,7 +383,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/nested_struct_input.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/nested_struct_input.so')
+                                            output_filename = '_code/nested_struct_input')
         _dfloat = structs['_dfloat']
         _dFoo = structs['_dFoo']
         _dBar = structs['_dBar']
@@ -396,7 +396,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/struct_output.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/struct_output.so')
+                                            output_filename = '_code/struct_output')
 
         _dfloat = structs['_dfloat']
         x = _dfloat(1.23, 4.56)
@@ -410,7 +410,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/struct_declare.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/struct_declare.so')
+                                            output_filename = '_code/struct_declare')
 
         _dfloat = structs['_dfloat']
         _dFoo = structs['_dFoo']
@@ -424,7 +424,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/struct_assign.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/struct_assign.so')
+                                            output_filename = '_code/struct_assign')
 
         _dfloat = structs['_dfloat']
         _dFoo = structs['_dFoo']
@@ -438,7 +438,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/nested_struct_output.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/nested_struct_output.so')
+                                            output_filename = '_code/nested_struct_output')
 
         _dfloat = structs['_dfloat']
         _dBar = structs['_dBar']
@@ -458,7 +458,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/array_in_struct.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/array_in_struct.so')
+                                            output_filename = '_code/array_in_struct')
         _dfloat = structs['_dfloat']
         int_arr = ctypes.c_int(3)
         float_arr = _dfloat(5.0, 7.0)
@@ -472,7 +472,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/struct_in_array.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/struct_in_array.so')
+                                            output_filename = '_code/struct_in_array')
         _dfloat = structs['_dfloat']
         _dFoo = structs['_dFoo']
 
@@ -489,7 +489,7 @@ class Homework1Test(unittest.TestCase):
         with open('loma_code/poly.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/poly.so')
+                                            output_filename = '_code/poly')
         x = 0.6
         out = lib.d_poly_dx(x)
         # poly is 3x^4 + 5x^2 + 10

@@ -22,7 +22,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/ifelse_fwd.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/ifelse_fwd.so')
+                                            output_filename = '_code/ifelse_fwd')
         _dfloat = structs['_dfloat']
         x = _dfloat(1.23, 0.4)
         y = _dfloat(1, 0.5)
@@ -41,7 +41,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/ifelse_rev.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/ifelse_rev.so')
+                                            output_filename = '_code/ifelse_rev')
         x = 1.23
         _dx = ctypes.c_float(0)
         y = 1.0
@@ -63,7 +63,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/ifelse_side_effects_rev.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/ifelse_side_effects_rev.so')
+                                            output_filename = '_code/ifelse_side_effects_rev')
         
         x = 1.23
         _dx = ctypes.c_float(0)
@@ -86,7 +86,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/nested_ifelse_rev.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/nested_ifelse_rev.so')
+                                            output_filename = '_code/nested_ifelse_rev')
         
         # test all three branches
         x = 1.23
@@ -117,7 +117,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/func_call_fwd.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/func_call_fwd.so')
+                                            output_filename = '_code/func_call_fwd')
         _dfloat = structs['_dfloat']
         x = _dfloat(0.67, 0.4)
         y = _dfloat(0.5, 0.5)
@@ -131,7 +131,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/chained_calls_fwd.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/chained_calls_fwd.so')
+                                            output_filename = '_code/chained_calls_fwd')
         _dfloat = structs['_dfloat']
         x = _dfloat(0.67, 0.4)
         out = lib.fwd_chained_calls(x)
@@ -144,7 +144,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/call_stmt_fwd.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call_stmt_fwd.so')
+                                            output_filename = '_code/call_stmt_fwd')
         _dfloat = structs['_dfloat']
         x = _dfloat(0.67, 0.4)
         z = lib.fwd_call_stmt(x)
@@ -156,7 +156,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/func_call_rev.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/func_call_rev.so')
+                                            output_filename = '_code/func_call_rev')
         x = 0.67
         _dx = ctypes.c_float(0)
         y = 0.5
@@ -173,7 +173,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/func_call_rev2.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/func_call_rev2.so')
+                                            output_filename = '_code/func_call_rev2')
         x = 0.67
         _dx = ctypes.c_float(0)
         y = 0.5
@@ -190,7 +190,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/func_call_assign_rev.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/func_call_assign_rev.so')
+                                            output_filename = '_code/func_call_assign_rev')
         x = 0.67
         _dx = ctypes.c_float(0)
         y = 0.5
@@ -207,7 +207,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/call_stmt_rev.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call_stmt_rev.so')
+                                            output_filename = '_code/call_stmt_rev')
         x = 0.67
         _dx = ctypes.c_float(0)
         dout = 0.3
@@ -220,7 +220,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/call_stmt_side_effects.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call_stmt_side_effects.so')
+                                            output_filename = '_code/call_stmt_side_effects')
         x = 0.67
         _dx = ctypes.c_float(0)
         dout = 0.3
@@ -233,7 +233,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/call_stmt_side_effects2.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/call_stmt_side_effects2.so')
+                                            output_filename = '_code/call_stmt_side_effects2')
         x = 0.67
         _dx = ctypes.c_float(0)
         y = 0.89
@@ -251,7 +251,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/chained_calls_rev.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/chained_calls.so')
+                                            output_filename = '_code/chained_calls')
         x = 0.67
         _dx = ctypes.c_float(0)
         dout = 0.3
@@ -265,7 +265,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/while_loop_fwd.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/while_loop_fwd.so')
+                                            output_filename = '_code/while_loop_fwd')
         _dfloat = structs['_dfloat']
         x = _dfloat(1.23, 0.4)
         n = 5
@@ -287,7 +287,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/while_loop_rev.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/while_loop_rev.so')
+                                            output_filename = '_code/while_loop_rev')
         x = 1.23
         _dx = ctypes.c_float(0)
         n = 5
@@ -311,7 +311,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/nested_while_loop_rev.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/nested_while_loop_rev.so')
+                                            output_filename = '_code/nested_while_loop_rev')
         x = 1.23
         _dx = ctypes.c_float(0)
         n = 5
@@ -327,7 +327,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/three_level_while_loop_rev.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'c',
-                                            output_filename = '_code/three_level_while_loop_rev.so')
+                                            output_filename = '_code/three_level_while_loop_rev')
         x = 0.123
         _dx = ctypes.c_float(0)
         n = 5
@@ -343,7 +343,7 @@ class Homework3Test(unittest.TestCase):
         with open('loma_code/parallel_copy.py') as f:
             structs, lib = compiler.compile(f.read(),
                                             target = 'ispc',
-                                            output_filename = '_code/parallel_copy.so')
+                                            output_filename = '_code/parallel_copy')
         x = 0.123
         n = 10000
         _dx = ctypes.c_float(0)

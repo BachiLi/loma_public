@@ -1,0 +1,35 @@
+name: test_windows
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: ilammy/msvc-dev-cmd@v1
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - name: Set up OpenCL
+      run: |
+        Invoke-WebRequest -Uri 'https://registrationcenter-download.intel.com/akdlm/IRC_NAS/f8f09106-6d86-41b5-83c8-02892bbb7f29/w_opencl_runtime_p_2023.1.0.46319.exe' -OutFile 'D:\igfx.exe'
+        7z x "D:\igfx.exe" -o"D:\igfx" -y
+        D:\igfx\w_opencl_runtime_p_2023.1.0.46319.msi /quiet
+    - name: Set up ISPC 1.23
+      uses: ScatteredRay/install-ispc-action@main
+      with:
+        version: 1.23.0
+        platform: windows
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt       
+    - run: echo "OPENCL_CTX=0:0" | Out-File -FilePath $env:GITHUB_ENV -Append
+    - name: Test
+      run: |
+        cd tests
+        python test.py
