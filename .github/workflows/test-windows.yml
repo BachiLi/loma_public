@@ -33,4 +33,5 @@ jobs:
         cd tests
         chcp 65001 #set code page to utf-8
         echo "OPENCL_CTX=0:0" >> $env:GITHUB_ENV
+        echo "${{ env.OPENCL_CTX }}"
         python test.py
