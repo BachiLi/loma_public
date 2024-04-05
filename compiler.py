@@ -184,6 +184,7 @@ void atomic_add(float *ptr, float val) {
             capture_output=False)
         #if log.returncode != 0:
         #    print(log.stderr)
+        run(['dumpbin', '/EXPORTS', output_filename], encoding='utf-8', capture_output=False)
     elif target == 'opencl':
         code = codegen_opencl.codegen_opencl(structs, funcs)
         # add atomic add (taken from https://gist.github.com/PolarNick239/9dffaf365b332b4442e2ac63b867034f)
