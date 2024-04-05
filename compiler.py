@@ -130,16 +130,22 @@ def compile(loma_code : str,
         print(code)
 
         if platform.system() == 'Windows':
-            exports = [f'/EXPORT:{f.id}' for f in funcs.values()]
-            with open('_tmp.c', 'w') as f:
+            tmp_c_filename = f'_tmp_{output_filename}.c'
+            with open(tmp_c_filename, 'w') as f:
                 f.write(code)
-            log = run(['cl.exe', '/LD', '/O2', '/D_USRDLL', '/D_WINDLL', f'/Fe:{output_filename}', *exports, '_tmp.c'],
-                input = code,
+            obj_filename = output_filename + '.o'
+            log = run(['cl.exe', '/c', '/O2', f'/Fe:{obj_filename}', tmp_c_filename],
                 encoding='utf-8',
                 capture_output=True)
             if log.returncode != 0:
                 print(log.stderr)
-            os.remove('_tmp.c')
+            exports = [f'/EXPORT:{f.id}' for f in funcs.values()]
+            log = run(['link.exe', '/DLL', f'/OUT:{output_filename}', '/OPT:REF', '/OPT:ICF', *export, obj_filename],
+                encoding='utf-8',
+                capture_output=True)
+            if log.returncode != 0:
+                print(log.stderr)
+            os.remove(tmp_c_filename)
         else:
             log = run(['gcc', '-shared', '-fPIC', '-o', output_filename, '-O2', '-x', 'c', '-'],
                 input = code,
