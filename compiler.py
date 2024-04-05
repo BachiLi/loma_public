@@ -179,7 +179,7 @@ void atomic_add(float *ptr, float val) {
         #if log.returncode != 0:
         #    print(log.stderr)        
       
-        run(['clang++', '-export-all-symbols', '-fvisibility=default', '-shared', '-o', output_filename, '-O2', obj_filename, tasksys_obj_path],
+        run(['clang++', '--export-all-symbols', '-fvisibility=default', '-shared', '-o', output_filename, '-O2', obj_filename, tasksys_obj_path],
             encoding='utf-8',
             capture_output=False)
         #if log.returncode != 0:
