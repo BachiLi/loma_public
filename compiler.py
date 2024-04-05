@@ -185,7 +185,7 @@ void atomic_add(float *ptr, float val) {
         # run(['clang++', '-shared', '-o', output_filename, '-O2', obj_filename, tasksys_obj_path],
         #     encoding='utf-8',
         #     capture_output=False)
-        run(['link.exe', '/DLL', f'/OUT:{output_filename}', '/OPT:REF', '/OPT:ICF', obj_filename, tasksys_obj_path],
+        run(['link.exe', '/DLL', f'/OUT:{output_filename}', '/EXPORT:parallel_add', '/OPT:REF', '/OPT:ICF', obj_filename, tasksys_obj_path],
             encoding='utf-8',
             capture_output=False)
         #if log.returncode != 0:
