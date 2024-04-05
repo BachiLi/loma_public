@@ -158,7 +158,7 @@ void atomic_add(float *ptr, float val) {
         #print(code)
 
         obj_filename = output_filename + '.o'
-        log = run(['ispc', '--pic', '-o', asm_filename, '-O2', '-'],
+        log = run(['ispc', '--pic', '-o', obj_filename, '-O2', '-'],
             input = code,
             encoding='utf-8',
             capture_output=True)
