@@ -38,7 +38,9 @@ build/
 !handouts/imgs/*.pdf
 
 # Vscode related
-.vscode
+.vscode/*
+# but handy to create a task to launch VS dev terminal in VSCode
+!.vscode/tasks.json
 
 # Generated code
 __pycache__/

@@ -1,0 +1,20 @@
+// Usage: ctrl + shift + p -> choose Tasks: Run Task, the first one should be
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Open VS Developer Command Prompt",
+            "type": "shell",
+            "command": "cmd",
+            "args": [
+                "/k",
+                "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat",
+                "-arch=x64",
+                "-host_arch=x64"
+            ],
+            "problemMatcher": [],
+        },
+    ]
+}
