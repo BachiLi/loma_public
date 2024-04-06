@@ -66,9 +66,27 @@ def topo_sort_structs(structs : dict[str, loma_ir.Struct]):
         traverse_structs(s)
     return sorted_structs_list
 
+
+"""UPDATE LOG:
+1. General programming bug: output_filename : str = None 
+    will cause a bug if we don't specify its value (though we never).
+    It's better to have some concrete default value (e.g. gcc use a.out)
+2. Windows path: it's crucial to distinguish what suffix -- [.o, .dll, etc.] to apppend
+    to {output_filename}, which doesn't have a suffix.
+    The original code at "# + .dll or + .so" messed up this suffix-free {output_filename}
+    and thus failed later operations:
+    it fails to compile on Windows, because we created something like sum_array.dll.o
+    it works imperfectly on Linux, the lib is sum_array.so.so instead of sum_array.so
+    We will just create different var for these strings to better clearify things.
+    Use sum_array as example, we are likely to have these under _code/ on Windows
+    - sum_array.dll
+    - sum_array.exp
+    - sum_array.lib
+    - sum_array.o
+"""
 def compile(loma_code : str,
             target : str = 'c',
-            output_filename : str = None,
+            output_filename : str = "_code/app",
             opencl_context = None,
             opencl_device = None,
             opencl_command_queue = None,
@@ -115,8 +133,12 @@ def compile(loma_code : str,
 
     if output_filename is not None:
         # + .dll or + .so
-        output_filename = output_filename + distutils.ccompiler.new_compiler().shared_lib_extension
+        # output_filename = output_filename + distutils.ccompiler.new_compiler().shared_lib_extension
         pathlib.Path(os.path.dirname(output_filename)).mkdir(parents=True, exist_ok=True)
+
+    # build different filenames
+    obj_filename = output_filename + '.o'
+    lib_filename = output_filename + distutils.ccompiler.new_compiler().shared_lib_extension # .so for Linux; .dll for Windows
 
     # Generate and compile the code
     if target == 'c':
@@ -133,14 +155,15 @@ def compile(loma_code : str,
             tmp_c_filename = f'_tmp.c'
             with open(tmp_c_filename, 'w') as f:
                 f.write(code)
-            obj_filename = output_filename + '.o'
+            # compile without linking
             log = run(['cl.exe', '/c', '/O2', f'/Fo:{obj_filename}', tmp_c_filename],
                 encoding='utf-8',
                 capture_output=True)
             if log.returncode != 0:
                 print(log.stderr)
             exports = [f'/EXPORT:{f.id}' for f in funcs.values()]
-            log = run(['link.exe', '/DLL', f'/OUT:{output_filename}', '/OPT:REF', '/OPT:ICF', *exports, obj_filename],
+            # linking
+            log = run(['link.exe', '/DLL', f'/OUT:{lib_filename}', '/OPT:REF', '/OPT:ICF', *exports, obj_filename],
                 encoding='utf-8',
                 capture_output=True)
             if log.returncode != 0:
@@ -170,7 +193,6 @@ void atomic_add(float *ptr, float val) {
         print('Generated ISPC code:')
         print(code)
 
-        obj_filename = output_filename + '.o'
         log = run(['ispc', '--pic', '-o', obj_filename, '-O2', '-'],
             input = code,
             encoding='utf-8',
@@ -192,7 +214,7 @@ void atomic_add(float *ptr, float val) {
             if log.returncode != 0:
                 print(log.stderr)
             exports = [f'/EXPORT:{f.id}' for f in funcs.values()]
-            log = run(['link.exe', '/DLL', f'/OUT:{output_filename}', '/OPT:REF', '/OPT:ICF', *exports, obj_filename, tasksys_obj_path],
+            log = run(['link.exe', '/DLL', f'/OUT:{lib_filename}', '/OPT:REF', '/OPT:ICF', *exports, obj_filename, tasksys_obj_path],
                 encoding='utf-8',
                 capture_output=True)
             if log.returncode != 0:
@@ -257,7 +279,7 @@ static float cl_atomic_add(volatile __global float *p, float val) {
 
     # load the dynamic library
     if target == 'c' or target == 'ispc':
-        lib = CDLL(os.path.join(os.getcwd(), output_filename))
+        lib = CDLL(os.path.join(os.getcwd(), lib_filename))
         for f in funcs.values():
             if target == 'ispc':
                 # only process SIMD functions
