@@ -83,6 +83,10 @@ def topo_sort_structs(structs : dict[str, loma_ir.Struct]):
     - sum_array.exp
     - sum_array.lib
     - sum_array.o
+
+FIXED & TESTED: c backend, Windows and Linux(Ubuntu)
+FIXED (but probably work): ispc
+cl_compile() hasn't been fixed
 """
 def compile(loma_code : str,
             target : str = 'c',
@@ -105,10 +109,6 @@ def compile(loma_code : str,
         opencl_context, opencl_device, opencl_command_queue - see cl_utils.create_context()
                     only used by the opencl backend
         print_error - whether it prints compile errors or not
-
-    FIXED & TESTED: c backend, Windows and Linux(Ubuntu)
-    FIXED (but probably work): ispc
-    cl_compile() hasn't been fixed
     """
 
     # The compiler passes
