@@ -105,6 +105,10 @@ def compile(loma_code : str,
         opencl_context, opencl_device, opencl_command_queue - see cl_utils.create_context()
                     only used by the opencl backend
         print_error - whether it prints compile errors or not
+
+    FIXED & TESTED: c backend, Windows and Linux(Ubuntu)
+    FIXED (but probably work): ispc
+    cl_compile() hasn't been fixed
     """
 
     # The compiler passes
@@ -131,10 +135,8 @@ def compile(loma_code : str,
             print(e.to_string())
         raise e
 
-    if output_filename is not None:
-        # + .dll or + .so
-        # output_filename = output_filename + distutils.ccompiler.new_compiler().shared_lib_extension
-        pathlib.Path(os.path.dirname(output_filename)).mkdir(parents=True, exist_ok=True)
+    # create _code/ subfolder
+    pathlib.Path(os.path.dirname(output_filename)).mkdir(parents=True, exist_ok=True)
 
     # build different filenames
     obj_filename = output_filename + '.o'
@@ -170,7 +172,8 @@ def compile(loma_code : str,
                 print(log.stderr)
             os.remove(tmp_c_filename)
         else:
-            log = run(['gcc', '-shared', '-fPIC', '-o', output_filename, '-O2', '-x', 'c', '-'],
+            # compile and generate lib file
+            log = run(['gcc', '-shared', '-fPIC', '-o', lib_filename, '-O2', '-x', 'c', '-'],
                 input = code,
                 encoding='utf-8',
                 capture_output=True)
@@ -225,7 +228,7 @@ void atomic_add(float *ptr, float val) {
                 capture_output=True)
             if log.returncode != 0:
                print(log.stderr)
-            log = run(['g++', '-fPIC', '-shared', '-o', output_filename, '-O2', obj_filename, tasksys_obj_path],
+            log = run(['g++', '-fPIC', '-shared', '-o', lib_filename, '-O2', obj_filename, tasksys_obj_path],
                 encoding='utf-8',
                 capture_output=True)
     elif target == 'opencl':
