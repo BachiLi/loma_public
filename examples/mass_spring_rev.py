@@ -12,7 +12,7 @@ import numpy as np
 with open('loma_code/mass_spring_rev.py') as f:
     structs, lib = compiler.compile(f.read(),
                               target = 'c',
-                              output_filename = '_code/mass_spring_rev.so')
+                              output_filename = '_code/mass_spring_rev')
 gradH = lib.gradH
 MassSpringConfig = structs['MassSpringConfig']
 

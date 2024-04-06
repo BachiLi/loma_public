@@ -11,7 +11,7 @@ import ctypes
 with open('loma_code/pendulum_fwd.py') as f:
     structs, lib = compiler.compile(f.read(),
                               target = 'c',
-                              output_filename = '_code/pendulum_fwd.so')
+                              output_filename = '_code/pendulum_fwd')
 dHdq = lib.dHdq
 dHdp = lib.dHdp
 PendulumConfig = structs['PendulumConfig']
