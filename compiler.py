@@ -71,12 +71,12 @@ def topo_sort_structs(structs : dict[str, loma_ir.Struct]):
 1. General programming bug: output_filename : str = None 
     will cause a bug if we don't specify its value (though we never).
     It's better to have some concrete default value (e.g. gcc use a.out)
-2. Windows path: it's crucial to distinguish what suffix -- [.o, .dll, etc.] to apppend
+2. Windows path: it's better to distinguish what suffix -- [.o, .dll, etc.] to apppend
     to {output_filename}, which doesn't have a suffix.
     The original code at "# + .dll or + .so" messed up this suffix-free {output_filename}
-    and thus failed later operations:
-    it fails to compile on Windows, because we created something like sum_array.dll.o
-    it works imperfectly on Linux, the lib is sum_array.so.so instead of sum_array.so
+    and thus messed up filenames we generate:
+    on Windows, we created something like sum_array.so.dll
+    on Linux, the lib is sum_array.so.so instead of sum_array.so
     We will just create different var for these strings to better clearify things.
     Use sum_array as example, we are likely to have these under _code/ on Windows
     - sum_array.dll

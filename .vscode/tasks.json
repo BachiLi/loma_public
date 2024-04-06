@@ -11,7 +11,7 @@
             "args": [
                 "/k",
                 "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat",
-                "-arch=x64",
+                "-arch=x64",  // these 2 are very important, otherwise it generates 32-bit lib and fails compile
                 "-host_arch=x64"
             ],
             "problemMatcher": [],
