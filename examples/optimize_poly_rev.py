@@ -11,7 +11,7 @@ import ctypes
 with open('loma_code/bigger_poly_rev.py') as f:
     _, lib = compiler.compile(f.read(),
                               target = 'c',
-                              output_filename = '_code/bigger_poly_rev.so')
+                              output_filename = '_code/bigger_poly_rev')
 
 f = lib.bigger_poly
 grad_f = lib.grad_bigger_poly

@@ -11,7 +11,7 @@ import ctypes
 with open('loma_code/third_order_poly_fwd.py') as f:
     _, lib = compiler.compile(f.read(),
                               target = 'c',
-                              output_filename = '_code/third_order_poly_fwd.so')
+                              output_filename = '_code/third_order_poly_fwd')
 
 f = lib.third_order_poly
 grad_f = lib.grad_third_order_poly

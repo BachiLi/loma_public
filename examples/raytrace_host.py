@@ -12,7 +12,7 @@ if __name__ == '__main__':
     with open('loma_code/raytrace.py') as f:
         structs, lib = compiler.compile(f.read(),
                                   target = 'c',
-                                  output_filename = '_code/raytrace.so')
+                                  output_filename = '_code/raytrace')
 
     w = 400
     h = 225
