@@ -256,7 +256,7 @@ def visit_expr(node) -> loma_ir.expr:
                 assert False, f'Unknown constant type'
         case ast.UnaryOp():
             if isinstance(node.op, ast.USub):
-                return loma_ir.BinaryOp(loma_ir.Sub(), loma_ir.ConstInt(0), visit_expr(node.operand))
+                return loma_ir.BinaryOp(loma_ir.Sub(), loma_ir.ConstInt(0), visit_expr(node.operand), lineno = node.lineno)
             else:
                 assert False, f'Unknown UnaryOp {type(node.op).__name__}'
         case ast.BinOp():
