@@ -13,6 +13,70 @@ import unittest
 
 epsilon = 1e-4
 
+# List of test method names to run
+# comment out function names to skip them
+tests_to_run = [
+    # The start
+    'test_identity',
+    'test_constant',
+    # Binary Ops +-*/
+    'test_plus',
+    'test_subtract',
+    'test_multiply',
+    'test_divide',
+    # Variable manipulation
+    'test_declare',
+    'test_assign',
+    'test_side_effect',
+    # Math functions
+    'test_call_sin',
+    'test_call_cos',
+    'test_call_sqrt',
+    'test_call_pow',
+    'test_call_exp',
+    'test_call_log',
+    'test_call',
+    # In & Out
+    'test_int_input',
+    'test_int_output',
+    # Arrays
+    'test_array_output',
+    'test_array_input',
+    'test_int_array_input',
+    'test_array_input_indexing',
+    'test_array_output_indexing',
+    'test_multiple_outputs',
+    # Structs
+    'test_struct_input',
+    'test_nested_struct_input',
+    'test_struct_output',
+    'test_struct_declare',
+    'test_struct_assign',
+    'test_nested_struct_output',
+    'test_array_in_struct',
+    'test_struct_in_array',
+    # Usage
+    'test_poly',
+    # END HW1: Add more custom tests
+    'test_something_else',
+
+    'DUMMY END'
+]
+
+class CustomTestLoader(unittest.TestLoader):
+    def loadTestsFromTestCase(self, testCaseClass):
+        # Load all test methods from the specified test case class
+        test_suite = super().loadTestsFromTestCase(testCaseClass)
+
+        # Filter out test methods that are in the skip list
+        filtered_suite = unittest.TestSuite()
+        for test in test_suite:
+            test_method_name = test._testMethodName
+            if test_method_name in tests_to_run:
+                filtered_suite.addTest(test)
+
+        return filtered_suite
+
 class Homework1Test(unittest.TestCase):
     def setUp(self):
         os.chdir(os.path.dirname(os.path.realpath(__file__)))
@@ -496,6 +560,24 @@ class Homework1Test(unittest.TestCase):
         # the derivative is 12 x^3 + 10 x
         assert out - (12 * x * x * x + 10 * x) < epsilon
 
-if __name__ == '__main__':
-    unittest.main()
+    """Add more custom tests here"""
 
+# Print out all test method names, one per line
+def print_test_method_names():
+    test_case_methods = Homework1Test.__dict__.items()
+    test_method_names = [name for name, method in test_case_methods if callable(method) and name.startswith('test_')]
+    
+    for method_name in test_method_names:
+        print(f"'{method_name}',")
+
+
+if __name__ == '__main__':
+    # Uncomment the following line to print out test method names to update tests_to_run[]
+    # print_test_method_names()
+
+    # Use custom test loader to load filtered test suite
+    loader = CustomTestLoader()
+    test_suite = loader.loadTestsFromTestCase(Homework1Test)
+    
+    # Run the test suite
+    unittest.TextTestRunner().run(test_suite)
