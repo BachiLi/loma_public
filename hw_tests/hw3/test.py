@@ -216,6 +216,19 @@ class Homework3Test(unittest.TestCase):
         # dx = 2 * dout * (2 * x + 1)
         assert abs(_dx.value - (2 * dout * (2 * x + 1))) < epsilon
 
+    def test_call_stmt2_rev(self):
+        with open('loma_code/call_stmt2_rev.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/call_stmt2_rev')
+        x = 0.67
+        _dx = ctypes.c_float(0)
+        _dy = 0.3
+        z = lib.rev_call_stmt2(x, ctypes.byref(_dx), _dy)
+        # y = (x * x + x)
+        # dx = dy * (2 * x + 1)
+        assert abs(_dx.value - (_dy * (2 * x + 1))) < epsilon
+
     def test_call_stmt_side_effects(self):
         with open('loma_code/call_stmt_side_effects.py') as f:
             structs, lib = compiler.compile(f.read(),
