@@ -381,5 +381,24 @@ class Homework3Test(unittest.TestCase):
         assert np.sum(np.abs(_dx - _dz)) / n < epsilon and \
             np.sum(np.abs(_dy - _dz)) / n < epsilon
 
+    def test_parallel_sum(self):
+        with open('loma_code/parallel_sum.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'ispc',
+                                            output_filename = '_code/parallel_sum')
+
+        np.random.seed(1234)
+        n = 10000
+        x = np.random.random(n).astype('f') / n
+        _dx = np.zeros_like(x)
+        _dz = 0.234
+        lib.rev_parallel_sum(\
+            x.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            _dx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            _dz,
+            n)
+
+        assert np.sum(np.abs(_dx - _dz)) / n < epsilon
+
 if __name__ == '__main__':
     unittest.main()
