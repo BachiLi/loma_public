@@ -97,9 +97,9 @@ class ISPCCodegenVisitor(codegen_c.CCodegenVisitor):
             case loma_ir.Var():
                 return node.id in self.output_args
             case loma_ir.ArrayAccess():
-                return is_output_arg(self, node.array)
+                return self.is_output_arg(node.array)
             case loma_ir.StructAccess():
-                return is_output_arg(self, node.struct)
+                return self.is_output_arg(node.struct)
         return False
 
     def visit_expr(self, node):
