@@ -8,7 +8,7 @@ Now we are going to extend our previous implementations of forward and reverse m
 
 \section{Handling if/else statements}
 
-Handling if/else statements in both forward and reverse modes are as simple as passing down the then and else statements and process then independently in the \lstinline{mutate_ifelse} method. 
+Handling if/else statements in both forward and reverse modes are as simple as passing down the then and else statements and process them independently in the \lstinline{mutate_ifelse} method. 
 
 \paragraph{Forward mode.} For example, the following code
 \begin{lstlisting}[language=Python]
@@ -68,7 +68,6 @@ def rev_ifelse(x : In[float], _dx : Out[float], y : In[float], _dy : Out[float],
         _adj_1 = 2.0 * _dret
         _dret = 0.0
         _dx = _dx + _adj_1
-}
 \end{lstlisting}
 
 \lstinline{test_ifelse_rev} tests for this.
@@ -90,11 +89,11 @@ fwd_func_call = fwd_diff(func_call)
 \end{lstlisting}
 will be transformed to
 \begin{lstlisting}[language=Python]
-_d_fwd_foo(x : In[_dfloat], y : In[_dfloat]) -> _dfloat:
+def _d_fwd_foo(x : In[_dfloat], y : In[_dfloat]) -> _dfloat:
     return make__dfloat(x.val * x.val * y.val + y.val * y.val,
     x.dval * x.val + x.val * x.dval * y.val + x.val * x.val * y.dval + y.dval * y.val + y.val * y.dval)
 
-fwd_func_call(In[_dfloat] x, In[_dfloat] y) -> _dfloat:
+def fwd_func_call(In[_dfloat] x, In[_dfloat] y) -> _dfloat:
     z : _dfloat = make__dfloat(\
         _d_fwd_foo(make__dfloat(x.val, x.dval), make__dfloat(y.val, y.dval)).val,
         _d_fwd_foo(make__dfloat(x.val, x.dval), make__dfloat(y.val, y.dval)).dval)
@@ -120,9 +119,7 @@ fwd_call_stmt = fwd_diff(call_stmt)
 \end{lstlisting}
 If you implement the previous parts like me, you might generate a function call like:
 \begin{lstlisting}[language=Python]
-_d_fwd_foo(x : In[_dfloat], y : Out[_dfloat]):
-    # ...
-
+# def _d_fwd_foo(x : In[_dfloat], y : Out[_dfloat]):
 _d_fwd_foo(make__dfloat(x.val,x.dval), make__dfloat(y.val,y.dval))
 \end{lstlisting}
 However, since the second argument \lstinline{y} is an output argument, this is not a legal loma code. My solution is: whenever we encounter an output argument in a function call in forward mode, we just switch to the original argument. In the case above my implementation would output the call statement: \lstinline{_d_fwd_foo(make__dfloat(x.val,x.dval), y)}.
