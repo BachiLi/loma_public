@@ -356,5 +356,30 @@ class Homework3Test(unittest.TestCase):
 
         assert abs(_dx.value - np.sum(_dz)) < epsilon
 
+    def test_parallel_add(self):
+        with open('loma_code/parallel_add.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'ispc',
+                                            output_filename = '_code/parallel_add')
+
+        np.random.seed(seed=1234)
+        n = 10000
+        x = np.random.random(n).astype('f') / n
+        _dx = np.zeros_like(x)
+        y = np.random.random(n).astype('f') / n
+        _dy = np.zeros_like(y)
+        z = np.zeros_like(x)
+        _dz = np.random.random(n).astype('f') / n
+        lib.rev_parallel_add(
+            x.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            _dx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            y.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            _dy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            _dz.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            n)
+
+        assert np.sum(np.abs(_dx - _dz)) / n < epsilon and \
+            np.sum(np.abs(_dy - _dz)) / n < epsilon
+
 if __name__ == '__main__':
     unittest.main()
