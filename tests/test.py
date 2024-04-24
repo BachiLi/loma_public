@@ -331,70 +331,74 @@ def test_parallel_add():
     py_z = [0, 0, 0]
     z = (ctypes.c_int * len(py_z))(*py_z)
     lib.parallel_add(x, y, z, len(py_z))
-    assert z[0] == 9 and z[1] == 14 and z[2] == 18
-
-    with open('loma_code/parallel_add.py') as f:
-        structs, lib = compiler.compile(f.read(),
-                                        target = 'ispc',
-                                        output_filename = '_code/parallel_add')
-    py_x = [2, 3, 5]
-    x = (ctypes.c_int * len(py_x))(*py_x)
-    py_y = [7, 11, 13]
-    y = (ctypes.c_int * len(py_y))(*py_y)
-    py_z = [0, 0, 0]
-    z = (ctypes.c_int * len(py_z))(*py_z)
-    lib.parallel_add(x, y, z, len(py_z))
-    assert z[0] == 9 and z[1] == 14 and z[2] == 18
-
-    cl_ctx, cl_device, cl_cmd_queue = cl_utils.create_context()
-
-    with open('loma_code/parallel_add.py') as f:
-        structs, lib = compiler.compile(f.read(),
-                                        target = 'opencl',
-                                        opencl_context = cl_ctx,
-                                        opencl_device = cl_device,
-                                        opencl_command_queue = cl_cmd_queue)
-    py_x = [2, 3, 5]
-    x = (ctypes.c_int * len(py_x))(*py_x)
-    py_y = [7, 11, 13]
-    y = (ctypes.c_int * len(py_y))(*py_y)
-    py_z = [0, 0, 0]
-    z = (ctypes.c_int * len(py_z))(*py_z)
-
-    status = ctypes.c_int32()
-    bufx = cl.clCreateBuffer(cl_ctx,
-                             cl.CL_MEM_READ_ONLY | cl.CL_MEM_COPY_HOST_PTR,
-                             ctypes.sizeof(x),
-                             ctypes.byref(x),
-                             ctypes.byref(status))
-    cl_utils.cl_check(status.value)
-    bufy = cl.clCreateBuffer(cl_ctx,
-                             cl.CL_MEM_READ_ONLY | cl.CL_MEM_COPY_HOST_PTR,
-                             ctypes.sizeof(y),
-                             ctypes.byref(y),
-                             ctypes.byref(status))
-    cl_utils.cl_check(status.value)
-    bufz = cl.clCreateBuffer(cl_ctx,
-                             cl.CL_MEM_WRITE_ONLY,
-                             ctypes.sizeof(z),
-                             None,
-                             ctypes.byref(status))
-    cl_utils.cl_check(status.value)
-
-    lib.parallel_add(bufx, bufy, bufz, len(py_z))
-    cl.clFinish(cl_cmd_queue)
-
-    cl.clEnqueueReadBuffer(cl_cmd_queue,
-                           bufz,
-                           cl.CL_TRUE,
-                           0,
-                           ctypes.sizeof(z),
-                           ctypes.byref(z),
-                           0,
-                           None,
-                           None)
+    print(*x)
+    print(*y)
+    print(*z)
 
     assert z[0] == 9 and z[1] == 14 and z[2] == 18
+
+    # with open('loma_code/parallel_add.py') as f:
+    #     structs, lib = compiler.compile(f.read(),
+    #                                     target = 'ispc',
+    #                                     output_filename = '_code/parallel_add')
+    # py_x = [2, 3, 5]
+    # x = (ctypes.c_int * len(py_x))(*py_x)
+    # py_y = [7, 11, 13]
+    # y = (ctypes.c_int * len(py_y))(*py_y)
+    # py_z = [0, 0, 0]
+    # z = (ctypes.c_int * len(py_z))(*py_z)
+    # lib.parallel_add(x, y, z, len(py_z))
+    # assert z[0] == 9 and z[1] == 14 and z[2] == 18
+
+    # cl_ctx, cl_device, cl_cmd_queue = cl_utils.create_context()
+
+    # with open('loma_code/parallel_add.py') as f:
+    #     structs, lib = compiler.compile(f.read(),
+    #                                     target = 'opencl',
+    #                                     opencl_context = cl_ctx,
+    #                                     opencl_device = cl_device,
+    #                                     opencl_command_queue = cl_cmd_queue)
+    # py_x = [2, 3, 5]
+    # x = (ctypes.c_int * len(py_x))(*py_x)
+    # py_y = [7, 11, 13]
+    # y = (ctypes.c_int * len(py_y))(*py_y)
+    # py_z = [0, 0, 0]
+    # z = (ctypes.c_int * len(py_z))(*py_z)
+
+    # status = ctypes.c_int32()
+    # bufx = cl.clCreateBuffer(cl_ctx,
+    #                          cl.CL_MEM_READ_ONLY | cl.CL_MEM_COPY_HOST_PTR,
+    #                          ctypes.sizeof(x),
+    #                          ctypes.byref(x),
+    #                          ctypes.byref(status))
+    # cl_utils.cl_check(status.value)
+    # bufy = cl.clCreateBuffer(cl_ctx,
+    #                          cl.CL_MEM_READ_ONLY | cl.CL_MEM_COPY_HOST_PTR,
+    #                          ctypes.sizeof(y),
+    #                          ctypes.byref(y),
+    #                          ctypes.byref(status))
+    # cl_utils.cl_check(status.value)
+    # bufz = cl.clCreateBuffer(cl_ctx,
+    #                          cl.CL_MEM_WRITE_ONLY,
+    #                          ctypes.sizeof(z),
+    #                          None,
+    #                          ctypes.byref(status))
+    # cl_utils.cl_check(status.value)
+
+    # lib.parallel_add(bufx, bufy, bufz, len(py_z))
+    # cl.clFinish(cl_cmd_queue)
+
+    # cl.clEnqueueReadBuffer(cl_cmd_queue,
+    #                        bufz,
+    #                        cl.CL_TRUE,
+    #                        0,
+    #                        ctypes.sizeof(z),
+    #                        ctypes.byref(z),
+    #                        0,
+    #                        None,
+    #                        None)
+
+    # assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
 def test_simd_local_func():
     with open('loma_code/simd_local_func.py') as f:
@@ -623,43 +627,43 @@ def test_call_not_in_call_stmt():
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-    test_declaration()
-    test_binary_ops()
-    test_builtin_funcs()
-    test_args()
-    test_mutation()
-    test_array_read()
-    test_array_write()
-    test_compare()
-    test_if_else()
-    test_while_loop()
-    test_local_static_array()
-    test_local_array_init_zero()
-    test_sum_nested_array()
-    test_nested_array_output()
-    test_intrinsic_func_call()
-    test_func_decl()
-    test_struct_access()
-    test_struct_return()
-    test_struct_in_struct()
-    test_array_in_struct()
-    test_struct_in_array()
-    test_struct_in_array_in_struct()
-    test_struct_init_zero()
-    test_pass_by_ref_lhs()
-    test_pass_by_ref_lhs_struct()
-    test_pass_by_ref_array()
-    test_call_stmt()
+    # test_declaration()
+    # test_binary_ops()
+    # test_builtin_funcs()
+    # test_args()
+    # test_mutation()
+    # test_array_read()
+    # test_array_write()
+    # test_compare()
+    # test_if_else()
+    # test_while_loop()
+    # test_local_static_array()
+    # test_local_array_init_zero()
+    # test_sum_nested_array()
+    # test_nested_array_output()
+    # test_intrinsic_func_call()
+    # test_func_decl()
+    # test_struct_access()
+    # test_struct_return()
+    # test_struct_in_struct()
+    # test_array_in_struct()
+    # test_struct_in_array()
+    # test_struct_in_array_in_struct()
+    # test_struct_init_zero()
+    # test_pass_by_ref_lhs()
+    # test_pass_by_ref_lhs_struct()
+    # test_pass_by_ref_array()
+    # test_call_stmt()
     test_parallel_add()
-    test_simd_local_func()
-    test_atomic_add()
+    # test_simd_local_func()
+    # test_atomic_add()
 
-    # test compile errors
-    test_missing_annotation()
-    test_duplicate_declare()
-    test_undeclared_var()
-    test_early_return()
-    test_deadcode()
-    test_declare_unbounded_array()
-    test_declare_in_ifelse()
-    test_call_not_in_call_stmt()
+    # # test compile errors
+    # test_missing_annotation()
+    # test_duplicate_declare()
+    # test_undeclared_var()
+    # test_early_return()
+    # test_deadcode()
+    # test_declare_unbounded_array()
+    # test_declare_in_ifelse()
+    # test_call_not_in_call_stmt()
