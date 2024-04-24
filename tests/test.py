@@ -321,21 +321,26 @@ def test_call_stmt():
     assert lib.call_stmt() == 5
 
 def test_parallel_add():
-    gc.disable()
     with open('loma_code/parallel_add.py') as f:
         structs, lib = compiler.compile(f.read(),
                                         target = 'c',
                                         output_filename = '_code/parallel_add')
-    py_x = [2, 3, 5]
-    x = (ctypes.c_int * len(py_x))(*py_x)
-    py_y = [7, 11, 13]
-    y = (ctypes.c_int * len(py_y))(*py_y)
-    py_z = [0, 0, 0]
-    z = (ctypes.c_int * len(py_z))(*py_z)
-    lib.parallel_add(x, y, z, len(py_z))
-    print(*x)
-    print(*y)
-    print(*z)
+    x = np.array([2,3,5]).astype(np.int32)
+    y = np.array([7,11,13]).astype(np.int32)
+    z = np.array([0,0,0]).astype(np.int32)
+    # py_x = [2, 3, 5]
+    # x = (ctypes.c_int * len(py_x))(*py_x)
+    # py_y = [7, 11, 13]
+    # y = (ctypes.c_int * len(py_y))(*py_y)
+    # py_z = [0, 0, 0]
+    # z = (ctypes.c_int * len(py_z))(*py_z)
+    lib.parallel_add(x.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
+                     y.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
+                     z.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
+                     len(z))
+    print(x)
+    print(y)
+    print(z)
 
     assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
