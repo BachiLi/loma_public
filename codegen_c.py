@@ -62,19 +62,18 @@ class CCodegenVisitor(irvisitor.IRVisitor):
         self.emit_tabs()
         self.code += 'printf("i:%d, j:%d\\n", i, j);\n'
         if node.is_simd:
-            pass
+            # pass
             #self.emit_tabs()
             #self.code += 'printf("z:%d\\n", z);\n'
-            #self.emit_tabs()
-            #self.code += 'for (int __work_id = 0; __work_id < j; __work_id++) {\n'
-            #self.tab_count += 1
+            self.emit_tabs()
+            self.code += 'for (int __work_id = 0; __work_id < j; __work_id++) {\n'
+            self.tab_count += 1
         for stmt in node.body:
             self.visit_stmt(stmt)
         if node.is_simd:
-            pass
-            #self.tab_count -= 1
-            #self.emit_tabs()
-            #self.code += '}\n'
+            self.tab_count -= 1
+            self.emit_tabs()
+            self.code += '}\n'
         self.tab_count -= 1
         self.code += '}\n'
 
