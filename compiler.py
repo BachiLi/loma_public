@@ -123,6 +123,7 @@ def compile(loma_code : str,
         code = codegen_c.codegen_c(structs, funcs)
         # add standard headers
         code = """
+#include <stdio.h>
 #include <math.h>
         \n""" + code
 

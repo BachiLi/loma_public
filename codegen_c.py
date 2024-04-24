@@ -119,6 +119,8 @@ class CCodegenVisitor(irvisitor.IRVisitor):
         if expr_str != '':
             self.code += f' = {expr_str}'
         self.code += ';\n'
+        self.emit_tabs()
+        self.code += f'printf("z[%d]:%d\\n", i, z[i]);\n'
 
     def visit_ifelse(self, node):
         self.emit_tabs()
