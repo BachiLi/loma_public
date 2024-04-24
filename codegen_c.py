@@ -60,7 +60,7 @@ class CCodegenVisitor(irvisitor.IRVisitor):
 
         self.tab_count += 1
         self.emit_tabs()
-        self.code += 'printf("z:%d, __total_work:%d\\n", z, __total_work);\n'
+        self.code += 'printf("z[0]:%d, __total_work:%d\\n", z[0], __total_work);\n'
         if node.is_simd:
             # pass
             #self.emit_tabs()

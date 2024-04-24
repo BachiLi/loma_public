@@ -337,7 +337,7 @@ def test_parallel_add():
     print('argtypes')
     print(c_func.argtypes)
 
-    lib.parallel_add(l, l)
+    lib.parallel_add(z, l)
     #print(*x)
     #print(*y)
     #print(*z)
