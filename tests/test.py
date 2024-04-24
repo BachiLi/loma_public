@@ -10,6 +10,7 @@ import math
 #import gpuctypes.opencl as cl
 #import cl_utils
 import numpy as np
+import gc
 
 ###########################################################################
 # Correctness test
@@ -320,6 +321,7 @@ def test_call_stmt():
     assert lib.call_stmt() == 5
 
 def test_parallel_add():
+    gc.disable()
     with open('loma_code/parallel_add.py') as f:
         structs, lib = compiler.compile(f.read(),
                                         target = 'c',
@@ -328,9 +330,9 @@ def test_parallel_add():
     x = (ctypes.c_int * len(py_x))(*py_x)
     py_y = [7, 11, 13]
     y = (ctypes.c_int * len(py_y))(*py_y)
-    py_z = [5, 5, 5]
+    py_z = [0, 0, 0]
     z = (ctypes.c_int * len(py_z))(*py_z)
-    lib.parallel_add(x, y, z, 3)
+    lib.parallel_add(x, y, z, len(py_z))
     print(*x)
     print(*y)
     print(*z)
