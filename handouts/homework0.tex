@@ -24,7 +24,7 @@ Use \lstinline{pip install -r requirements.txt} to install the dependent package
 
 You further need to install the following compilers:
 \begin{itemize}
-    \item \textbf{GCC or Clang}: make sure you have \lstinline{gcc} in your environment paths. For Windows users, you can install \href{https://www.mingw-w64.org/}{MinGW}.
+    \item \textbf{GCC/Clang/MSVC}: make sure you have \lstinline{gcc} in your environment paths. For Windows users, we use MSVC -- make sure \lstinline{cl.exe} and \lstinline{link.exe} are in your environment paths.
     \item \textbf{ISPC}: we use \href{https://ispc.github.io/}{ISPC} to generate parallel and vectorized CPU code. Make sure \lstinline{ispc} is in your environment paths.
     \item \textbf{OpenCL}: we use OpenCL for generating parallel GPU code. OpenCL should come with your GPU drivers. Run the following Python code to check: \lstinline{python -c "import ctypes, ctypes.util; l = ctypes.util.find_library('OpenCL'); assert(l != None); ctypes.CDLL(l)"}.
 \end{itemize}

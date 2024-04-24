@@ -17,7 +17,7 @@ def type_to_string(node : loma_ir.type) -> str:
             return 'float'
         case loma_ir.Array():
             if node.static_size != None:
-                return f'Array[{type_to_string(node.t)}, node.static_size]'
+                return f'Array[{type_to_string(node.t)}, {node.static_size}]'
             else:
                 return f'Array[{type_to_string(node.t)}]'
         case loma_ir.Struct():

@@ -1,12 +1,10 @@
-name: Linux test
+name: MacOS test
 
 on: [push]
 
 jobs:
   test-macos:
     runs-on: macos-latest
-    strategy:
-      max-parallel: 5
 
     steps:
     - uses: actions/checkout@v3

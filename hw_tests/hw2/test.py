@@ -443,7 +443,7 @@ class Homework2Test(unittest.TestCase):
                                             output_filename = '_code/int_assign')
         x = 1.23
         _dx = ctypes.c_float(0)
-        y = 0
+        y = 3
         _dy = ctypes.c_int(0)
         dout = 0.3
         lib.d_int_assign(x, ctypes.byref(_dx), y, ctypes.byref(_dy), dout)

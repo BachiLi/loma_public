@@ -8,7 +8,7 @@ Now we are going to extend our previous implementations of forward and reverse m
 
 \section{Handling if/else statements}
 
-Handling if/else statements in both forward and reverse modes are as simple as passing down the then and else statements and process then independently in the \lstinline{mutate_ifelse} method. 
+Handling if/else statements in both forward and reverse modes are as simple as passing down the then and else statements and process them independently in the \lstinline{mutate_ifelse} method. 
 
 \paragraph{Forward mode.} For example, the following code
 \begin{lstlisting}[language=Python]
@@ -68,7 +68,6 @@ def rev_ifelse(x : In[float], _dx : Out[float], y : In[float], _dy : Out[float],
         _adj_1 = 2.0 * _dret
         _dret = 0.0
         _dx = _dx + _adj_1
-}
 \end{lstlisting}
 
 \lstinline{test_ifelse_rev} tests for this.
@@ -90,11 +89,11 @@ fwd_func_call = fwd_diff(func_call)
 \end{lstlisting}
 will be transformed to
 \begin{lstlisting}[language=Python]
-_d_fwd_foo(x : In[_dfloat], y : In[_dfloat]) -> _dfloat:
+def _d_fwd_foo(x : In[_dfloat], y : In[_dfloat]) -> _dfloat:
     return make__dfloat(x.val * x.val * y.val + y.val * y.val,
     x.dval * x.val + x.val * x.dval * y.val + x.val * x.val * y.dval + y.dval * y.val + y.val * y.dval)
 
-fwd_func_call(In[_dfloat] x, In[_dfloat] y) -> _dfloat:
+def fwd_func_call(In[_dfloat] x, In[_dfloat] y) -> _dfloat:
     z : _dfloat = make__dfloat(\
         _d_fwd_foo(make__dfloat(x.val, x.dval), make__dfloat(y.val, y.dval)).val,
         _d_fwd_foo(make__dfloat(x.val, x.dval), make__dfloat(y.val, y.dval)).dval)
@@ -120,9 +119,7 @@ fwd_call_stmt = fwd_diff(call_stmt)
 \end{lstlisting}
 If you implement the previous parts like me, you might generate a function call like:
 \begin{lstlisting}[language=Python]
-_d_fwd_foo(x : In[_dfloat], y : Out[_dfloat]):
-    # ...
-
+# def _d_fwd_foo(x : In[_dfloat], y : Out[_dfloat]):
 _d_fwd_foo(make__dfloat(x.val,x.dval), make__dfloat(y.val,y.dval))
 \end{lstlisting}
 However, since the second argument \lstinline{y} is an output argument, this is not a legal loma code. My solution is: whenever we encounter an output argument in a function call in forward mode, we just switch to the original argument. In the case above my implementation would output the call statement: \lstinline{_d_fwd_foo(make__dfloat(x.val,x.dval), y)}.
@@ -138,8 +135,7 @@ It should be transformed into
 d_foo(x, _dx, y, _dy, _dz)
 \end{lstlisting}
 Notice that for each input argument (\lstinline{x} and \lstinline{y} in this case), we append another output argument to receive the derivatives. For each output argument, we turn them into an input argument that receives the adjoint.
-(As in forward mode, use the argument \lstinline{func_to_rev} to map function names to their reverse mode 
-counterpart.)
+(As in forward mode, use the argument \lstinline{func_to_rev} to map function names to their reverse mode counterpart.)
 
 However, if you do this naively, you will run into some problems with a function call like this:
 \begin{lstlisting}[language=Python]
@@ -148,7 +144,14 @@ bar(2 * x, y + x, z) # 2 * x and y + x are inputs, z is output
 \end{lstlisting}
 We do not have specific variables for storing \lstinline{2 * x} and \lstinline{y + x}'s adjoint. 
 
-Our solution to this is to factor out the expressions inside the function arguments, until they can be used as a left hand side in an assign statement. For the example above, we first rewrite the original call statement as:
+Furthermore, side effects are even more annoying when differentiating function calls. Consider the following function call:
+\begin{lstlisting}[language=Python]
+# foobar(a : In[Array[float]])
+a[5] = foobar(a)
+\end{lstlisting}
+Using our previous way to differentiate this function call, we will need to store the derivatives of \lstinline{a} into an entire temporary array, then accumulate to the final derivative buffer -- this is prohibitively slow (and can change the complexity of reverse mode!). 
+
+Our solution to this is to factor out the expressions inside the function arguments, until they can be used as a left hand side in an assign statement. For the \lstinline{bar} example above, we first rewrite the original call statement as:
 \begin{lstlisting}[language=Python]
 _x : float = 2 * x
 _y : float = y + x
@@ -156,9 +159,18 @@ bar(_x, _y, z)
 \end{lstlisting}
 Then we can transform \lstinline{bar(_x, _y, z)} into something like \lstinline{d_bar(_x, __dx, _y, __dy, _dz)}.
 
-We have provided the code for doing the rewrite for you already: look at \lstinline{CallNormalizeMutator} in \lstinline{reverse_diff.py}. You can apply it at the beinning of \lstinline{mutate_function_def}.
+For the \lstinline{foobar} function, we perform the following rewrite:
+\begin{lstlisting}[language=Python]
+# foobar(a : In[Array[float]])
+t : float
+t = foobar(a)
+a[5] = t
+\end{lstlisting}
+Now, there is no clash of the use of \lstinline{a} in the assign statement and we can safely differentiate.
 
-Finally, we have to deal with the variables overwrite with function calls. You need to do the same thing as we did with the assign statements but for \lstinline{CallStmt} (we disallowed function calls with outputs outside of call statement to simplify this part). For reference, the following code in \lstinline{test_call_stmt_side_effect}:
+We have provided the code for doing the rewrite for you already: look at \lstinline{CallNormalizeMutator} in \lstinline{reverse_diff.py}. You can apply it at the beginning of \lstinline{mutate_function_def}.
+
+Finally, we still have to deal with the variables overwrite with function calls. You need to do the same thing as we did with the assign statements but for \lstinline{CallStmt} (we disallowed function calls with outputs outside of call statement to simplify this part). For reference, the following code in \lstinline{test_call_stmt_side_effect}:
 \begin{lstlisting}[language=Python]
 def foo(x : In[float], y : Out[float]):
     y = x * x + x
@@ -193,7 +205,7 @@ def rev_call_stmt_side_effects(x : In[float], _dx : Out[float], _dreturn : In[fl
     _dx = _dx + y * _dz
 \end{lstlisting}
 
-The tests for call expressions and statements in reverse mode are: \lstinline{test_func_call_rev}, \lstinline{test_func_call_rev2}, \lstinline{test_func_call_assign_rev}, \lstinline{test_call_stmt_rev}, \lstinline{test_call_stmt_side_effects}, \lstinline{test_call_stmt_side_effects2}, and \lstinline{test_chained_calls_rev}.
+The tests for call expressions and statements in reverse mode are: \lstinline{test_func_call_rev}, \lstinline{test_func_call_rev2}, \lstinline{test_func_call_assign_rev}, \lstinline{test_call_array_rev}, \lstinline{test_call_stmt_rev}, \lstinline{test_call_stmt2_rev}, \lstinline{test_call_stmt_side_effects}, \lstinline{test_call_stmt_side_effects2}, \lstinline{test_call_stmt_array_rev}, and \lstinline{test_chained_calls_rev}.
 
 \section{Handling while loops.}
 
@@ -386,9 +398,89 @@ def rev_parallel_copy(x : In[float],
 
 To implement this, you simply need to turn the previous adjoint accumulation code into \lstinline{atomic_add} I will let you figure out which one to turn. Note that we disallow reading from an output buffer and writing to an input buffer (\lstinline{atomic_add} is the only exception), this significantly simplifies a lot of the nasty corner cases.
 
-We will only test on the ISPC backend. You shouldn't need to do anything different for the OpenCL backend though. The only test is \lstinline{test_parallel_copy}.
+We will only test on the ISPC backend. You shouldn't need to do anything different for the OpenCL backend though. We have three tests for the parallel automatic differentiation: \lstinline{test_parallel_copy}, \lstinline{test_parallel_add}, and \lstinline{test_parallel_reduce}.
 
 \section{More examples}
-TODO!
+Now that our compiler starts to support more features, we can do pretty crazy stuff. As usual, the examples below are not graded. You might need to modify your code a bit to run these examples.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.8\linewidth]{imgs/diff-raytrace.png}
+\vspace{-20pt}
+\caption{Loma is used to compute the derivatives of normal with respect to camera position moving towards right.}
+\label{fig:diffraytrace}
+\end{figure}
+
+\subsection{Differentiable ray tracing}
+Returning to our example in Homework 0, we can now compute derivatives inside our ray tracer. This can be useful for many things, including computer vision, and advanced rendering features. Figure~\ref{fig:diffraytrace} shows an example where we compute the derivatives of the normal of the sphere, with respect to the camera position moving right. See \lstinline{examples/diff_raytrace_host} for the code.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.8\linewidth]{imgs/optimize-newton.png}
+\vspace{-20pt}
+\caption{Revisiting the 2D optimization in Homework 1 using Newton's method.}
+\label{fig:newton}
+\end{figure}
+
+\subsection{Second-order optimization}
+Again, returning to our example in Homework 1, we can now compute second order derivatives of our 2D function and apply Newton's method for the optimization. We apply reverse mode on top of forward mode to compute the Hessian here:
+\begin{lstlisting}[language=Python]
+def grad_third_order_poly(x : In[float], y : In[float], gx : Out[float], gy : Out[float]):
+    d_x : Diff[float]
+    d_x.val = x
+    d_x.dval = 1.0
+    d_y : Diff[float]
+    d_y.val = y
+    d_y.dval = 0.0
+
+    ret_x : Diff[float] = fwd_third_order_poly(d_x, d_y)
+    gx = ret_x.dval
+    d_x.dval = 0.0
+    d_y.dval = 1.0
+    ret_y : Diff[float] = fwd_third_order_poly(d_x, d_y)
+    gy = ret_y.dval
+
+rev_grad_poly = rev_diff(grad_third_order_poly)
+
+def hess_third_order_poly(x : In[float], y : In[float],
+                          hxx : Out[float], hxy : Out[float], hyy : Out[float]):
+    rev_grad_poly(x, hxx, y, hxy, 1.0, 0.0)
+    rev_grad_poly(x, hxy, y, hyy, 0.0, 1.0)
+\end{lstlisting}
+See \lstinline{examples/optimize_poly_hess.py} for the full code.
+
+Figure~\ref{fig:newton} shows the optimization trajectory. With Newton's method, the optimization can take significantly larger step sizes and converges much faster than gradient descent.
+
+\subsection{Mass spring model revisited}
+We now revisit our mass spring model in Homework 2. I refactored the \lstinline{hamiltonian} function in the code so now it supports varying number of mass spring nodes:
+\begin{lstlisting}[language=Python]
+def square(x : In[float]) -> float:
+    return x * x
+
+def hamiltonian(q : In[Array[float]], p : In[Array[float]], c : In[MassSpringConfig]) -> float:
+    K : float
+    i : int = 0
+    while (i < 2 * c.n, max_iter := 1000):
+        K = K + 0.5 * p[i] * p[i] / c.mass
+        i = i + 1
+
+    U : float
+    # mass spring potential
+    tmp : float
+    i = 0
+    while (i < c.n - 1, max_iter := 1000):
+        tmp = sqrt(square(q[2 * i] - q[2 * i + 2]) + square(q[2 * i + 1] - q[2 * i + 3])) - c.length
+        U = U + 0.5 * c.k * tmp * tmp
+        i = i + 1
+
+    # gravity potential
+    i = 0
+    while (i < c.n, max_iter := 1000):
+        U = U + c.mass * c.g * q[2 * i + 1]
+        i = i + 1
+
+    return K + U
+\end{lstlisting}
+See \lstinline{examples/mass_spring_rev_loop.py} for the full code. In \lstinline{examples/mass_spring_rev_loop.mp4}, we show an animation of a mass spring system with 40 nodes.
 
 \end{document}

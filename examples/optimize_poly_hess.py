@@ -8,13 +8,14 @@ sys.path.append(parent)
 import compiler
 import ctypes
 
-with open('loma_code/third_order_poly_fwd.py') as f:
+with open('loma_code/third_order_poly_hess.py') as f:
     _, lib = compiler.compile(f.read(),
                               target = 'c',
-                              output_filename = '_code/third_order_poly_fwd')
+                              output_filename = '_code/third_order_poly_hess')
 
 f = lib.third_order_poly
 grad_f = lib.grad_third_order_poly
+hess_f = lib.hess_third_order_poly
 
 # Plot the loss landscape
 left = -3.0
@@ -29,18 +30,29 @@ for i in range(X.shape[0]):
     for j in range(X.shape[1]):
         Z[i, j] = f(X[i, j], Y[i,j])
 
-# Actual gradient descent loop
+# Actual Newton's method loop
 # Start from (2, 2)
 x, y = 2.0, 2.0
 traj_x = [x]
 traj_y = [y]
-step_size = 1e-2
-for i in range(2000):
+step_size = 1
+for i in range(20):
     gx = ctypes.c_float(0)
     gy = ctypes.c_float(0)
     grad_f(x, y, gx, gy)
-    x -= step_size * gx.value
-    y -= step_size * gy.value
+    hxx = ctypes.c_float(0)
+    hxy = ctypes.c_float(0)
+    hyy = ctypes.c_float(0)
+    hess_f(x, y, hxx, hxy, hyy)
+    # solve for H d = g
+    inv_det = 1 / (hxx.value * hyy.value - hxy.value * hxy.value)
+    hinv_xx = hyy.value * inv_det
+    hinv_xy = -hxy.value * inv_det
+    hinv_yy = hxx.value * inv_det
+    dx = hinv_xx * gx.value + hinv_xy * gy.value
+    dy = hinv_xy * gx.value + hinv_yy * gy.value
+    x -= step_size * dx
+    y -= step_size * dy
     traj_x.append(x)
     traj_y.append(y)
 traj_x = np.array(traj_x)

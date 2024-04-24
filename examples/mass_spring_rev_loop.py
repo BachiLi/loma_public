@@ -9,22 +9,25 @@ import compiler
 import ctypes
 import numpy as np
 
-with open('loma_code/mass_spring_rev.py') as f:
+with open('loma_code/mass_spring_rev_loop.py') as f:
     structs, lib = compiler.compile(f.read(),
                               target = 'c',
-                              output_filename = '_code/mass_spring_rev')
+                              output_filename = '_code/mass_spring_rev_loop')
 gradH = lib.gradH
 MassSpringConfig = structs['MassSpringConfig']
 
-q0 = np.array([0.0, 0.0, 0.2, 0.0, 0.4, 0.0, 0.6, 0.0, 0.8, 0.0], dtype = np.float32)
-p0 = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype = np.float32)
-config = MassSpringConfig(mass = 1.0, length = 0.2, k = 8.0, g = 2.0)
-# time step: 0.005
-ts = 0.005
+n = 40
+q0x = np.linspace(0.0, 0.8, n, dtype = np.float32)
+q0y = np.zeros(n, dtype = np.float32)
+q0 = np.vstack((q0x, q0y)).reshape((-1, ), order='F')
+p0 = np.zeros(2 * n, dtype = np.float32)
+config = MassSpringConfig(mass = 1.0, length = 0.8 / (n-1), k = 1000.0, g = 4.0, n = n)
+# time step
+ts = 0.0001
 # frame per second
 fps = 20
 # damping factor
-damp = 0.02
+damp = 0.025
 
 def solver(t, q, p):
     # given a target time t and q/p, advances
@@ -56,7 +59,7 @@ def visualize():
     fig = plt.figure(figsize=(8, 4))
     ax = plt.axes(xlim=(-1.5, 1.5), ylim=(-5, 1))
     line, = ax.plot([], [], '-', lw=2)
-    point, = ax.plot([], [], 'g.', ms=20)
+    point, = ax.plot([], [], 'g.', ms=3)
 
     t = 0
     q = q0
@@ -84,5 +87,5 @@ def visualize():
     return animation.FuncAnimation(fig, animate, frames=400, interval=fps, blit=True)
 
 anim = visualize()
-anim.save('mass_spring_rev.mp4')
+anim.save('mass_spring_rev_loop.mp4')
 plt.show()
