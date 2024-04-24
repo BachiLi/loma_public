@@ -328,9 +328,10 @@ def test_parallel_add():
     x = (ctypes.c_int * len(py_x))(*py_x)
     py_y = [7, 11, 13]
     y = (ctypes.c_int * len(py_y))(*py_y)
-    py_z = [0, 0, 0]
-    z = (ctypes.c_int * len(py_z))(*py_z)
-    lib.parallel_add(x, y, z, len(py_z))
+    #py_z = [0, 0, 0]
+    z_type = (ctypes.c_int * 3)
+    z = z_type()
+    lib.parallel_add(x, y, z, 3)
     print(*x)
     print(*y)
     print(*z)
