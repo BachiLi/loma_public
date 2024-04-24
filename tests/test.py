@@ -7,8 +7,8 @@ import compiler
 import ctypes
 import error
 import math
-import gpuctypes.opencl as cl
-import cl_utils
+#import gpuctypes.opencl as cl
+#import cl_utils
 import numpy as np
 
 ###########################################################################
