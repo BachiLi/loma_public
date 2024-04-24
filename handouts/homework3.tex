@@ -405,14 +405,14 @@ Now that our compiler starts to support more features, we can do pretty crazy st
 
 \begin{figure}
 \centering
-\includegraphics[width=0.8\linewidth]{imgs/diff_raytrace.png}
+\includegraphics[width=0.8\linewidth]{imgs/diff-raytrace.png}
 \vspace{-20pt}
 \caption{Loma is used to compute the derivatives of normal with respect to camera position moving towards right.}
-\label{fig:diff_raytrace}
+\label{fig:diffraytrace}
 \end{figure}
 
 \subsection{Differentiable ray tracing}
-Returning to our example in Homework 0, we can now compute derivatives inside our ray tracer. This can be useful for many things, including computer vision, and advanced rendering features. Figure~\ref{fig:diff_raytrace} shows an example where we compute the derivatives of the normal of the sphere, with respect to the camera position moving right. See \lstinline{examples/diff_raytrace_host} for the code.
+Returning to our example in Homework 0, we can now compute derivatives inside our ray tracer. This can be useful for many things, including computer vision, and advanced rendering features. Figure~\ref{fig:diffraytrace} shows an example where we compute the derivatives of the normal of the sphere, with respect to the camera position moving right. See \lstinline{examples/diff_raytrace_host} for the code.
 
 \begin{figure}
 \centering
