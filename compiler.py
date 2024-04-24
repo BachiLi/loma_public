@@ -269,6 +269,7 @@ static float cl_atomic_add(volatile __global float *p, float val) {
             # for simd functions, the last argument is the number of threads
             if f.is_simd:
                 c_func.argtypes.append(ctypes.c_int)
+            print(c_func.argtypes)
             c_func.restype = loma_to_ctypes_type(f.ret_type, ctypes_structs)
 
     return ctypes_structs, lib
