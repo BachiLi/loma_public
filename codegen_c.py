@@ -53,20 +53,20 @@ class CCodegenVisitor(irvisitor.IRVisitor):
         if node.is_simd:
             if len(node.args) > 0:
                 self.code += ', '
-            self.code += 'int j'
+            self.code += 'int total_work'
         self.code += ') {\n'
         self.byref_args = set([arg.id for arg in node.args if \
             arg.i == loma_ir.Out() and (not isinstance(arg.t, loma_ir.Array))])
 
         self.tab_count += 1
         self.emit_tabs()
-        self.code += 'printf("i:%d, j:%d\\n", i, j);\n'
+        self.code += 'printf("i:%d, total_work:%d\\n", i, total_work);\n'
         if node.is_simd:
             # pass
             #self.emit_tabs()
             #self.code += 'printf("z:%d\\n", z);\n'
             self.emit_tabs()
-            self.code += 'for (int __work_id = 0; __work_id < j; __work_id++) {\n'
+            self.code += 'for (int __work_id = 0; __work_id < total_work; __work_id++) {\n'
             self.tab_count += 1
         for stmt in node.body:
             self.visit_stmt(stmt)
@@ -278,7 +278,7 @@ def codegen_c(structs : dict[str, loma_ir.Struct],
         if f.is_simd:
             if len(f.args) > 0:
                 code += ', '
-            code += 'int j'
+            code += 'int total_work'
         code += ');\n'
 
     for f in funcs.values():
