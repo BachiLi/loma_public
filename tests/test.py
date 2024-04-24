@@ -337,10 +337,10 @@ def test_parallel_add():
     print('argtypes')
     print(c_func.argtypes)
 
-    lib.parallel_add(z, l)
-    print(*x)
-    print(*y)
-    print(*z)
+    lib.parallel_add(l, l)
+    #print(*x)
+    #print(*y)
+    #print(*z)
 
     assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
