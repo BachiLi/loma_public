@@ -198,7 +198,7 @@ void atomic_add(float *ptr, float val) {
             if log.returncode != 0:
                 print(log.stderr)
         else:
-            log = run(['g++', '-std=c++17', '-c', '-O2', '-o', tasksys_obj_path, tasksys_path],
+            log = run(['g++', '-fPIC', '-std=c++17', '-c', '-O2', '-o', tasksys_obj_path, tasksys_path],
                 encoding='utf-8',
                 capture_output=True)
             if log.returncode != 0:
