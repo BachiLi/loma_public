@@ -124,6 +124,13 @@ def reverse_diff(diff_func_id : str,
     # f(x0, x1, ...)
     # where x0, x1, ... are all loma_ir.Var or 
     # loma_ir.ArrayAccess or loma_ir.StructAccess
+    # Furthermore, it normalizes all Assign statements
+    # with a function call
+    # z = f(...)
+    # into a declaration followed by an assignment
+    # _tmp : [z's type]
+    # _tmp = f(...)
+    # z = _tmp
     class CallNormalizeMutator(irmutator.IRMutator):
         def mutate_function_def(self, node):
             self.tmp_count = 0
@@ -157,11 +164,33 @@ def reverse_diff(diff_func_id : str,
         def mutate_assign(self, node):
             self.tmp_assign_stmts = []
             target = self.mutate_expr(node.target)
+            self.has_call_expr = False
             val = self.mutate_expr(node.val)
-            return self.tmp_assign_stmts + [loma_ir.Assign(\
-                target,
-                val,
-                lineno = node.lineno)]
+            if self.has_call_expr:
+                # turn the assignment into a declaration plus
+                # an assignment
+                self.tmp_count += 1
+                tmp_name = f'_call_t_{self.tmp_count}_{random_id_generator()}'
+                self.tmp_count += 1
+                self.tmp_declare_stmts.append(loma_ir.Declare(\
+                    tmp_name,
+                    target.t,
+                    lineno = node.lineno))
+                tmp_var = loma_ir.Var(tmp_name, t = target.t)
+                assign_tmp = loma_ir.Assign(\
+                    tmp_var,
+                    val,
+                    lineno = node.lineno)
+                assign_target = loma_ir.Assign(\
+                    target,
+                    tmp_var,
+                    lineno = node.lineno)
+                return self.tmp_assign_stmts + [assign_tmp, assign_target]
+            else:
+                return self.tmp_assign_stmts + [loma_ir.Assign(\
+                    target,
+                    val,
+                    lineno = node.lineno)]
 
         def mutate_call_stmt(self, node):
             self.tmp_assign_stmts = []
@@ -171,6 +200,7 @@ def reverse_diff(diff_func_id : str,
                 lineno = node.lineno)]
 
         def mutate_call(self, node):
+            self.has_call_expr = True
             new_args = []
             for arg in node.args:
                 if not isinstance(arg, loma_ir.Var) and \

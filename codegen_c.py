@@ -271,7 +271,7 @@ def codegen_c(structs : dict[str, loma_ir.Struct],
         if f.is_simd:
             if len(f.args) > 0:
                 code += ', '
-            code += 'int __work_id'
+            code += 'int __total_work'
         code += ');\n'
 
     for f in funcs.values():

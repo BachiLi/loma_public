@@ -74,7 +74,7 @@ class ISPCCodegenVisitor(codegen_c.CCodegenVisitor):
             self.code += '\tsync;\n'
             self.code += '}\n'
         else:
-            self.code += f'{codegen_c.type_to_string(node.ret_type)} {node.id}('
+            self.code += f'extern \"C\" {codegen_c.type_to_string(node.ret_type)} {node.id}('
             for i, arg in enumerate(node.args):
                 if i > 0:
                     self.code += ', '
@@ -97,9 +97,9 @@ class ISPCCodegenVisitor(codegen_c.CCodegenVisitor):
             case loma_ir.Var():
                 return node.id in self.output_args
             case loma_ir.ArrayAccess():
-                return is_output_arg(self, node.array)
+                return self.is_output_arg(node.array)
             case loma_ir.StructAccess():
-                return is_output_arg(self, node.struct)
+                return self.is_output_arg(node.struct)
         return False
 
     def visit_expr(self, node):
@@ -139,6 +139,8 @@ def codegen_ispc(structs : dict[str, loma_ir.Struct],
     for f in funcs.values():
         if f.is_simd:
             code += 'export '
+        else:
+            code += 'extern \"C\" '
         code += f'{codegen_c.type_to_string(f.ret_type)} {f.id}('
         for i, arg in enumerate(f.args):
             if i > 0:

@@ -198,7 +198,7 @@ void atomic_add(float *ptr, float val) {
             if log.returncode != 0:
                 print(log.stderr)
         else:
-            log = run(['g++', '-std=c++17', '-c', '-O2', '-o', tasksys_obj_path, tasksys_path],
+            log = run(['g++', '-fPIC', '-std=c++17', '-c', '-O2', '-o', tasksys_obj_path, tasksys_path],
                 encoding='utf-8',
                 capture_output=True)
             if log.returncode != 0:
@@ -264,8 +264,11 @@ static float cl_atomic_add(volatile __global float *p, float val) {
                 if not f.is_simd:
                     continue
             c_func = getattr(lib, f.id)
-            c_func.argtypes = \
-                [loma_to_ctypes_type(arg, ctypes_structs) for arg in f.args]
+            argtypes = [loma_to_ctypes_type(arg, ctypes_structs) for arg in f.args]
+            # for simd functions, the last argument is the number of threads
+            if f.is_simd:
+                argtypes.append(ctypes.c_int)
+            c_func.argtypes = argtypes
             c_func.restype = loma_to_ctypes_type(f.ret_type, ctypes_structs)
 
     return ctypes_structs, lib
