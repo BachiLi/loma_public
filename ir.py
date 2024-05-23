@@ -11,7 +11,7 @@ def generate_asdl_file():
 
     ADT("""
     module loma {
-      func = FunctionDef ( string id, arg* args, stmt* body, bool is_simd, type? ret_type )
+      func = FunctionDef ( string id, arg* args, stmt* body, bool is_simd, bool is_openMpi, type? ret_type)
            | ForwardDiff ( string id, string primal_func )
            | ReverseDiff ( string id, string primal_func )
              attributes  ( int? lineno )
@@ -59,5 +59,5 @@ def generate_asdl_file():
     }
     """,
     header= '',
-    ext_types = {},
+    ext_types = {'dict': 'dict'},
     memoize = [])

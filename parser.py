@@ -125,17 +125,22 @@ def visit_FunctionDef(node) -> loma_ir.FunctionDef:
         ret_type = annotation_to_type(node.returns)
 
     is_simd = False
+    is_openMpi = False
     for decorator in node.decorator_list:
         if isinstance(decorator, ast.Name):
             if decorator.id == 'simd':
                 is_simd = True
+            elif decorator.id == 'openMpi':
+                is_openMpi = True
 
     return loma_ir.FunctionDef(node.name,
                                args,
                                body,
                                is_simd,
+                               is_openMpi,
                                ret_type = ret_type,
-                               lineno = node.lineno)
+                               lineno = node.lineno,
+                               )
 
 def visit_Differentiate(node) -> loma_ir.func:
     """ Given a Python AST node representing
@@ -377,3 +382,4 @@ def parse(code : str) -> tuple[dict[str, loma_ir.Struct], dict[str, loma_ir.func
             funcs[f.id] = f
 
     return structs, funcs
+ # type: ignore

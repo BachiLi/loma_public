@@ -41,7 +41,7 @@ class IRMutator:
         # Important: mutate_stmt can return a list of statements. We need to flatten the list.
         new_body = flatten(new_body)
         return loma_ir.FunctionDef(\
-            node.id, node.args, new_body, node.is_simd, node.ret_type, lineno = node.lineno)
+            node.id, node.args, new_body, node.is_simd, node.is_openMpi, node.ret_type,lineno = node.lineno)
 
     def mutate_forward_diff(self, node):
         return node

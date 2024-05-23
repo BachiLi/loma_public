@@ -98,6 +98,7 @@ def replace_diff_types(diff_structs : dict[str, loma_ir.Struct],
                 new_args,
                 new_body,
                 node.is_simd,
+                node.is_openMpi,
                 _replace_diff_type(node.ret_type),
                 lineno = node.lineno)
 
@@ -204,8 +205,8 @@ def resolve_diff_types(structs : dict[str, loma_ir.Struct],
                     loma_ir.Assign(loma_ir.StructAccess(loma_ir.Var('ret'), 'dval'), loma_ir.Var('dval')),
                     loma_ir.Return(loma_ir.Var('ret'))],
             is_simd = False,
+            is_openMpi=False,
             ret_type = dfloat)
-
     return structs, diff_structs, funcs
 
 class CallFuncVisitor(irvisitor.IRVisitor):

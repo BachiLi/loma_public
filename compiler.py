@@ -6,6 +6,7 @@ import check
 import codegen_c
 import codegen_ispc
 import codegen_opencl
+import codegen_openMpi
 import inspect
 import os
 import parser
@@ -242,6 +243,49 @@ static float cl_atomic_add(volatile __global float *p, float val) {
                                   opencl_command_queue,
                                   code,
                                   kernel_names)
+    elif target == "openMpi":
+        output_filename = output_filename.split('.')[0]
+        child_output_file_name = output_filename + '.o'
+        parent_output_file_name = output_filename + '.so'
+        code_child = codegen_openMpi.codegen_openMpiChild(structs, funcs)
+        code_parent = codegen_openMpi.codegen_openMpiParent(structs, funcs, child_output_file_name)
+
+        # add standard headers
+
+        code_child = """
+#include <mpi.h>
+#include <math.h>
+#include <stdlib.h>
+        \n""" + code_child
+
+        code_parent = """
+#include <mpi.h>
+#include <math.h>
+#include <stdlib.h>
+        \n""" + code_parent
+
+        print('Generated C code for child:')
+        print(code_child)
+
+        print('Generated C code for parent:')
+        print(code_parent)
+
+        # Compile child code
+        log = run(['mpicc', '-o', child_output_file_name, '-x', 'c', '-'],
+            input = code_child,
+            encoding='utf-8',
+            capture_output=True)
+        if log.returncode != 0:
+            print(log.stderr) 
+
+        # Compile parent code
+        log = run(['mpicc','-shared', '-fPIC','-o', parent_output_file_name, '-x', 'c', '-'],
+            input = code_parent,
+            encoding='utf-8',
+            capture_output=True)
+        if log.returncode != 0:
+            print(log.stderr) 
+        output_filename = parent_output_file_name
     else:
         assert False, f'unrecognized compilation target {target}'
 
@@ -270,5 +314,7 @@ static float cl_atomic_add(volatile __global float *p, float val) {
                 argtypes.append(ctypes.c_int)
             c_func.argtypes = argtypes
             c_func.restype = loma_to_ctypes_type(f.ret_type, ctypes_structs)
+    elif target == 'openMpi':
+        lib = CDLL(os.path.join(os.getcwd(), output_filename))
 
     return ctypes_structs, lib

@@ -92,6 +92,7 @@ class TypeInferencer(irmutator.IRMutator):
             new_args,
             new_body,
             node.is_simd,
+            node.is_openMpi,
             new_ret_type,
             lineno = node.lineno)
 
