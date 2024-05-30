@@ -231,6 +231,83 @@ class Homework1Test(unittest.TestCase):
     #         # assert abs(out[i].val - (0.7 + 0.3)) < epsilon and abs(out[i].dval - (0.8 + 0.5)) < epsilon
 
 
+    # def test_struct_input(self):
+    #     with open('loma_code/struct_input.py') as f:
+    #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/struct_input')
+    #     _dfloat = structs['_dfloat']
+    #     _dFoo = structs['_dFoo']
+    #     num_worker = 2
+    #     f = _dFoo(_dfloat(1, 4), 3)
+    #     py_x = [_dFoo(_dfloat(1, 4), 3),_dFoo(_dfloat(2, 6), 5)]
+    #     input = (_dFoo * len(py_x))(*py_x)
+    #     py_y = [_dfloat(0, 0)] * num_worker
+    #     out = (_dfloat * len(py_y))(*py_y)
+    #     lib.mpi_runner(input,out,num_worker)
+    #     result = [(7,20),(14,30)]
+    #     for worker in range(num_worker):
+    #         flag = False
+    #         print(f"Result from Worker {worker+1}: val = {out[worker].val}, dval = {out[worker].dval}")
+    #         for res in result:
+    #             if abs(out[worker].val - res[0]) < epsilon and abs(out[worker].dval - res[1]) < epsilon:
+    #                 flag = True
+    #                 break
+    #         assert flag
+
+    # def test_array_output(self):
+    #     with open('loma_code/array_output.py') as f:
+    #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/array_output')
+    #     _dfloat = structs['_dfloat']
+    #     num_worker = 2
+    #     py_x = [_dfloat(0.7, 0.8),_dfloat(0.7, 0.8)]
+    #     input = (_dfloat * len(py_x))(*py_x)
+    #     py_y = [_dfloat(0.0, 0.0), _dfloat(0.0, 0.0)]* num_worker
+    #     y = (_dfloat * len(py_y))(*py_y)
+    #     lib.mpi_runner(input, y,num_worker)
+    #     for worker in range(num_worker):
+    #         print(y[0][0].val,y[0][0].dval,y[1][1].val,y[1][1].dval)
+    #     # assert abs(y[0].val - x.val * x.val) < epsilon and \
+    #     #     abs(y[0].dval - 2 * x.val * x.dval) < epsilon and \
+    #     #     abs(y[1].val - x.val * x.val * x.val) < epsilon and \
+    #     #     abs(y[1].dval - 3 * x.val * x.val * x.dval) < epsilon
+
+    # def test_identity_rev(self):
+    #     with open('loma_code/identity_rev.py') as f:
+    #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/identity_rev')
+    #     num_worker = 2
+    #     _dx=ctypes.c_float(0.0)
+    #     _dx1=ctypes.c_float(0.0)
+    #     py_x  = [_dx, _dx1]
+    #     x = [1.23,1.23]
+    #     dx = [4.56,4.56]
+    #     arg_dx = (ctypes.c_float * len(py_x))(*py_x)
+    #     arg_x = (ctypes.c_float * len(x))(*x)
+    #     arg_dreturn = (ctypes.c_float * len(dx))(*dx)
+    #     lib.mpi_runner(arg_x,arg_dx,arg_dreturn, num_worker)
+    #     for i in range(num_worker):
+    #         assert abs(arg_dx[i] - 4.56) < epsilon
+
+    def test_plus_rev(self):
+        with open('loma_code/plus_rev.py') as f:
+            structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/plus_rev')
+        num_worker = 2
+        _dx=ctypes.c_float(0.0)
+        _dx1=ctypes.c_float(0.0)
+        _dy=ctypes.c_float(0.0)
+        _dy1=ctypes.c_float(0.0)
+        py_x  = [_dx, _dx1]
+        py_y  = [_dy, _dy1]
+        x = [5.0,1.0]
+        y = [6.0,4.0]
+        dout =  [3.0,4.0]
+        arg_dx = (ctypes.c_float * len(py_x))(*py_x)
+        arg_x = (ctypes.c_float * len(x))(*x)
+        arg_dy = (ctypes.c_float * len(py_y))(*py_y)
+        arg_y = (ctypes.c_float * len(y))(*y)
+        arg_dreturn = (ctypes.c_float * len(dout))(*dout)
+        lib.mpi_runner(arg_x,arg_dx,arg_y,arg_dy,arg_dreturn, num_worker)
+        for i in range(num_worker):
+            assert abs(arg_dx[i] - dout[i]) < epsilon and  abs(arg_dy[i] - dout[i]) < epsilon
+        
 
 if __name__ == '__main__':
     unittest.main()
