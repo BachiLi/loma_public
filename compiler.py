@@ -256,12 +256,14 @@ static float cl_atomic_add(volatile __global float *p, float val) {
 #include <mpi.h>
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
         \n""" + code_child
 
         code_parent = """
 #include <mpi.h>
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
         \n""" + code_parent
 
         print('Generated C code for child:')

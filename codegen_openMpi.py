@@ -61,11 +61,37 @@ class OpemMpiCodegenVisitor(codegen_c.CCodegenVisitor):
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     """
-            self.code += f"""
-    {node.args[0].t.id} input;
-    MPI_Recv(&input, sizeof({node.args[0].t.id}), MPI_BYTE, 0, 0, parent_comm, MPI_STATUS_IGNORE);
-    """
-            self.code += f"{codegen_c.type_to_string(node.ret_type)} out = {node.id}(input);\n"
+            for arg in node.args:
+                if isinstance(arg.t,loma_ir.Array):
+                    self.code += f"int {arg.id}_size;\n"
+                    self.code += f"MPI_Recv(&{arg.id}_size, 1, MPI_INT, 0, 0, parent_comm,MPI_STATUS_IGNORE);\n"
+                    self.code += f"_dfloat* {arg.id} = (_dfloat*)malloc({arg.id}_size * sizeof(_dfloat));"
+                    self.code += f"MPI_Recv({arg.id}, sizeof(_dfloat)*{arg.id}_size, MPI_BYTE, 0, 0, parent_comm,MPI_STATUS_IGNORE);\n"
+                    # self.code += f"_dfloat* {arg.id} = (_dfloat*)malloc(4* sizeof(_dfloat));"
+                    # self.code += f"MPI_Recv({arg.id}, sizeof(_dfloat)*4, MPI_BYTE, 0, 0, parent_comm,MPI_STATUS_IGNORE);\n"
+                elif isinstance(arg.t,loma_ir.Int):
+                    self.code += f"int {arg.id};\n"
+                    self.code += f"MPI_Recv(&{arg.id}, 1, MPI_INT, 0, 0, parent_comm,MPI_STATUS_IGNORE);\n"
+                else:
+                    self.code += f"{codegen_c.type_to_string(arg.t)} {arg.id};\n"
+                    self.code += f"""printf("Sizeee: %d, {arg.id}\\n",sizeof({arg.id}));"""
+                    self.code += f"MPI_Recv(&{arg.id}, sizeof({arg.id}), MPI_BYTE, 0, 0, parent_comm,MPI_STATUS_IGNORE);\n"
+            
+            self.code += f"{codegen_c.type_to_string(node.ret_type)} out = {node.id}("
+            for i, arg in enumerate(node.args):
+                if i > 0:
+                    self.code += ', '
+                self.code += f'{arg.id}'
+            self.code += ");"
+            # if(len(node.args) == 1):
+            #     if isinstance(node.args[0].t, loma_ir.Array):
+            #         self.code += f"{codegen_c.type_to_string(node.ret_type)} out = {node.id}(input_array);\n"
+            #     else:
+            #         self.code += f"{codegen_c.type_to_string(node.ret_type)} out = {node.id}(input_array[0]);\n"
+            # elif(len(node.args) == 2):
+            #     self.code += f"{codegen_c.type_to_string(node.ret_type)} out = {node.id}(input_array[0],input_array2[0]);\n"
+            # elif(len(node.args) == 3):
+            #     self.code += f"{codegen_c.type_to_string(node.ret_type)} out = {node.id}(input_array[0],input_array[1],input_array[2]);\n"
             self.code += f"""
     MPI_Send(&out, sizeof({codegen_c.type_to_string(node.ret_type)}), MPI_BYTE, 0, 0, parent_comm);
 
@@ -85,14 +111,21 @@ int main() {{
             
     def create_parent_code(self, node: loma_ir.FunctionDef, output_filename: str):
         new_node_id = node.id + '_mpi_worker'
-        self.code += f"""
-void mpi_runner( """
+        self.code += "void mpi_runner("
         for i, arg in enumerate(node.args):
             if i > 0:
                 self.code += ', '
-            self.code += f'{codegen_c.type_to_string(arg)} {arg.id}'
-
-        self.code += f""", {codegen_c.type_to_string(node.ret_type)}* output, int __total_work) {{
+            if isinstance(arg.t, loma_ir.Array):
+                self.code += f'{codegen_c.type_to_string(arg)} {arg.id}'
+                self.code += f',int* {arg.id}_size'
+            else:
+                self.code += f'{codegen_c.type_to_string(arg)}* {arg.id}'            
+        if len(node.args) > 0:
+            self.code += ', '
+        self.code += f'{codegen_c.type_to_string(node.ret_type)}* output, '
+        self.code += 'int __total_work'
+        self.code += ') {\n'
+        self.code += f"""
     MPI_Init(NULL, NULL);
 
     int world_rank, world_size;
@@ -104,15 +137,37 @@ void mpi_runner( """
         MPI_Comm child_comm;
         MPI_Info info;
         MPI_Info_create(&info);
-
         // Spawn NUM_CHILDREN child processes
         MPI_Comm_spawn("{output_filename}", MPI_ARGV_NULL, __total_work, info, 0, MPI_COMM_SELF, &child_comm, MPI_ERRCODES_IGNORE);
-
+        int end = 0;
         for (int i = 0; i < __total_work; i++) {{
             // Send input to child process
-            MPI_Send(&{node.args[0].id}, sizeof({node.args[0].t.id}), MPI_BYTE, i, 0, child_comm);
-        }}
+            """
+        for arg in node.args:
+            if isinstance(arg.t,loma_ir.Array):
+                self.code += f"MPI_Send(&{arg.id}_size[i], 1, MPI_INT, i, 0, child_comm);\n"
+                
+                self.code += f""" 
+                _dfloat* {arg.id}_i = (_dfloat*)malloc({arg.id}_size[i] * sizeof(_dfloat));
+                for (int j = 0; j < {arg.id}_size[i]; j++) {{
+                    {arg.id}_i[j] = {arg.id}[end++];
+                }}
+                printf("End: %d\\n",end);
+                for(int l=0;l<{arg.id}_size[i];l++){{
+                    printf("Value: %f, Dval: %f \\n",{arg.id}_i[l].val,{arg.id}_i[l].dval);
+                }} 
+                """
+                self.code += f"MPI_Send({arg.id}_i, sizeof(_dfloat)*{arg.id}_size[i], MPI_BYTE, i, 0, child_comm);\n"
+                # self.code += f"MPI_Send({arg.id}, sizeof(_dfloat)*4, MPI_BYTE, i, 0, child_comm);\n"
+            elif isinstance(arg.t,loma_ir.Int):
+                self.code += f"MPI_Send(&{arg.id}[i], 1, MPI_INT, i, 0, child_comm);\n"
+            else:
+                self.code += f"""printf("Sizeee1: %d, {arg.id}\\n",sizeof({arg.id}));"""
+                self.code += f"MPI_Send(&{arg.id}[i], sizeof({arg.id}[i]), MPI_BYTE, i, 0, child_comm);\n"
+        
+        self.code += "}\n"
 
+        self.code += f""" 
         // Communicate with children and receive responses
         for (int i = 0; i < __total_work; i++) {{
             _dfloat local_output;
@@ -121,11 +176,10 @@ void mpi_runner( """
         }}
 
         MPI_Info_free(&info);
-    }}
-
+    }} 
     MPI_Finalize();
 }}"""
-
+        
 def codegen_openMpiChild(structs : dict[str, loma_ir.Struct],
                  funcs : dict[str, loma_ir.func],
                  ) -> str:
