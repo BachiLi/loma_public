@@ -18,6 +18,8 @@ jobs:
         python -m ensurepip --upgrade
         pip install -r requirements.txt
     - name: Running tests
+      env:
+        OPENCL_CTX: '0:0'
       run: |
         cd tests
         OPENCL_CTX='0:0' python test.py
