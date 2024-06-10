@@ -8,14 +8,13 @@ sys.path.append(parent)
 import compiler
 import ctypes
 import math
+
 with open('loma_code/pendulum_fwd.py') as f:
-    structs, lib = compiler.compile(f.read(),
-                              target = 'c',
-                              output_filename = '_code/pendulum_fwd')
+    structs, lib = compiler.compile(f.read(),target = 'openMpi', output_filename = '_code/pendulum_fwd')
 dHdq = lib.dHdq
 dHdp = lib.dHdp
 PendulumConfig = structs['PendulumConfig']
-
+num_worker = 2
 # Start at q = pi /4 and p = 0
 q0 = math.pi / 4
 p0 = 0.0
