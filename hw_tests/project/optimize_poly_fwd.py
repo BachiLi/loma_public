@@ -1,19 +1,23 @@
-import matplotlib.pyplot as plt
-import numpy as np
-import os
 import sys
+import os
 current = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.dirname(current)
+parent = os.path.dirname(os.path.dirname(current))
 sys.path.append(parent)
 import compiler
 import ctypes
+import error
+import math
+import gpuctypes.opencl as cl
+import cl_utils
+import unittest
+import numpy as np
+import matplotlib.pyplot as plt
+epsilon = 1e-4
 
 with open('loma_code/third_order_poly_fwd.py') as f:
-    structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/third_order_poly_fwd')
+    _, lib = compiler.compile(f.read(),target = 'c',output_filename = '_code/third_order_poly_fwd1')
 
 f = lib.third_order_poly
-grad_f = lib.grad_third_order_poly
-
 # Plot the loss landscape
 left = -3.0
 right = 3.0
@@ -27,35 +31,29 @@ for i in range(X.shape[0]):
     for j in range(X.shape[1]):
         Z[i, j] = f(X[i, j], Y[i,j])
 
-# Actual gradient descent loop
-# Start from (2, 2)
-x, y = 2.0, 2.0
-traj_x = [x]
-traj_y = [y]
-step_size = 1e-2
+with open('/Users/jashmakhija/UCSD/Spring_2024/Differentiable_programming/Project/loma_public/hw_tests/project/loma_code/third_order_poly_fwd.py') as f:
+    structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/third_order_poly_fwd')
+x = 2.0
+y = 2.0
+step_size = 0.5
 _dfloat = structs['_dfloat']
-num_worker = 5
-for i in range(2000):
-    gx = [ctypes.c_float(0)] * num_worker
-    gy = [ctypes.c_float(0)] * num_worker
-    input1 = (_dfloat * len(gx))(*gx)
-    input2 = (_dfloat * len(gy))(*gy)
-    py_y = [_dfloat(0, 0)] * num_worker
-    out = (_dfloat * len(py_y))(*py_y)
-    lib.mpi_runner(input1,input2,out,num_worker)
-    grad_f(x, y, gx, gy)
-    x -= step_size * gx.value
-    y -= step_size * gy.value
-    traj_x.append(x)
-    traj_y.append(y)
-traj_x = np.array(traj_x)
-traj_y = np.array(traj_y)
+num_worker = 2
+px_x = [_dfloat(x, 1.0), _dfloat(x, 0.0)]
+px_y = [_dfloat(y, 0.0), _dfloat(y, 1.0)]
+input1 = (_dfloat * len(px_x))(*px_x)
+input2 = (_dfloat * len(px_y))(*px_y)
+py_y = [_dfloat(0, 0)] * num_worker
+out = (_dfloat * len(py_y))(*py_y)
+lib.mpi_runner(input1,input2,out,num_worker)
+x1 = x - step_size* out[0].dval
+y1 = y - step_size* out[1].dval
+
 
 fig = plt.figure()
 ax = plt.axes()
 
 im = ax.imshow(Z, extent=[left,right,bottom,top])
 plt.colorbar(im)
-ax.plot(traj_x, traj_y, color='red')
+ax.plot([x,x1], [y,y1], color='red')
 
 plt.show()

@@ -69,8 +69,17 @@ class OpemMpiCodegenVisitor(codegen_c.CCodegenVisitor):
                 elif isinstance(arg.t,loma_ir.Array):
                     self.code += f"int {arg.id}_size;\n"
                     self.code += f"MPI_Recv(&{arg.id}_size, 1, MPI_INT, 0, 0, parent_comm,MPI_STATUS_IGNORE);\n"
-                    self.code += f"_dfloat* {arg.id} = (_dfloat*)malloc({arg.id}_size * sizeof(_dfloat));"
-                    self.code += f"MPI_Recv({arg.id}, {arg.id}_size * sizeof(_dfloat), MPI_BYTE, 0, 0, parent_comm,MPI_STATUS_IGNORE);\n"
+                    if isinstance(arg.t.t,loma_ir.Int):
+                        self.code += f"int* {arg.id} = (int*)malloc({arg.id}_size * sizeof(int));"
+                        self.code += f"MPI_Recv({arg.id}, {arg.id}_size * sizeof(int), MPI_INT, 0, 0, parent_comm,MPI_STATUS_IGNORE);\n"
+                    else:
+                        self.code += f"_dfloat* {arg.id} = (_dfloat*)malloc({arg.id}_size * sizeof(_dfloat));"
+                        self.code += f"MPI_Recv({arg.id}, {arg.id}_size * sizeof(_dfloat), MPI_BYTE, 0, 0, parent_comm,MPI_STATUS_IGNORE);\n"
+                #     self.code += f"""
+                # for(int g=0;g<{arg.id}_size;g++){{
+                #     printf("Value: %d, Dvalue: %d \\n", {arg.id}[g].val,{arg.id}[g].dval);
+                # }}
+                # """
                     # self.code += f"_dfloat* {arg.id} = (_dfloat*)malloc(4* sizeof(_dfloat));"
                     # self.code += f"MPI_Recv({arg.id}, sizeof(_dfloat)*4, MPI_BYTE, 0, 0, parent_comm,MPI_STATUS_IGNORE);\n"
                 elif isinstance(arg.t,loma_ir.Int):
@@ -110,7 +119,6 @@ class OpemMpiCodegenVisitor(codegen_c.CCodegenVisitor):
                     if isinstance(arg.t,loma_ir.Int):
                         self.code+=f"""MPI_Send(&{arg.id}, 1, MPI_INT, 0, 0, parent_comm);"""
                     elif isinstance(arg.t,loma_ir.Float):
-                        
                         self.code += f"MPI_Send(&{arg.id}, 1, MPI_FLOAT, 0, 0, parent_comm);\n"
                     else:
                        self.code += f"MPI_Send(&{arg.id}, sizeof({codegen_c.type_to_string(node.ret_type)}), MPI_BYTE, 0, 0, parent_comm);"
@@ -128,6 +136,7 @@ int main() {{
 """
             
     def create_parent_code(self, node: loma_ir.FunctionDef, output_filename: str):
+        array_number = 0
         self.byref_args = set([arg.id for arg in node.args if \
             arg.i == loma_ir.Out() and (not isinstance(arg.t, loma_ir.Array))])
         self.forward_out_args = set([arg.id for arg in node.args if arg.i == loma_ir.Out() and (isinstance(arg.t, loma_ir.Array))])
@@ -139,6 +148,7 @@ int main() {{
             if isinstance(arg.t, loma_ir.Array):
                 self.code += f'{codegen_c.type_to_string(arg)} {arg.id}'
                 self.code += f',int* {arg.id}_size'
+                array_number +=1
             elif arg.id in self.byref_args:
                 self.code += f'{codegen_c.type_to_string(arg)} {arg.id}'
             else:
@@ -149,6 +159,7 @@ int main() {{
             self.code += f'{codegen_c.type_to_string(node.ret_type)}* output, '
         self.code += 'int __total_work'
         self.code += ') {\n'
+    
         self.code += f"""
     MPI_Init(NULL, NULL);
 
@@ -163,26 +174,40 @@ int main() {{
         MPI_Info_create(&info);
         // Spawn NUM_CHILDREN child processes
         MPI_Comm_spawn("{output_filename}", MPI_ARGV_NULL, __total_work, info, 0, MPI_COMM_SELF, &child_comm, MPI_ERRCODES_IGNORE);
+        int* array_end = (int*)malloc({array_number} * sizeof(int));
         int end = 0;
-        for (int i = 0; i < __total_work; i++) {{
+        int array_index = 0;
+        for (int i = 0; i< {array_number};i++){{
+            array_end[i] = 0;
+        }}
+        for (int i = 0; i < __total_work; i++) {{   
+            array_index = 0;
             // Send input to child process
             """
         for arg in node.args:
             if arg.id in self.byref_args:
                 continue
-            if isinstance(arg.t,loma_ir.Array):                
+            if isinstance(arg.t,loma_ir.Array):            
                 self.code += f"MPI_Send(&{arg.id}_size[i], 1, MPI_INT, i, 0, child_comm);\n"
-                self.code += f""" 
-                _dfloat* {arg.id}_i = (_dfloat*)malloc({arg.id}_size[i] * sizeof(_dfloat));
+                if isinstance(arg.t.t,loma_ir.Int):
+                   self.code += f""" 
+                int* {arg.id}_i = (int*)malloc({arg.id}_size[i] * sizeof(int)); 
+                """
+                else:
+                    self.code += f""" 
+                _dfloat* {arg.id}_i = (_dfloat*)malloc({arg.id}_size[i] * sizeof(_dfloat)); 
+                """
+                self.code += f"""
+                end = array_end[array_index];
                 for (int j = 0; j < {arg.id}_size[i]; j++) {{
                     {arg.id}_i[j] = {arg.id}[end++];
                 }}
-                printf("End: %d\\n",end);
-                for(int l=0;l<{arg.id}_size[i];l++){{
-                    printf("Value: %f, Dval: %f \\n",{arg.id}_i[l].val,{arg.id}_i[l].dval);
-                }} 
+                array_end[array_index] = end;
+                array_index = array_index + 1;
                 """
+                
                 self.code += f"MPI_Send({arg.id}_i, sizeof(_dfloat)*{arg.id}_size[i], MPI_BYTE, i, 0, child_comm);\n"
+                
             elif isinstance(arg.t,loma_ir.Int):
                 self.code += f"MPI_Send(&{arg.id}[i], 1, MPI_INT, i, 0, child_comm);\n"
             elif isinstance(arg.t,loma_ir.Float):
@@ -191,7 +216,6 @@ int main() {{
                 self.code += f"MPI_Send(&{arg.id}[i], sizeof({arg.id}[i]), MPI_BYTE, i, 0, child_comm);\n"
         
         self.code += "}\n"
-        self.code += "int curr = 0;"
         tmp_string = ''
         for args in node.args:
             if args.id in self.byref_args:
@@ -204,25 +228,25 @@ int main() {{
                     tmp_string += f"MPI_Recv(&_temp_{args.id}, 1, sizeof({codegen_c.type_to_string(node.ret_type)}), i, 0, child_comm, MPI_STATUS_IGNORE);\n"
                 tmp_string += f"{args.id}[i] = _temp_{args.id};\n" 
             elif args.id in self.forward_out_args:
-                tmp_string += f"int {arg.id}_size_recv;\n"
-                tmp_string += f"MPI_Recv(&{arg.id}_size_recv, 1, MPI_INT, i, 0, child_comm, MPI_STATUS_IGNORE);\n"
-                tmp_string += f"_dfloat* {arg.id}_temp = (_dfloat*)malloc({arg.id}_size_recv * sizeof(_dfloat));"
-                tmp_string += f"MPI_Recv({arg.id}_temp, {arg.id}_size_recv* sizeof(_dfloat), MPI_BYTE, i, 0, child_comm,MPI_STATUS_IGNORE);\n"
+                tmp_string += f"int {args.id}_size_recv;\n"
+                tmp_string += f"MPI_Recv(&{args.id}_size_recv, 1, MPI_INT, i, 0, child_comm, MPI_STATUS_IGNORE);\n"
+                tmp_string += f"_dfloat* {args.id}_temp = (_dfloat*)malloc({args.id}_size_recv * sizeof(_dfloat));"
+                tmp_string += f"MPI_Recv({args.id}_temp, {args.id}_size_recv* sizeof(_dfloat), MPI_BYTE, i, 0, child_comm,MPI_STATUS_IGNORE);\n"
                 tmp_string += f"""
-                for (int j = 0; j < {arg.id}_size_recv; j++) {{
-                    {args.id}[curr] = {arg.id}_temp[j];
-                    curr++;
+                rend = rec_end[rec_array_index];
+                for (int j = 0; j < {args.id}_size_recv; j++) {{
+                    {args.id}[rend] = {args.id}_temp[j];
+                    rend++;
                 }}
-                for(int u=0;u<4;u++){{
-                    printf("Value: %f, Dval: %f \\n",{arg.id}[u].val,{arg.id}[u].dval);
-                }} 
+                rec_end[rec_array_index] = rend;
+                rec_array_index = rec_array_index + 1;
                 """
         if codegen_c.type_to_string(node.ret_type) != "void":
             self.code += f""" 
             // Communicate with children and receive responses
             for (int i = 0; i < __total_work; i++) {{
-                _dfloat local_output;
-                MPI_Recv(&local_output, sizeof(_dfloat), MPI_BYTE, i, 0, child_comm, MPI_STATUS_IGNORE);
+                {codegen_c.type_to_string(node.ret_type)} local_output;
+                MPI_Recv(&local_output, sizeof({codegen_c.type_to_string(node.ret_type)}), MPI_BYTE, i, 0, child_comm, MPI_STATUS_IGNORE);
                 {tmp_string}
                 output[i] = local_output;        
             }}
@@ -233,7 +257,14 @@ int main() {{
         else:
             self.code += f""" 
             // Communicate with children and receive responses
+            int* rec_end = (int*)malloc({array_number} * sizeof(int));
+            int rend = 0;
+            int rec_array_index = 0;
+            for (int i = 0; i< {array_number};i++){{
+                rec_end[i] = 0;
+            }}
             for (int i = 0; i < __total_work; i++) {{
+                rec_array_index = 0;
                 {tmp_string}        
             }}
             """
@@ -312,7 +343,7 @@ def codegen_openMpiParent(structs : dict[str, loma_ir.Struct],
             else:
                 code += f'\t{codegen_c.type_to_string(m.t)} {m.id};\n'
         code += f'}} {s.id};\n'
-
+    
     to_call_f = [f for f in funcs.values() if f.is_openMpi and f.id.startswith("d_")]
     cg = OpemMpiCodegenVisitor(funcs)
     if len(to_call_f) == 1:

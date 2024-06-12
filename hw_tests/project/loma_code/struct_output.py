@@ -1,0 +1,12 @@
+class Foo:
+    a : float
+    b : int
+
+@openMpi
+def struct_output(x : In[float], y : In[int]) -> Foo:
+    foo : Foo
+    foo.a = x + y * x
+    foo.b = y - x
+    return foo
+
+d_struct_output = fwd_diff(struct_output)

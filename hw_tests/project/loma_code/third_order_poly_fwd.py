@@ -1,3 +1,4 @@
+@openMpi
 def third_order_poly(x : In[float], y : In[float]) -> float:
     x3_term : float = 0.05 * x * x * x
     y3_term : float = 0.03 * y * y * y
@@ -20,17 +21,4 @@ def third_order_poly(x : In[float], y : In[float]) -> float:
         y_term +  \
         c_term
 
-fwd_third_order_poly = fwd_diff(third_order_poly)
-
-@openMpi
-def grad_third_order_poly(x : In[float], y : In[float], gx : Out[float], gy : Out[float]):
-    d_x : Diff[float]
-    d_x.val = x
-    d_x.dval = 1.0
-    d_y : Diff[float]
-    d_y.val = y
-    d_y.dval = 0.0
-    gx = fwd_third_order_poly(d_x, d_y).dval
-    d_x.dval = 0.0
-    d_y.dval = 1.0
-    gy = fwd_third_order_poly(d_x, d_y).dval
+d_fwd_third_order_poly = fwd_diff(third_order_poly)

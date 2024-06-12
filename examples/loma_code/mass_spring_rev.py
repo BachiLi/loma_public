@@ -38,6 +38,7 @@ def hamiltonian(q : In[Array[float]], p : In[Array[float]], c : In[MassSpringCon
 
 d_hamiltonian = rev_diff(hamiltonian)
 
+@openMpi
 def gradH(q : In[Array[float]], p : In[Array[float]], c : In[MassSpringConfig],
           dq : Out[Array[float]], dp : Out[Array[float]]):
     d_c : MassSpringConfig
