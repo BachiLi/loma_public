@@ -504,31 +504,31 @@ class Homework1Test(unittest.TestCase):
     #                 break
     #         assert flag
 
-    # def test_array_input(self):
-    #     with open('loma_code/array_input.py') as f:
-    #         structs, lib = compiler.compile(f.read(),target = 'openMpi', output_filename = '_code/array_input')
-    #     _dfloat = structs['_dfloat']        
-    #     num_worker = 2
-    #     px_x = [_dfloat(0.7, 0.8), _dfloat(0.3, 0.5),_dfloat(0.3, 0.4), _dfloat(0.4, 0.6)]
-    #     py_size = [2,2]
-    #     input = (_dfloat * len(px_x))(*px_x)
-    #     input2 = (ctypes.c_int * len(py_size))(*py_size)
-    #     py_y = [_dfloat(0, 0)] * num_worker
-    #     out = (_dfloat * len(py_y))(*py_y)
-    #     lib.mpi_runner(input, input2, out,num_worker)
-    #     result = []
-    #     for i in range(0,num_worker+1,2):
-    #         result.append((px_x[i].val + px_x[i+1].val,px_x[i].dval + px_x[i+1].dval))
+    def test_array_input(self):
+        with open('loma_code/array_input.py') as f:
+            structs, lib = compiler.compile(f.read(),target = 'openMpi', output_filename = '_code/array_input')
+        _dfloat = structs['_dfloat']        
+        num_worker = 2
+        px_x = [_dfloat(0.7, 0.8), _dfloat(0.3, 0.5),_dfloat(0.3, 0.4), _dfloat(0.4, 0.6)]
+        py_size = [2,2]
+        input = (_dfloat * len(px_x))(*px_x)
+        input2 = (ctypes.c_int * len(py_size))(*py_size)
+        py_y = [_dfloat(0, 0)] * num_worker
+        out = (_dfloat * len(py_y))(*py_y)
+        lib.mpi_runner(input, input2, out,num_worker)
+        result = []
+        for i in range(0,num_worker+1,2):
+            result.append((px_x[i].val + px_x[i+1].val,px_x[i].dval + px_x[i+1].dval))
 
-    #     print(result)
-    #     for worker in range(num_worker):
-    #         flag = False
-    #         print(f"Result from Worker {worker+1}: val = {out[worker].val}, dval = {out[worker].dval}")
-    #         for res in result:
-    #             if abs(out[worker].val - res[0]) < epsilon and abs(out[worker].dval - res[1]) < epsilon:
-    #                 flag = True
-    #                 break
-    #         assert flag
+        print(result)
+        for worker in range(num_worker):
+            flag = False
+            print(f"Result from Worker {worker+1}: val = {out[worker].val}, dval = {out[worker].dval}")
+            for res in result:
+                if abs(out[worker].val - res[0]) < epsilon and abs(out[worker].dval - res[1]) < epsilon:
+                    flag = True
+                    break
+            assert flag
 
     # def test_int_array_input(self):
     #     with open('loma_code/int_array_input.py') as f:

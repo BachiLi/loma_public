@@ -49,8 +49,9 @@ class Homework2Test(unittest.TestCase):
         arg_dreturn = (ctypes.c_float * len(dout))(*dout)
         lib.mpi_runner(arg_x,arg_dx,arg_y,arg_dy,arg_dreturn, num_worker)
         for i in range(num_worker):
-            print(f"Result from Worker {i+1}: {arg_dx[i]}")
+            print(f"Result from Worker {i+1}: {arg_dx[i]}, {arg_dy[i]}")
             assert abs(arg_dx[i] - dout[i]) < epsilon and  abs(arg_dy[i] - dout[i]) < epsilon
+
 
 if __name__ == '__main__':
         unittest.main()

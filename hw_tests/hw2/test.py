@@ -17,14 +17,14 @@ class Homework2Test(unittest.TestCase):
     def setUp(self):
         os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-    def test_identity(self):
-        with open('loma_code/identity.py') as f:
-            structs, lib = compiler.compile(f.read(),
-                                            target = 'c',
-                                            output_filename = '_code/identity')
-        _dx = ctypes.c_float(0.0)
-        lib.d_identity(1.23, ctypes.byref(_dx), 4.56)
-        assert abs(_dx.value - 4.56) < epsilon
+    # def test_identity(self):
+    #     with open('loma_code/identity.py') as f:
+    #         structs, lib = compiler.compile(f.read(),
+    #                                         target = 'c',
+    #                                         output_filename = '_code/identity')
+    #     _dx = ctypes.c_float(0.0)
+    #     lib.d_identity(1.23, ctypes.byref(_dx), 4.56)
+    #     assert abs(_dx.value - 4.56) < epsilon
 
     # def test_constant(self):
     #     with open('loma_code/constant.py') as f:
@@ -35,19 +35,19 @@ class Homework2Test(unittest.TestCase):
     #     lib.d_constant(1.23, ctypes.byref(_dx), 4.56)
     #     assert abs(_dx.value - 0) < epsilon
 
-    # def test_plus(self):
-    #     with open('loma_code/plus.py') as f:
-    #         structs, lib = compiler.compile(f.read(),
-    #                                         target = 'c',
-    #                                         output_filename = '_code/plus')
-    #     x = 5.0
-    #     _dx = ctypes.c_float(0)
-    #     y = 6.0
-    #     _dy = ctypes.c_float(0)
-    #     dout = 3.0
-    #     lib.d_plus(x, ctypes.byref(_dx), y, ctypes.byref(_dy), dout)
-    #     assert abs(_dx.value - dout) < epsilon and \
-    #            abs(_dy.value - dout) < epsilon
+    def test_plus(self):
+        with open('loma_code/plus.py') as f:
+            structs, lib = compiler.compile(f.read(),
+                                            target = 'c',
+                                            output_filename = '_code/plus')
+        x = 5.0
+        _dx = ctypes.c_float(0)
+        y = 6.0
+        _dy = ctypes.c_float(0)
+        dout = 3.0
+        lib.d_plus(x, ctypes.byref(_dx), y, ctypes.byref(_dy), dout)
+        assert abs(_dx.value - dout) < epsilon and \
+               abs(_dy.value - dout) < epsilon
 
     # def test_subtract(self):
     #     with open('loma_code/subtract.py') as f:
