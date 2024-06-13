@@ -273,7 +273,7 @@ static float cl_atomic_add(volatile __global float *p, float val) {
         print(code_parent)
 
         # Compile child code
-        log = run(['mpicc', '-o', child_output_file_name, '-x', 'c', '-'],
+        log = run(['mpicc', '-o', child_output_file_name,'-lm', '-x', 'c', '-'],
             input = code_child,
             encoding='utf-8',
             capture_output=True)
@@ -281,7 +281,7 @@ static float cl_atomic_add(volatile __global float *p, float val) {
             print(log.stderr) 
 
         # Compile parent code
-        log = run(['mpicc','-shared', '-fPIC','-o', parent_output_file_name, '-x', 'c', '-'],
+        log = run(['mpicc','-shared', '-fPIC','-o', parent_output_file_name, '-lm', '-x', 'c', '-'],
             input = code_parent,
             encoding='utf-8',
             capture_output=True)
