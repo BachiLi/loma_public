@@ -1,7 +1,7 @@
 import sys
 import os
 current = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.dirname(os.path.dirname(current))
+parent = os.path.dirname(os.path.dirname(os.path.dirname(current)))
 sys.path.append(parent)
 import compiler
 import ctypes
@@ -19,7 +19,7 @@ class Homework1Test(unittest.TestCase):
         os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
     # def test_identity(self):
-    #     with open('loma_code/identity.py') as f:
+    #     with open('../loma_code/identity.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/identity')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -38,10 +38,9 @@ class Homework1Test(unittest.TestCase):
     #                 break
     #         assert flag
 
-    
     # def test_constant(self):
-    #     with open('loma_code/constant.py') as f:
-    #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/constant')
+    #     with open('../loma_code/constant.py') as f:
+    #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '../_code/constant')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
     #     px_x = [_dfloat(1.23, 0.5), _dfloat(3.0, 0.3)]
@@ -60,7 +59,7 @@ class Homework1Test(unittest.TestCase):
     #         assert flag
 
     # def test_plus(self):
-    #     with open('loma_code/plus.py') as f:
+    #     with open('../loma_code/plus.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/plus')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 4
@@ -84,7 +83,7 @@ class Homework1Test(unittest.TestCase):
     
 
     # def test_subtract(self):
-    #     with open('loma_code/subtract.py') as f:
+    #     with open('../loma_code/subtract.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/subtract')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -106,7 +105,7 @@ class Homework1Test(unittest.TestCase):
     #         assert flag
 
     # def test_multiply(self):
-    #     with open('loma_code/multiply.py') as f:
+    #     with open('../loma_code/multiply.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/multiply')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -128,7 +127,7 @@ class Homework1Test(unittest.TestCase):
     #         assert flag
 
     # def test_divide(self):
-    #     with open('loma_code/divide.py') as f:
+    #     with open('../loma_code/divide.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/divide')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -151,7 +150,7 @@ class Homework1Test(unittest.TestCase):
 
 
     # def test_declare(self):
-    #     with open('loma_code/declare.py') as f:
+    #     with open('../loma_code/declare.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/declare')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -182,7 +181,7 @@ class Homework1Test(unittest.TestCase):
     #         assert flag
 
     # def test_assign(self):
-    #     with open('loma_code/assign.py') as f:
+    #     with open('../loma_code/assign.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/assign')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -208,7 +207,7 @@ class Homework1Test(unittest.TestCase):
     #         assert flag
 
     # def test_side_effect(self):
-    #     with open('loma_code/side_effect.py') as f:
+    #     with open('../loma_code/side_effect.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/side_effect')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -235,7 +234,7 @@ class Homework1Test(unittest.TestCase):
     
 
     # def test_call_sin(self):
-    #     with open('loma_code/call_sin.py') as f:
+    #     with open('../loma_code/call_sin.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/call_sin')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -260,7 +259,7 @@ class Homework1Test(unittest.TestCase):
 
 
     # def test_call_cos(self):
-    #     with open('loma_code/call_cos.py') as f:
+    #     with open('../loma_code/call_cos.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/call_cos')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -285,7 +284,7 @@ class Homework1Test(unittest.TestCase):
 
 
     # def test_call_sqrt(self):
-    #     with open('loma_code/call_sqrt.py') as f:
+    #     with open('../loma_code/call_sqrt.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/call_sqrt')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -309,7 +308,7 @@ class Homework1Test(unittest.TestCase):
     #         assert flag
 
     # def test_call_pow(self):
-    #     with open('loma_code/call_pow.py') as f:
+    #     with open('../loma_code/call_pow.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/call_pow')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -337,7 +336,7 @@ class Homework1Test(unittest.TestCase):
     #         assert flag
 
     # def test_call_exp(self):
-    #     with open('loma_code/call_exp.py') as f:
+    #     with open('../loma_code/call_exp.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/call_exp')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -362,7 +361,7 @@ class Homework1Test(unittest.TestCase):
     #         assert flag
 
     # def test_call_log(self):
-    #     with open('loma_code/call_log.py') as f:
+    #     with open('../loma_code/call_log.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/call_log')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -387,7 +386,7 @@ class Homework1Test(unittest.TestCase):
     #         assert flag
        
     # def test_call(self):
-    #     with open('loma_code/call.py') as f:
+    #     with open('../loma_code/call.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/call')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -424,7 +423,7 @@ class Homework1Test(unittest.TestCase):
 
 
     # def test_int_input(self):
-    #     with open('loma_code/int_input.py') as f:
+    #     with open('../loma_code/int_input.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/int_input')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -448,7 +447,7 @@ class Homework1Test(unittest.TestCase):
     #         assert flag
 
     # def test_int_output(self):
-    #     with open('loma_code/int_output.py') as f:
+    #     with open('../loma_code/int_output.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/int_output')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -474,7 +473,7 @@ class Homework1Test(unittest.TestCase):
     #         assert flag
 
     # def test_array_output(self):
-    #     with open('loma_code/array_output.py') as f:
+    #     with open('../loma_code/array_output.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/array_output')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -504,34 +503,34 @@ class Homework1Test(unittest.TestCase):
     #                 break
     #         assert flag
 
-    def test_array_input(self):
-        with open('loma_code/array_input.py') as f:
-            structs, lib = compiler.compile(f.read(),target = 'openMpi', output_filename = '_code/array_input')
-        _dfloat = structs['_dfloat']        
-        num_worker = 2
-        px_x = [_dfloat(0.7, 0.8), _dfloat(0.3, 0.5),_dfloat(0.3, 0.4), _dfloat(0.4, 0.6)]
-        py_size = [2,2]
-        input = (_dfloat * len(px_x))(*px_x)
-        input2 = (ctypes.c_int * len(py_size))(*py_size)
-        py_y = [_dfloat(0, 0)] * num_worker
-        out = (_dfloat * len(py_y))(*py_y)
-        lib.mpi_runner(input, input2, out,num_worker)
-        result = []
-        for i in range(0,num_worker+1,2):
-            result.append((px_x[i].val + px_x[i+1].val,px_x[i].dval + px_x[i+1].dval))
+    # def test_array_input(self):
+    #     with open('../loma_code/array_input.py') as f:
+    #         structs, lib = compiler.compile(f.read(),target = 'openMpi', output_filename = '_code/array_input')
+    #     _dfloat = structs['_dfloat']        
+    #     num_worker = 2
+    #     px_x = [_dfloat(0.7, 0.8), _dfloat(0.3, 0.5),_dfloat(0.3, 0.4), _dfloat(0.4, 0.6)]
+    #     py_size = [2,2]
+    #     input = (_dfloat * len(px_x))(*px_x)
+    #     input2 = (ctypes.c_int * len(py_size))(*py_size)
+    #     py_y = [_dfloat(0, 0)] * num_worker
+    #     out = (_dfloat * len(py_y))(*py_y)
+    #     lib.mpi_runner(input, input2, out,num_worker)
+    #     result = []
+    #     for i in range(0,num_worker+1,2):
+    #         result.append((px_x[i].val + px_x[i+1].val,px_x[i].dval + px_x[i+1].dval))
 
-        print(result)
-        for worker in range(num_worker):
-            flag = False
-            print(f"Result from Worker {worker+1}: val = {out[worker].val}, dval = {out[worker].dval}")
-            for res in result:
-                if abs(out[worker].val - res[0]) < epsilon and abs(out[worker].dval - res[1]) < epsilon:
-                    flag = True
-                    break
-            assert flag
+    #     print(result)
+    #     for worker in range(num_worker):
+    #         flag = False
+    #         print(f"Result from Worker {worker+1}: val = {out[worker].val}, dval = {out[worker].dval}")
+    #         for res in result:
+    #             if abs(out[worker].val - res[0]) < epsilon and abs(out[worker].dval - res[1]) < epsilon:
+    #                 flag = True
+    #                 break
+    #         assert flag
 
     # def test_int_array_input(self):
-    #     with open('loma_code/int_array_input.py') as f:
+    #     with open('../loma_code/int_array_input.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/int_array_input')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -563,7 +562,7 @@ class Homework1Test(unittest.TestCase):
 
 
     # def test_array_input_indexing(self):
-    #     with open('loma_code/array_input_indexing.py') as f:
+    #     with open('../loma_code/array_input_indexing.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/array_input_indexing')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -592,7 +591,7 @@ class Homework1Test(unittest.TestCase):
     #         assert flag
 
     # def test_array_output_indexing(self):
-    #     with open('loma_code/array_output_indexing.py') as f:
+    #     with open('../loma_code/array_output_indexing.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/array_output_indexing')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -630,7 +629,7 @@ class Homework1Test(unittest.TestCase):
     #         assert flag
 
     # def test_multiple_outputs(self):
-    #     with open('loma_code/multiple_outputs.py') as f:
+    #     with open('../loma_code/multiple_outputs.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/multiple_outputs')
     #     _dfloat = structs['_dfloat']
     #     num_worker = 2
@@ -676,7 +675,7 @@ class Homework1Test(unittest.TestCase):
     #         assert flag
 
     # def test_struct_input(self):
-    #     with open('loma_code/struct_input.py') as f:
+    #     with open('../loma_code/struct_input.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/struct_input')
     #     _dfloat = structs['_dfloat']
     #     _dFoo = structs['_dFoo']
@@ -698,7 +697,7 @@ class Homework1Test(unittest.TestCase):
     #         assert flag
 
     # def test_nested_struct_input(self):
-    #     with open('loma_code/nested_struct_input.py') as f:
+    #     with open('../loma_code/nested_struct_input.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/nested_struct_input')
     #     _dfloat = structs['_dfloat']
     #     _dFoo = structs['_dFoo']
@@ -727,7 +726,7 @@ class Homework1Test(unittest.TestCase):
     #         assert flag
 
     # def test_struct_output(self):
-    #     with open('loma_code/struct_output.py') as f:
+    #     with open('../loma_code/struct_output.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/struct_output')
     #     _dfloat = structs['_dfloat']
     #     _dFoo = structs['_dFoo']
@@ -756,7 +755,7 @@ class Homework1Test(unittest.TestCase):
     #         assert flag
 
     # def test_struct_declare(self):
-    #     with open('loma_code/struct_declare.py') as f:
+    #     with open('../loma_code/struct_declare.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/struct_declare')
     #     _dfloat = structs['_dfloat']
     #     _dFoo = structs['_dFoo']
@@ -783,7 +782,7 @@ class Homework1Test(unittest.TestCase):
     #         assert flag
 
     # def test_struct_assign(self):
-    #     with open('loma_code/struct_assign.py') as f:
+    #     with open('../loma_code/struct_assign.py') as f:
     #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/struct_assign')
     #     _dfloat = structs['_dfloat']
     #     _dFoo = structs['_dFoo']

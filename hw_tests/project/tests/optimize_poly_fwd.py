@@ -1,7 +1,7 @@
 import sys
 import os
 current = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.dirname(os.path.dirname(current))
+parent = os.path.dirname(os.path.dirname(os.path.dirname(current)))
 sys.path.append(parent)
 import compiler
 import ctypes
@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 epsilon = 1e-4
 
-with open('loma_code/third_order_poly_fwd.py') as f:
+with open('../loma_code/third_order_poly_fwd.py') as f:
     _, lib = compiler.compile(f.read(),target = 'c',output_filename = '_code/third_order_poly_fwd1')
 
 f = lib.third_order_poly
@@ -31,7 +31,7 @@ for i in range(X.shape[0]):
     for j in range(X.shape[1]):
         Z[i, j] = f(X[i, j], Y[i,j])
 
-with open('/Users/jashmakhija/UCSD/Spring_2024/Differentiable_programming/Project/loma_public/hw_tests/project/loma_code/third_order_poly_fwd.py') as f:
+with open('../loma_code/third_order_poly_fwd.py') as f:
     structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/third_order_poly_fwd')
 x = 2.0
 y = 2.0

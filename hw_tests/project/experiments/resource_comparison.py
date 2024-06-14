@@ -1,7 +1,7 @@
 import sys
 import os
 current = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.dirname(os.path.dirname(current))
+parent = os.path.dirname(os.path.dirname(os.path.dirname(current)))
 sys.path.append(parent)
 import compiler
 import ctypes
@@ -12,15 +12,15 @@ import cl_utils
 import unittest
 import numpy as np
 import matplotlib.pyplot as plt
-epsilon = 1e-4
 import time
+epsilon = 1e-4
 
 class Homework1Test(unittest.TestCase):
     def setUp(self):
         os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
     def test_while(self):
-        with open('loma_code/while.py') as f:
+        with open('../loma_code/while.py') as f:
             structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/while')
         _dfloat = structs['_dfloat']
         num_worker = 100
@@ -38,7 +38,7 @@ class Homework1Test(unittest.TestCase):
             print(out[i].val,out[i].dval)
 
     def test_while_loop_fwd(self):
-        with open('/Users/jashmakhija/UCSD/Spring_2024/Differentiable_programming/Differentiable_programming/hw_tests/hw3/loma_code/while_loop_fwd.py') as f:
+        with open('../../hw3/loma_code/while_loop_fwd.py') as f:
             structs, lib = compiler.compile(f.read(),target = 'c',output_filename = '_code/while_loop_fwd1')
         _dfloat = structs['_dfloat']
         input1 = [_dfloat(1.0, 0.5),_dfloat(2.0, 1.5)]

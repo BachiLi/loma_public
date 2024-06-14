@@ -1,7 +1,7 @@
 import sys
 import os
 current = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.dirname(os.path.dirname(current))
+parent = os.path.dirname(os.path.dirname(os.path.dirname(current)))
 sys.path.append(parent)
 import compiler
 import ctypes
@@ -12,8 +12,8 @@ import cl_utils
 import unittest
 import numpy as np
 import matplotlib.pyplot as plt
-epsilon = 1e-4
 import time
+epsilon = 1e-4
 
 class MultipleInput(unittest.TestCase):
     def setUp(self):
@@ -21,7 +21,7 @@ class MultipleInput(unittest.TestCase):
 
     def test_subtract_openMpi(self):
         # Compile the OpenMPI code
-        with open('loma_code/subtract.py') as f:
+        with open('../loma_code/subtract.py') as f:
             structs, lib = compiler.compile(f.read(), target='openMpi', output_filename='_code/subtract')
         
         _dfloat = structs['_dfloat']
@@ -41,7 +41,7 @@ class MultipleInput(unittest.TestCase):
         print(f"Time taken for OpenMPI Implementation: {mpi_end_time - start_time:.6f} seconds")
 
     def test_subtract_normal(self):
-        with open('loma_code/subtract.py') as f:
+        with open('../loma_code/subtract.py') as f:
             structs, lib = compiler.compile(f.read(), target='c', output_filename='_code/subtract1')
         _dfloat = structs['_dfloat']
         px_x = [_dfloat(5.0, 0.5)] * 1000000

@@ -14,8 +14,11 @@ class OpemMpiCodegenVisitor(codegen_c.CCodegenVisitor):
 
 
     def visit_function_def(self, node: loma_ir.FunctionDef):
+        reverse_diff = False
         self.code += f'{codegen_c.type_to_string(node.ret_type)} {node.id}('
         for i, arg in enumerate(node.args):
+            if '_d' in arg.id:
+                reverse_diff = True
             if i > 0:
                 self.code += ', '
             self.code += f'{codegen_c.type_to_string(arg)} {arg.id}'
@@ -73,8 +76,12 @@ class OpemMpiCodegenVisitor(codegen_c.CCodegenVisitor):
                         self.code += f"int* {arg.id} = (int*)malloc({arg.id}_size * sizeof(int));"
                         self.code += f"MPI_Recv({arg.id}, {arg.id}_size * sizeof(int), MPI_INT, 0, 0, parent_comm,MPI_STATUS_IGNORE);\n"
                     else:
-                        self.code += f"_dfloat* {arg.id} = (_dfloat*)malloc({arg.id}_size * sizeof(_dfloat));"
-                        self.code += f"MPI_Recv({arg.id}, {arg.id}_size * sizeof(_dfloat), MPI_BYTE, 0, 0, parent_comm,MPI_STATUS_IGNORE);\n"
+                        if reverse_diff:
+                            self.code += f"float* {arg.id} = (float*)malloc({arg.id}_size * sizeof(float));"
+                            self.code += f"MPI_Recv({arg.id}, {arg.id}_size * sizeof(float), MPI_BYTE, 0, 0, parent_comm,MPI_STATUS_IGNORE);\n"
+                        else:
+                            self.code += f"_dfloat* {arg.id} = (_dfloat*)malloc({arg.id}_size * sizeof(_dfloat));"
+                            self.code += f"MPI_Recv({arg.id}, {arg.id}_size * sizeof(_dfloat), MPI_BYTE, 0, 0, parent_comm,MPI_STATUS_IGNORE);\n"
                 #     self.code += f"""
                 # for(int g=0;g<{arg.id}_size;g++){{
                 #     printf("Value: %d, Dvalue: %d \\n", {arg.id}[g].val,{arg.id}[g].dval);
@@ -107,7 +114,10 @@ class OpemMpiCodegenVisitor(codegen_c.CCodegenVisitor):
                 for arg in node.args:
                     if arg.id in self.forward_out_args:
                         self.code += f"MPI_Send(&{arg.id}_size, 1, MPI_INT, 0, 0, parent_comm);\n"
-                        self.code += f"MPI_Send({arg.id}, {arg.id}_size * sizeof(_dfloat), MPI_BYTE, 0, 0, parent_comm);\n"
+                        if reverse_diff:
+                            self.code += f"MPI_Send({arg.id}, {arg.id}_size * sizeof(float), MPI_BYTE, 0, 0, parent_comm);\n"
+                        else:
+                            self.code += f"MPI_Send({arg.id}, {arg.id}_size * sizeof(_dfloat), MPI_BYTE, 0, 0, parent_comm);\n"
             else:
                 self.code += f"{codegen_c.type_to_string(node.ret_type)} out = {node.id}("
                 self.code += temp_string
@@ -136,6 +146,7 @@ int main() {{
 """
             
     def create_parent_code(self, node: loma_ir.FunctionDef, output_filename: str):
+        reverse_diff = False
         array_number = 0
         self.byref_args = set([arg.id for arg in node.args if \
             arg.i == loma_ir.Out() and (not isinstance(arg.t, loma_ir.Array))])
@@ -143,6 +154,9 @@ int main() {{
         new_node_id = node.id + '_mpi_worker'
         self.code += "void mpi_runner("
         for i, arg in enumerate(node.args):
+
+            if '_d' in arg.id:
+                reverse_diff = True
             if i > 0:
                 self.code += ', '
             if isinstance(arg.t, loma_ir.Array):
@@ -194,9 +208,14 @@ int main() {{
                 int* {arg.id}_i = (int*)malloc({arg.id}_size[i] * sizeof(int)); 
                 """
                 else:
-                    self.code += f""" 
-                _dfloat* {arg.id}_i = (_dfloat*)malloc({arg.id}_size[i] * sizeof(_dfloat)); 
-                """
+                    if reverse_diff:
+                        self.code += f""" 
+                        float* {arg.id}_i = (float*)malloc({arg.id}_size[i] * sizeof(float)); 
+                    """
+                    else:
+                        self.code += f""" 
+                    _dfloat* {arg.id}_i = (_dfloat*)malloc({arg.id}_size[i] * sizeof(_dfloat)); 
+                    """
                 self.code += f"""
                 end = array_end[array_index];
                 for (int j = 0; j < {arg.id}_size[i]; j++) {{
@@ -205,8 +224,10 @@ int main() {{
                 array_end[array_index] = end;
                 array_index = array_index + 1;
                 """
-                
-                self.code += f"MPI_Send({arg.id}_i, sizeof(_dfloat)*{arg.id}_size[i], MPI_BYTE, i, 0, child_comm);\n"
+                if reverse_diff:
+                    self.code += f"MPI_Send({arg.id}_i, sizeof(float)*{arg.id}_size[i], MPI_BYTE, i, 0, child_comm);\n"
+                else:
+                    self.code += f"MPI_Send({arg.id}_i, sizeof(_dfloat)*{arg.id}_size[i], MPI_BYTE, i, 0, child_comm);\n"
                 
             elif isinstance(arg.t,loma_ir.Int):
                 self.code += f"MPI_Send(&{arg.id}[i], 1, MPI_INT, i, 0, child_comm);\n"
@@ -230,8 +251,12 @@ int main() {{
             elif args.id in self.forward_out_args:
                 tmp_string += f"int {args.id}_size_recv;\n"
                 tmp_string += f"MPI_Recv(&{args.id}_size_recv, 1, MPI_INT, i, 0, child_comm, MPI_STATUS_IGNORE);\n"
-                tmp_string += f"_dfloat* {args.id}_temp = (_dfloat*)malloc({args.id}_size_recv * sizeof(_dfloat));"
-                tmp_string += f"MPI_Recv({args.id}_temp, {args.id}_size_recv* sizeof(_dfloat), MPI_BYTE, i, 0, child_comm,MPI_STATUS_IGNORE);\n"
+                if reverse_diff:
+                    tmp_string += f"float* {args.id}_temp = (float*)malloc({args.id}_size_recv * sizeof(float));"
+                    tmp_string += f"MPI_Recv({args.id}_temp, {args.id}_size_recv* sizeof(float), MPI_BYTE, i, 0, child_comm,MPI_STATUS_IGNORE);\n"
+                else:
+                    tmp_string += f"_dfloat* {args.id}_temp = (_dfloat*)malloc({args.id}_size_recv * sizeof(_dfloat));"
+                    tmp_string += f"MPI_Recv({args.id}_temp, {args.id}_size_recv* sizeof(_dfloat), MPI_BYTE, i, 0, child_comm,MPI_STATUS_IGNORE);\n"
                 tmp_string += f"""
                 rend = rec_end[rec_array_index];
                 for (int j = 0; j < {args.id}_size_recv; j++) {{
