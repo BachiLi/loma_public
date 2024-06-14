@@ -24,7 +24,7 @@ class Homework1Test(unittest.TestCase):
         _dfloat = structs['_dfloat']
         num_worker = 100
         px_x = [_dfloat(1.0, 0.5)]*num_worker
-        px_y = [1000000000]*num_worker
+        px_y = [100000]*num_worker
         input1 = (_dfloat * len(px_x))(*px_x)
         input2 = (ctypes.c_int * len(px_y))(*px_y)
         py_y = [_dfloat(0, 0)] * num_worker

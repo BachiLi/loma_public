@@ -23,7 +23,7 @@ The OpenMPI extension of Loma is supported by the implementation described below
 4. **Child Codebase Compilation**:
    - The child codebase is compiled as a regular object file. This is necessary as OpenMPI parallelization can only be invoked in files which have a `main` function. This child codebase additionally contains a wrapper on top of the concerned function which receives the parameters from the parent and sends back the response to the parent.
 
-![Open MPI implementation in Loma](/Users/jashmakhija/UCSD/Spring_2024/Differentiable_programming/Project/loma_public/hw_tests/project/Plots/architecture.png)
+![Open MPI implementation in Loma](hw_tests/project/plots/architecture.png)
 
 _Figure 1: Open MPI implementation in Loma. The loma compiler generates two OpenMPI-based C code files. One DLL which acts as a parent and spawns multiple child workers. These child workers are the second generated files which contain an OpenMPI wrapper on top of the actual generated C function._
 

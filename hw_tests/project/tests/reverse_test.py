@@ -50,24 +50,24 @@ class Homework2Test(unittest.TestCase):
     #         print(f"Result from Worker {i+1}: {arg_dx[i]}")
     #         assert abs(arg_dx[i] - 0.0) < epsilon
     
-    # def test_plus_rev(self):
-    #     with open('../loma_code/plus_rev.py') as f:
-    #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/plus_rev')
-    #     num_worker = 2
-    #     py_x  = [ctypes.c_float(0.0), ctypes.c_float(0.0)]
-    #     py_y  = [ctypes.c_float(0.0), ctypes.c_float(0.0)]
-    #     x = [5.0,1.0]
-    #     y = [6.0,4.0]
-    #     dout =  [3.0,4.0]
-    #     arg_dx = (ctypes.c_float * len(py_x))(*py_x)
-    #     arg_x = (ctypes.c_float * len(x))(*x)
-    #     arg_dy = (ctypes.c_float * len(py_y))(*py_y)
-    #     arg_y = (ctypes.c_float * len(y))(*y)
-    #     arg_dreturn = (ctypes.c_float * len(dout))(*dout)
-    #     lib.mpi_runner(arg_x,arg_dx,arg_y,arg_dy,arg_dreturn, num_worker)
-    #     for i in range(num_worker):
-    #         print(f"Result from Worker {i+1}: {arg_dx[i]}")
-    #         assert abs(arg_dx[i] - dout[i]) < epsilon and  abs(arg_dy[i] - dout[i]) < epsilon
+    def test_plus_rev(self):
+        with open('../loma_code/plus_rev.py') as f:
+            structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/plus_rev')
+        num_worker = 2
+        py_x  = [ctypes.c_float(0.0), ctypes.c_float(0.0)]
+        py_y  = [ctypes.c_float(0.0), ctypes.c_float(0.0)]
+        x = [5.0,1.0]
+        y = [6.0,4.0]
+        dout =  [3.0,4.0]
+        arg_dx = (ctypes.c_float * len(py_x))(*py_x)
+        arg_x = (ctypes.c_float * len(x))(*x)
+        arg_dy = (ctypes.c_float * len(py_y))(*py_y)
+        arg_y = (ctypes.c_float * len(y))(*y)
+        arg_dreturn = (ctypes.c_float * len(dout))(*dout)
+        lib.mpi_runner(arg_x,arg_dx,arg_y,arg_dy,arg_dreturn, num_worker)
+        for i in range(num_worker):
+            print(f"Result from Worker {i+1}: {arg_dx[i]}")
+            assert abs(arg_dx[i] - dout[i]) < epsilon and  abs(arg_dy[i] - dout[i]) < epsilon
 
     # def test_subtract_rev(self):
     #     with open('../loma_code/subtract_rev.py') as f:
@@ -659,41 +659,41 @@ class Homework2Test(unittest.TestCase):
     #         assert abs(temp[i] - 2 * dout[j]) < epsilon and abs(temp[i+1] - 6 * x[i+1] * dout[j]) < epsilon
     #         j+=1
 
-    def test_int_array_input(self):
-        with open('../loma_code/int_array_input_rev.py') as f:
-            structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/int_array_input_rev')
-        num_worker = 2
-        py_x = [0.7, 0.3] * num_worker
-        x = (ctypes.c_float * len(py_x))(*py_x)
-        py_x_size = [2,2]
-        x_size = (ctypes.c_int * len(py_x_size))(*py_x_size)
+    # def test_int_array_input(self):
+    #     with open('../loma_code/int_array_input_rev.py') as f:
+    #         structs, lib = compiler.compile(f.read(),target = 'openMpi',output_filename = '_code/int_array_input_rev')
+    #     num_worker = 2
+    #     py_x = [0.7, 0.3] * num_worker
+    #     x = (ctypes.c_float * len(py_x))(*py_x)
+    #     py_x_size = [2,2]
+    #     x_size = (ctypes.c_int * len(py_x_size))(*py_x_size)
 
-        py_dx = [0.0, 0.0] * num_worker
-        _dx = (ctypes.c_float * len(py_dx))(*py_dx)
-        _dx_size = [2,2]
-        dx_size = (ctypes.c_int * len(_dx_size))(*_dx_size)
+    #     py_dx = [0.0, 0.0] * num_worker
+    #     _dx = (ctypes.c_float * len(py_dx))(*py_dx)
+    #     _dx_size = [2,2]
+    #     dx_size = (ctypes.c_int * len(_dx_size))(*_dx_size)
 
-        py_y = [5] *num_worker
-        y = (ctypes.c_int * len(py_y))(*py_y)
-        py_size = [1,1]
-        y_size = (ctypes.c_int * len(py_size))(*py_size)
+    #     py_y = [5] *num_worker
+    #     y = (ctypes.c_int * len(py_y))(*py_y)
+    #     py_size = [1,1]
+    #     y_size = (ctypes.c_int * len(py_size))(*py_size)
 
-        py_dy = [0] * num_worker
-        _dy = (ctypes.c_int * len(py_dy))(*py_dy)
-        _dy_size = [1,1]
-        dy_size = (ctypes.c_int * len(_dy_size))(*_dy_size)
+    #     py_dy = [0] * num_worker
+    #     _dy = (ctypes.c_int * len(py_dy))(*py_dy)
+    #     _dy_size = [1,1]
+    #     dy_size = (ctypes.c_int * len(_dy_size))(*_dy_size)
 
-        dout = [0.5,0.5]
-        arg_dreturn = (ctypes.c_float * len(dout))(*dout)
+    #     dout = [0.5,0.5]
+    #     arg_dreturn = (ctypes.c_float * len(dout))(*dout)
 
-        lib.mpi_runner(x,x_size, _dx,dx_size, y,y_size, _dy,dy_size,arg_dreturn,num_worker)
-        result= []
-        for worker in range(len(py_dx)):
-            print(f"Result from Worker {worker+1}: dx = {_dx[worker]}")
-            result.append(_dx[worker])
+    #     lib.mpi_runner(x,x_size, _dx,dx_size, y,y_size, _dy,dy_size,arg_dreturn,num_worker)
+    #     result= []
+    #     for worker in range(len(py_dx)):
+    #         print(f"Result from Worker {worker+1}: dx = {_dx[worker]}")
+    #         result.append(_dx[worker])
         
-        assert abs(result[0] - dout[0]) < epsilon and \
-            abs(result[1] - dout[0]) < epsilon
+    #     assert abs(result[0] - dout[0]) < epsilon and \
+    #         abs(result[1] - dout[0]) < epsilon
 
     # def test_array_input_indexing(self):
     #     with open('../loma_code/array_input_indexing_rev.py') as f:

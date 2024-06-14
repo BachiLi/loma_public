@@ -27,8 +27,8 @@ class MultipleInput(unittest.TestCase):
         _dfloat = structs['_dfloat']
         num_worker = 100
         # Test inputs
-        px_x = [_dfloat(5.0, 0.5)] *1000000
-        px_y = [_dfloat(1.2, 0.3)] *1000000
+        px_x = [_dfloat(5.0, 0.5)] *10000
+        px_y = [_dfloat(1.2, 0.3)] *10000
 
         input1 = (_dfloat * len(px_x))(*px_x)
         input2 = (_dfloat * len(px_y))(*px_y)
@@ -44,8 +44,8 @@ class MultipleInput(unittest.TestCase):
         with open('../loma_code/subtract.py') as f:
             structs, lib = compiler.compile(f.read(), target='c', output_filename='_code/subtract1')
         _dfloat = structs['_dfloat']
-        px_x = [_dfloat(5.0, 0.5)] * 1000000
-        px_y = [_dfloat(1.2, 0.3)] * 1000000
+        px_x = [_dfloat(5.0, 0.5)] * 10000
+        px_y = [_dfloat(1.2, 0.3)] * 10000
         start_time = time.time()
         for i in range(len(px_x)):
             x = px_x[i]

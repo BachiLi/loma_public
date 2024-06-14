@@ -25,7 +25,7 @@ class Homework1Test(unittest.TestCase):
         _dfloat = structs['_dfloat']
         num_worker = 100
         px_x = [_dfloat(1.0, 0.5)]*num_worker
-        px_y = [1000000]*num_worker
+        px_y = [100000]*num_worker
         input1 = (_dfloat * len(px_x))(*px_x)
         input2 = (ctypes.c_int * len(px_y))(*px_y)
         py_y = [_dfloat(0, 0)] * num_worker
@@ -42,7 +42,7 @@ class Homework1Test(unittest.TestCase):
             structs, lib = compiler.compile(f.read(),target = 'c',output_filename = '_code/while_loop_fwd1')
         _dfloat = structs['_dfloat']
         input1 = [_dfloat(1.0, 0.5),_dfloat(2.0, 1.5)]
-        input2 = [1000000000,1000000000]
+        input2 = [100000,100000]
         start_time = time.time()
         for i in range(len(input1)):
             out = lib.fwd_while_loop(input1[i], input2[i])
