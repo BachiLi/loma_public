@@ -17,16 +17,16 @@ For the final project, you can either do it alone or form a group of two people.
 know, more people doesn’t immediately lead to faster progress, so be careful. What teamwork buys you is
 probably more capacity to brainstorm ideas and the friendship.
 
-\textbf{Logistics}. Before 5/20, please let us know what you plan to do for the final project by submitting a 1-2 pages brief report to Canvas. 
-Schedule a chat with us if you have any question. We will have a checkpoint at
-5/29: send us a brief progress report in a few pages on Canvas describing what you did and what you plan to do next.
+\textbf{Logistics}. Before the proposal deadline, please let us know what you plan to do for the final project by submitting a 1-2 pages brief report to Canvas. 
+Schedule a chat with us if you have any question. 
+We have a checkpoint deadline: send us a brief progress report in a few pages on Canvas describing what you did and what you plan to do next.
 The final report is due on 6/13. Please submit a report (no format restriction) and your code.
-Describe what
+Describe what you planned to achieve, what you have achieved, and what you have learned.
 
 
 \section{Random ideas}
 
-Below we provide some ideas for the final project. They are not sorted by the difficulty. Feel free to come up with your own ones.
+Below we provide some ideas for the final project. They are not sorted by the difficulty. Feel free to come up with your own ones. The ideal scenario is you implement some interesting algorithms you know, make it differentiable in loma, and apply it to some interesting problems.
 
 \textbf{Checkpointing.} 
 Implement checkpointing in loma, either automatically or by user instruction. 
@@ -66,6 +66,8 @@ How should a user specify the checkpointing scheme? What is the optimal way to d
 
 \textbf{Differentiable shadertoy.} Take a random program from \href{https://www.shadertoy.com/}{shader toy}, make it differentiable, and learn for the parameters over some loss function (e.g., match a drawing, or have more high frequency details, etc).
 
+\textbf{Neural networks.} Implement a neural network (say, a multi-layer perceptron) in loma and make the execution and differentiation as fast as possible. Modify/extend the compiler if needed.
+
 \textbf{Equivarient neural networks.} Implement a equivariant neural network in loma. A paper to read is ``Tensor field networks: Rotation- and translation-equivariant neural networks for 3D point clouds'' from Thomas et al.
 
 \textbf{Fluids control.} Implement ``Fluid Control Using the Adjoint Method'' from McNamara et al. in loma.
@@ -78,6 +80,12 @@ How should a user specify the checkpointing scheme? What is the optimal way to d
 
 \textbf{Differentiable program simplification.} Given a program, find a cheaper program to approximate it. Optimize the parameters of the cheaper program to increase the quality.
 
-\textbf{Physics engine using loma.} Write a physics engine in loma in which the user supply the potential energy and variables, and your engine would automatically synthesize the physical trajectory. See \href{https://blog.jle.im/entry/hamiltonian-dynamics-in-haskell.html}{this blog post} for details.
+\textbf{Loma physics engine.} Write a physics engine in loma in which the user supply the potential energy and variables, and your engine would automatically synthesize the physical trajectory. See \href{https://blog.jle.im/entry/hamiltonian-dynamics-in-haskell.html}{this blog post} for details.
+
+\textbf{Minkowski penalties.} Implement ``Minkowski Penalties: Robust Differentiable Constraint Enforcement for Vector Graphics'' in loma.
+
+\textbf{Differentiable logic cellular automata.} Implement ``Differentiable Logic Cellular Automata'' from Miotti et al. in loma.
+
+\textbf{Differentiable digital signal processing.} Implement ``DDSP: Differentiable Digital Signal Processing'' from Engel et al. in loma.
 
 \end{document}
