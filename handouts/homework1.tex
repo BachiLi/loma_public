@@ -70,7 +70,7 @@ Here, we provide the list of terminal cases of the basic operations in loma:
 \text{DAdd}(x, y, dx, dy) &= (x + y, dx + dy) \\
 \text{DSub}(x, y, dx, dy) &= (x - y, dx - dy) \\
 \text{DMul}(x, y, dx, dy) &= (x \cdot y, x \cdot dy + y \cdot dx) \\
-\text{DDiv}(x, y, dx, dy) &= \left(\frac{x}{y}, \frac{x \cdot dy - y \cdot dx}{y^2}\right) \\
+\text{DDiv}(x, y, dx, dy) &= \left(\frac{x}{y}, \frac{y \cdot dx - x \cdot dy}{y^2}\right) \\
 \text{DSin}(x, dx) &= \left(\sin(x), \cos(x) \cdot dx\right) \\
 \text{DCos}(x, dx) &= \left(\cos(x), -\sin(x) \cdot dx\right) \\
 \text{DSqrt}(x, dx) &= \left(\sqrt{x}, \frac{dx}{2\sqrt{x}}\right) \\
