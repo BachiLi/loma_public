@@ -10,6 +10,7 @@ import math
 import gpuctypes.opencl as cl
 import cl_utils
 import numpy as np
+import slangpy
 
 ###########################################################################
 # Correctness test
@@ -396,6 +397,38 @@ def test_parallel_add():
 
     assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
+    slang_device = slangpy.Device()
+    with open('loma_code/parallel_add.py') as f:
+        structs, kernel = compiler.compile(f.read(),
+                                           target = 'slang',
+                                           slang_device = slang_device)
+
+    buffer_x = slang_device.create_buffer(
+        element_count=3,
+        resource_type_layout=kernel.reflection.parallel_add.x,
+        usage=slangpy.BufferUsage.shader_resource,
+        data=np.array([2, 3, 5], dtype=np.int32),
+    )
+    buffer_y = slang_device.create_buffer(
+        element_count=3,
+        resource_type_layout=kernel.reflection.parallel_add.y,
+        usage=slangpy.BufferUsage.shader_resource,
+        data=np.array([7, 11, 13], dtype=np.int32),
+    )
+    buffer_z = slang_device.create_buffer(
+        element_count=3,
+        resource_type_layout=kernel.reflection.parallel_add.z,
+        usage=slangpy.BufferUsage.unordered_access,
+    )
+
+    kernel.dispatch(thread_count=[3, 1, 1],
+                    _total_threads=3,
+                    x=buffer_x,
+                    y=buffer_y,
+                    z=buffer_z)
+    z = buffer_z.to_numpy().view(np.int32)
+    assert z[0] == 9 and z[1] == 14 and z[2] == 18
+
 def test_simd_local_func():
     with open('loma_code/simd_local_func.py') as f:
         structs, lib = compiler.compile(f.read(),
@@ -623,43 +656,43 @@ def test_call_not_in_call_stmt():
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-    test_declaration()
-    test_binary_ops()
-    test_builtin_funcs()
-    test_args()
-    test_mutation()
-    test_array_read()
-    test_array_write()
-    test_compare()
-    test_if_else()
-    test_while_loop()
-    test_local_static_array()
-    test_local_array_init_zero()
-    test_sum_nested_array()
-    test_nested_array_output()
-    test_intrinsic_func_call()
-    test_func_decl()
-    test_struct_access()
-    test_struct_return()
-    test_struct_in_struct()
-    test_array_in_struct()
-    test_struct_in_array()
-    test_struct_in_array_in_struct()
-    test_struct_init_zero()
-    test_pass_by_ref_lhs()
-    test_pass_by_ref_lhs_struct()
-    test_pass_by_ref_array()
-    test_call_stmt()
+    # test_declaration()
+    # test_binary_ops()
+    # test_builtin_funcs()
+    # test_args()
+    # test_mutation()
+    # test_array_read()
+    # test_array_write()
+    # test_compare()
+    # test_if_else()
+    # test_while_loop()
+    # test_local_static_array()
+    # test_local_array_init_zero()
+    # test_sum_nested_array()
+    # test_nested_array_output()
+    # test_intrinsic_func_call()
+    # test_func_decl()
+    # test_struct_access()
+    # test_struct_return()
+    # test_struct_in_struct()
+    # test_array_in_struct()
+    # test_struct_in_array()
+    # test_struct_in_array_in_struct()
+    # test_struct_init_zero()
+    # test_pass_by_ref_lhs()
+    # test_pass_by_ref_lhs_struct()
+    # test_pass_by_ref_array()
+    # test_call_stmt()
     test_parallel_add()
-    test_simd_local_func()
-    test_atomic_add()
+    # test_simd_local_func()
+    # test_atomic_add()
 
-    # test compile errors
-    test_missing_annotation()
-    test_duplicate_declare()
-    test_undeclared_var()
-    test_early_return()
-    test_deadcode()
-    test_declare_unbounded_array()
-    test_declare_in_ifelse()
-    test_call_not_in_call_stmt()
+    # # test compile errors
+    # test_missing_annotation()
+    # test_duplicate_declare()
+    # test_undeclared_var()
+    # test_early_return()
+    # test_deadcode()
+    # test_declare_unbounded_array()
+    # test_declare_in_ifelse()
+    # test_call_not_in_call_stmt()

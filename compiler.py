@@ -6,6 +6,7 @@ import check
 import codegen_c
 import codegen_ispc
 import codegen_opencl
+import codegen_slang
 import inspect
 import os
 import parser
@@ -72,6 +73,7 @@ def compile(loma_code : str,
             opencl_context = None,
             opencl_device = None,
             opencl_command_queue = None,
+            slang_device = None,
             print_error = True):
     """ Given loma frontend code represented as a string,
         compiles it to either C, ISPC, or OpenCL code.
@@ -242,6 +244,18 @@ static float cl_atomic_add(volatile __global float *p, float val) {
                                   opencl_command_queue,
                                   code,
                                   kernel_names)
+    elif target == 'slang':
+        code = codegen_slang.codegen_slang(structs, funcs)
+        print('Generated Slang code:')
+        print(code)
+        tmp_slang_filename = '_tmp.slang'
+        with open(tmp_slang_filename, 'w') as f:
+            f.write(code)
+        kernel_names = [func_name for func_name, func in funcs.items() if func.is_simd]
+        program = slang_device.load_program(module_name="_tmp.slang",
+                                            entry_point_names=kernel_names)
+        lib = slang_device.create_compute_kernel(program=program)
+        os.remove(tmp_slang_filename)
     else:
         assert False, f'unrecognized compilation target {target}'
 
