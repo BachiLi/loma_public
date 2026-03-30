@@ -52,7 +52,7 @@ class SlangCodegenVisitor(codegen_c.CCodegenVisitor):
             self.code += 'uniform int _total_threads'
             for i, arg in enumerate(node.args):
                 self.code += ', '
-                if not isinstance(arg.t, loma_ir.Array):
+                if not isinstance(arg.t, loma_ir.Array) and not arg.i == loma_ir.Out():
                     self.code += 'uniform '
                 self.code += f'{type_to_string(arg)} {arg.id}'
             self.code += ') {\n'
@@ -67,8 +67,12 @@ class SlangCodegenVisitor(codegen_c.CCodegenVisitor):
         self.byref_args = set([arg.id for arg in node.args if \
             arg.i == loma_ir.Out() and (not isinstance(arg.t, loma_ir.Array))])
 
+        self.single_ele_buffer = set([arg.id for arg in node.args if \
+            arg.i == loma_ir.Out() and (not isinstance(arg.t, loma_ir.Array))])
+
         self.tab_count += 1
-        self.code += '\tif (_tid >= _total_threads) return;\n'
+        if node.is_simd:
+            self.code += '\tif (_tid >= _total_threads) return;\n'
         for stmt in node.body:
             self.visit_stmt(stmt)
 
@@ -78,11 +82,19 @@ class SlangCodegenVisitor(codegen_c.CCodegenVisitor):
 
     def visit_expr(self, node):
         match node:
+            case loma_ir.Var():
+                if node.id in self.single_ele_buffer:
+                    return node.id + '[0]'
+                else:
+                    return node.id
             case loma_ir.Call():
                 if node.id == 'thread_id':
                     return '_tid'
                 elif node.id == 'atomic_add':
-                    assert False
+                    assert len(node.args) == 2
+                    arg0_str = self.visit_expr(node.args[0])
+                    arg1_str = self.visit_expr(node.args[1])
+                    return f'InterlockedAdd<{type_to_string(node.args[0].t)}>({arg0_str}, {arg1_str})'
         return super().visit_expr(node)
 
 def codegen_slang(structs : dict[str, loma_ir.Struct],
