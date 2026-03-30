@@ -5,7 +5,6 @@ from ctypes import CDLL
 import check
 import codegen_c
 import codegen_ispc
-import codegen_opencl
 import codegen_slang
 import inspect
 import os
@@ -16,7 +15,6 @@ import ir
 ir.generate_asdl_file()
 import _asdl.loma as loma_ir
 import numpy as np
-import cl_utils
 import pathlib
 import error
 import platform
@@ -70,24 +68,21 @@ def topo_sort_structs(structs : dict[str, loma_ir.Struct]):
 def compile(loma_code : str,
             target : str = 'c',
             output_filename : str = None,
-            opencl_context = None,
-            opencl_device = None,
-            opencl_command_queue = None,
             slang_device = None,
             print_error = True):
     """ Given loma frontend code represented as a string,
-        compiles it to either C, ISPC, or OpenCL code.
+        compiles it to either C, ISPC, or Slang code.
         Furthermore, generates a library from the compiled code,
         and dynamically links the generated library.
 
         Parameters:
         loma_code - a string representing loma code to be compiled
-        target - 'c', 'ispc', or 'opencl'
+        target - 'c', 'ispc', or 'slang'
         output_filename - where to store the generated library for C and ISPC backends. 
             Don't need the suffix (like '.so').
-            when target == 'opencl', this argument is ignored.
-        opencl_context, opencl_device, opencl_command_queue - see cl_utils.create_context()
-                    only used by the opencl backend
+            when target == 'slang', this argument is ignored.
+        slang_device - see slang_utils.create_device()
+                    only used by the slang backend
         print_error - whether it prints compile errors or not
     """
 
@@ -208,42 +203,6 @@ void atomic_add(float *ptr, float val) {
             log = run(['g++', '-fPIC', '-shared', '-o', output_filename, '-O2', obj_filename, tasksys_obj_path],
                 encoding='utf-8',
                 capture_output=True)
-    elif target == 'opencl':
-        code = codegen_opencl.codegen_opencl(structs, funcs)
-        # add atomic add (taken from https://gist.github.com/PolarNick239/9dffaf365b332b4442e2ac63b867034f)
-        code = """
-static float atomic_cmpxchg_f32(volatile __global float *p, float cmp, float val) {
-    union {
-        unsigned int u32;
-        float        f32;
-    } cmp_union, val_union, old_union;
-
-    cmp_union.f32 = cmp;
-    val_union.f32 = val;
-    old_union.u32 = atomic_cmpxchg((volatile __global unsigned int *) p, cmp_union.u32, val_union.u32);
-    return old_union.f32;
-}
-
-static float cl_atomic_add(volatile __global float *p, float val) {
-    float found = *p;
-    float expected;
-    do {
-        expected = found;
-        found = atomic_cmpxchg_f32(p, expected, expected + val);
-    } while (found != expected);
-    return found;
-}
-        \n""" + code
-
-        print('Generated OpenCL code:')
-        print(code)
-        
-        kernel_names = [func_name for func_name, func in funcs.items() if func.is_simd]
-        lib = cl_utils.cl_compile(opencl_context,
-                                  opencl_device,
-                                  opencl_command_queue,
-                                  code,
-                                  kernel_names)
     elif target == 'slang':
         code = codegen_slang.codegen_slang(structs, funcs)
         print('Generated Slang code:')

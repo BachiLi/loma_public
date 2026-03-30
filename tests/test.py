@@ -7,8 +7,6 @@ import compiler
 import ctypes
 import error
 import math
-import gpuctypes.opencl as cl
-import cl_utils
 import numpy as np
 import slang_utils
 import slangpy
@@ -348,56 +346,6 @@ def test_parallel_add():
     lib.parallel_add(x, y, z, len(py_z))
     assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
-    cl_ctx, cl_device, cl_cmd_queue = cl_utils.create_context()
-
-    with open('loma_code/parallel_add.py') as f:
-        structs, lib = compiler.compile(f.read(),
-                                        target = 'opencl',
-                                        opencl_context = cl_ctx,
-                                        opencl_device = cl_device,
-                                        opencl_command_queue = cl_cmd_queue)
-    py_x = [2, 3, 5]
-    x = (ctypes.c_int * len(py_x))(*py_x)
-    py_y = [7, 11, 13]
-    y = (ctypes.c_int * len(py_y))(*py_y)
-    py_z = [0, 0, 0]
-    z = (ctypes.c_int * len(py_z))(*py_z)
-
-    status = ctypes.c_int32()
-    bufx = cl.clCreateBuffer(cl_ctx,
-                             cl.CL_MEM_READ_ONLY | cl.CL_MEM_COPY_HOST_PTR,
-                             ctypes.sizeof(x),
-                             ctypes.byref(x),
-                             ctypes.byref(status))
-    cl_utils.cl_check(status.value)
-    bufy = cl.clCreateBuffer(cl_ctx,
-                             cl.CL_MEM_READ_ONLY | cl.CL_MEM_COPY_HOST_PTR,
-                             ctypes.sizeof(y),
-                             ctypes.byref(y),
-                             ctypes.byref(status))
-    cl_utils.cl_check(status.value)
-    bufz = cl.clCreateBuffer(cl_ctx,
-                             cl.CL_MEM_WRITE_ONLY,
-                             ctypes.sizeof(z),
-                             None,
-                             ctypes.byref(status))
-    cl_utils.cl_check(status.value)
-
-    lib.parallel_add(bufx, bufy, bufz, len(py_z))
-    cl.clFinish(cl_cmd_queue)
-
-    cl.clEnqueueReadBuffer(cl_cmd_queue,
-                           bufz,
-                           cl.CL_TRUE,
-                           0,
-                           ctypes.sizeof(z),
-                           ctypes.byref(z),
-                           0,
-                           None,
-                           None)
-
-    assert z[0] == 9 and z[1] == 14 and z[2] == 18
-
     slang_device = slang_utils.create_slang_device()
     with open('loma_code/parallel_add.py') as f:
         structs, kernel = compiler.compile(f.read(),
@@ -457,56 +405,6 @@ def test_simd_local_func():
     lib.simd_local_func(x, y, z, len(py_z))
     assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
-    cl_ctx, cl_device, cl_cmd_queue = cl_utils.create_context()
-
-    with open('loma_code/simd_local_func.py') as f:
-        structs, lib = compiler.compile(f.read(),
-                                        target = 'opencl',
-                                        opencl_context = cl_ctx,
-                                        opencl_device = cl_device,
-                                        opencl_command_queue = cl_cmd_queue)
-    py_x = [2, 3, 5]
-    x = (ctypes.c_int * len(py_x))(*py_x)
-    py_y = [7, 11, 13]
-    y = (ctypes.c_int * len(py_y))(*py_y)
-    py_z = [0, 0, 0]
-    z = (ctypes.c_int * len(py_z))(*py_z)
-
-    status = ctypes.c_int32()
-    bufx = cl.clCreateBuffer(cl_ctx,
-                             cl.CL_MEM_READ_ONLY | cl.CL_MEM_COPY_HOST_PTR,
-                             ctypes.sizeof(x),
-                             ctypes.byref(x),
-                             ctypes.byref(status))
-    cl_utils.cl_check(status.value)
-    bufy = cl.clCreateBuffer(cl_ctx,
-                             cl.CL_MEM_READ_ONLY | cl.CL_MEM_COPY_HOST_PTR,
-                             ctypes.sizeof(y),
-                             ctypes.byref(y),
-                             ctypes.byref(status))
-    cl_utils.cl_check(status.value)
-    bufz = cl.clCreateBuffer(cl_ctx,
-                             cl.CL_MEM_WRITE_ONLY,
-                             ctypes.sizeof(z),
-                             None,
-                             ctypes.byref(status))
-    cl_utils.cl_check(status.value)
-
-    lib.simd_local_func(bufx, bufy, bufz, len(py_z))
-    cl.clFinish(cl_cmd_queue)
-
-    cl.clEnqueueReadBuffer(cl_cmd_queue,
-                           bufz,
-                           cl.CL_TRUE,
-                           0,
-                           ctypes.sizeof(z),
-                           ctypes.byref(z),
-                           0,
-                           None,
-                           None)
-
-    assert z[0] == 9 and z[1] == 14 and z[2] == 18
-
     slang_device = slang_utils.create_slang_device()
     with open('loma_code/simd_local_func.py') as f:
         structs, kernel = compiler.compile(f.read(),
@@ -558,45 +456,6 @@ def test_atomic_add():
                                   output_filename = '_code/atomic_add')
     z = ctypes.c_float(0)
     lib.my_atomic_add(ctypes_x, ctypes.byref(z), n)
-    assert abs(z.value - np.sum(x)) < 1e-3
-
-    cl_ctx, cl_device, cl_cmd_queue = cl_utils.create_context()
-
-    with open('loma_code/atomic_add.py') as f:
-        _, lib = compiler.compile(f.read(),
-                                  target = 'opencl',
-                                  opencl_context = cl_ctx,
-                                  opencl_device = cl_device,
-                                  opencl_command_queue = cl_cmd_queue)
-    z = ctypes.c_float(0)
-
-    status = ctypes.c_int32()
-    bufx = cl.clCreateBuffer(cl_ctx,
-                             cl.CL_MEM_READ_ONLY | cl.CL_MEM_COPY_HOST_PTR,
-                             ctypes.sizeof(ctypes.c_float) * x.shape[0],
-                             ctypes_x,
-                             ctypes.byref(status))
-    cl_utils.cl_check(status.value)
-    bufz = cl.clCreateBuffer(cl_ctx,
-                             cl.CL_MEM_READ_WRITE | cl.CL_MEM_COPY_HOST_PTR,
-                             ctypes.sizeof(ctypes.c_float),
-                             ctypes.byref(z),
-                             ctypes.byref(status))
-    cl_utils.cl_check(status.value)
-
-    lib.my_atomic_add(bufx, bufz, n)
-    cl.clFinish(cl_cmd_queue)
-
-    cl.clEnqueueReadBuffer(cl_cmd_queue,
-                           bufz,
-                           cl.CL_TRUE,
-                           0,
-                           ctypes.sizeof(ctypes.c_float),
-                           ctypes.byref(z),
-                           0,
-                           None,
-                           None)
-
     assert abs(z.value - np.sum(x)) < 1e-3
 
     slang_device = slang_utils.create_slang_device()
