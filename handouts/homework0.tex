@@ -749,33 +749,29 @@ Calling the Slang compute shader from our Python host code is more complicated t
 \begin{lstlisting}[language=python]
 slang_device = slang_utils.create_slang_device()
 with open('loma_code/parallel_add.py') as f:
-    structs, kernel = compiler.compile(f.read(),
-                                       target = 'slang',
-                                       slang_device = slang_device)
+    module, kernel = compiler.compile(f.read(),
+                                      target = 'slang',
+                                      slang_device = slang_device)
 
-buffer_x = slang_device.create_buffer(
-    element_count=3,
-    resource_type_layout=kernel.reflection.parallel_add.x,
-    usage=slangpy.BufferUsage.shader_resource,
-    data=np.array([2, 3, 5], dtype=np.int32),
+buffer_x = slangpy.Tensor.from_numpy(
+    device=slang_device,
+    ndarray=np.array([2, 3, 5], dtype=np.int32)
 )
-buffer_y = slang_device.create_buffer(
-    element_count=3,
-    resource_type_layout=kernel.reflection.parallel_add.y,
-    usage=slangpy.BufferUsage.shader_resource,
-    data=np.array([7, 11, 13], dtype=np.int32),
+buffer_y = slangpy.Tensor.from_numpy(
+    device=slang_device,
+    ndarray=np.array([7, 11, 13], dtype=np.int32)
 )
-buffer_z = slang_device.create_buffer(
-    element_count=3,
-    resource_type_layout=kernel.reflection.parallel_add.z,
-    usage=slangpy.BufferUsage.unordered_access,
+buffer_z = slangpy.Tensor.empty(
+    device=slang_device,
+    dtype=int,
+    shape=(3,)
 )
 
 kernel.dispatch(thread_count=[3, 1, 1],
                 _total_threads=3,
-                x=buffer_x,
-                y=buffer_y,
-                z=buffer_z)
+                x=buffer_x.storage,
+                y=buffer_y.storage,
+                z=buffer_z.storage)
 z = buffer_z.to_numpy().view(np.int32)
 assert z[0] == 9 and z[1] == 14 and z[2] == 18
 \end{lstlisting}
@@ -783,7 +779,7 @@ We use Slang's Python binding \href{https://slangpy.shader-slang.org/}{slangpy} 
 \begin{lstlisting}[language=python]
 slang_device = slang_utils.create_slang_device()
 \end{lstlisting}
-This line creates a Slang \href{https://slangpy.shader-slang.org/en/stable/src/api_reference.html#slangpy.Device}{Device} and selects the backend (Metal for MacOS and Vulkan for other platforms). The code is simply
+This line creates a Slang \href{https://slangpy.shader-slang.org/en/latest/src/api_reference.html#slangpy.Device}{Device} and selects the backend (Metal for MacOS and Vulkan for other platforms). The code is simply
 \begin{lstlisting}[language=python]
 def create_slang_device():
     """
@@ -791,49 +787,50 @@ def create_slang_device():
         Use Metal when we're using MacOS and use SPIR-V when we're using Windows/Linux
     """
     if platform.system() == 'Darwin':
-        device = slangpy.Device(type = slangpy.DeviceType.metal)
+        device = slangpy.create_device(include_paths=[
+                pathlib.Path(__file__).parent.absolute(),
+        ], type = slangpy.DeviceType.metal)
     else:
-        device = slangpy.Device(type = slangpy.DeviceType.vulkan)
+        device = slangpy.create_device(include_paths=[
+                pathlib.Path(__file__).parent.absolute(),
+        ], type = slangpy.DeviceType.vulkan)
     return device
 \end{lstlisting}
 
 The lines 
 \begin{lstlisting}[language=python]
 with open('loma_code/parallel_add.py') as f:
-    structs, kernel = compiler.compile(f.read(),
-                                       target = 'slang',
-                                       slang_device = slang_device)
+    module, kernel = compiler.compile(f.read(),
+                                      target = 'slang',
+                                      slang_device = slang_device)
 \end{lstlisting}
-are similar to the C backend, except we pass the slang Device to the compile function.
+are similar to the C backend, except we pass the slang Device to the compile function. The compile function returns a \href{https://slangpy.shader-slang.org/en/latest/src/api_reference.html#slangpy.Module}{slangpy.Module} and a \href{https://slangpy.shader-slang.org/en/latest/src/api_reference.html#slangpy.ComputeKernel}{slangpy.ComputeKernel}.
 
 Next, we create the Slang buffers for the inputs and outputs:
 \begin{lstlisting}[language=python]
-buffer_x = slang_device.create_buffer(
-    element_count=3,
-    resource_type_layout=kernel.reflection.parallel_add.x,
-    usage=slangpy.BufferUsage.shader_resource,
-    data=np.array([2, 3, 5], dtype=np.int32),
+buffer_x = slangpy.Tensor.from_numpy(
+    device=slang_device,
+    ndarray=np.array([2, 3, 5], dtype=np.int32)
 )
-buffer_y = slang_device.create_buffer(
-    element_count=3,
-    resource_type_layout=kernel.reflection.parallel_add.y,
-    usage=slangpy.BufferUsage.shader_resource,
-    data=np.array([7, 11, 13], dtype=np.int32),
+buffer_y = slangpy.Tensor.from_numpy(
+    device=slang_device,
+    ndarray=np.array([7, 11, 13], dtype=np.int32)
 )
-buffer_z = slang_device.create_buffer(
-    element_count=3,
-    resource_type_layout=kernel.reflection.parallel_add.z,
-    usage=slangpy.BufferUsage.unordered_access,
+buffer_z = slangpy.Tensor.empty(
+    device=slang_device,
+    dtype=int,
+    shape=(3,)
 )
 \end{lstlisting}
+See the slangpy \href{https://slangpy.shader-slang.org/en/latest/src/tensors/python.html}{tutorial} for more information about \lstinline{slangpy.Tensor}.
 
-Next, we launch the Slang kernel.
+Next, we launch the Slang compute kernel.
 \begin{lstlisting}[language=python]
 kernel.dispatch(thread_count=[3, 1, 1],
                 _total_threads=3,
-                x=buffer_x,
-                y=buffer_y,
-                z=buffer_z)
+                x=buffer_x.storage,
+                y=buffer_y.storage,
+                z=buffer_z.storage)
 \end{lstlisting}
 
 Lastly, we read from the buffer (the copying of the results from GPU to CPU is handled by slangpy) and compare the expected results.
@@ -866,5 +863,7 @@ If the first argument is not an output variable (i.e., it's a local variable dec
 \end{figure}
 
 \lstinline{examples/raytrace_host.py} and \lstinline{examples/loma_code/raytrace.py} shows the loma implementation of a simple ray tracer (code mostly taken from \href{https://raytracing.github.io/books/RayTracingInOneWeekend.html}{Ray Tracing in One Weekend}). Figure~\ref{fig:raytrace} shows the image rendered by the ray tracer. It also shows how loma interacts with numpy code.
+
+\lstinline{examples/raytrace_slang.py} and \lstinline{examples/loma_code/raytrace_simd.py} further shows the same program but targeted for the Slang backend. It demonstrates how Slang interacts with the custom structs we defined in loma.
 
 \end{document}

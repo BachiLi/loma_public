@@ -348,33 +348,31 @@ def test_parallel_add():
 
     slang_device = slang_utils.create_slang_device()
     with open('loma_code/parallel_add.py') as f:
-        structs, kernel = compiler.compile(f.read(),
-                                           target = 'slang',
-                                           slang_device = slang_device)
+        module, kernel = compiler.compile(f.read(),
+                                          target = 'slang',
+                                          slang_device = slang_device)
 
-    buffer_x = slang_device.create_buffer(
-        element_count=3,
-        resource_type_layout=kernel.reflection.parallel_add.x,
-        usage=slangpy.BufferUsage.shader_resource,
-        data=np.array([2, 3, 5], dtype=np.int32),
+    buffer_x = slangpy.Tensor.from_numpy(
+        device=slang_device,
+        ndarray=np.array([2, 3, 5], dtype=np.int32)
     )
-    buffer_y = slang_device.create_buffer(
-        element_count=3,
-        resource_type_layout=kernel.reflection.parallel_add.y,
-        usage=slangpy.BufferUsage.shader_resource,
-        data=np.array([7, 11, 13], dtype=np.int32),
+
+    buffer_y = slangpy.Tensor.from_numpy(
+        device=slang_device,
+        ndarray=np.array([7, 11, 13], dtype=np.int32)
     )
-    buffer_z = slang_device.create_buffer(
-        element_count=3,
-        resource_type_layout=kernel.reflection.parallel_add.z,
-        usage=slangpy.BufferUsage.unordered_access,
+
+    buffer_z = slangpy.Tensor.empty(
+        device=slang_device,
+        dtype=int,
+        shape=(3,)
     )
 
     kernel.dispatch(thread_count=[3, 1, 1],
                     _total_threads=3,
-                    x=buffer_x,
-                    y=buffer_y,
-                    z=buffer_z)
+                    x=buffer_x.storage,
+                    y=buffer_y.storage,
+                    z=buffer_z.storage)
     z = buffer_z.to_numpy().view(np.int32)
     assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
@@ -407,34 +405,32 @@ def test_simd_local_func():
 
     slang_device = slang_utils.create_slang_device()
     with open('loma_code/simd_local_func.py') as f:
-        structs, kernel = compiler.compile(f.read(),
-                                           target = 'slang',
-                                           slang_device = slang_device)
+        module, kernel = compiler.compile(f.read(),
+                                          target = 'slang',
+                                          slang_device = slang_device)
 
-    buffer_x = slang_device.create_buffer(
-        element_count=3,
-        resource_type_layout=kernel.reflection.simd_local_func.x,
-        usage=slangpy.BufferUsage.shader_resource,
-        data=np.array([2, 3, 5], dtype=np.int32),
+    buffer_x = slangpy.Tensor.from_numpy(
+        device=slang_device,
+        ndarray=np.array([2, 3, 5], dtype=np.int32)
     )
-    buffer_y = slang_device.create_buffer(
-        element_count=3,
-        resource_type_layout=kernel.reflection.simd_local_func.y,
-        usage=slangpy.BufferUsage.shader_resource,
-        data=np.array([7, 11, 13], dtype=np.int32),
+
+    buffer_y = slangpy.Tensor.from_numpy(
+        device=slang_device,
+        ndarray=np.array([7, 11, 13], dtype=np.int32)
     )
-    buffer_z = slang_device.create_buffer(
-        element_count=3,
-        resource_type_layout=kernel.reflection.simd_local_func.z,
-        usage=slangpy.BufferUsage.unordered_access,
+
+    buffer_z = slangpy.Tensor.empty(
+        device=slang_device,
+        dtype=int,
+        shape=(3,)
     )
 
     kernel.dispatch(thread_count=[3, 1, 1],
                     _total_threads=3,
-                    x=buffer_x,
-                    y=buffer_y,
-                    z=buffer_z)
-    z = buffer_z.to_numpy().view(np.int32)
+                    x=buffer_x.storage,
+                    y=buffer_y.storage,
+                    z=buffer_z.storage)
+    z = buffer_z.to_numpy()
     assert z[0] == 9 and z[1] == 14 and z[2] == 18
 
 def test_atomic_add():
@@ -460,28 +456,98 @@ def test_atomic_add():
 
     slang_device = slang_utils.create_slang_device()
     with open('loma_code/atomic_add.py') as f:
-        structs, kernel = compiler.compile(f.read(),
-                                           target = 'slang',
-                                           slang_device = slang_device)
+        module, kernel = compiler.compile(f.read(),
+                                          target = 'slang',
+                                          slang_device = slang_device)
 
-    buffer_x = slang_device.create_buffer(
-        element_count=n,
-        resource_type_layout=kernel.reflection.my_atomic_add.x,
-        usage=slangpy.BufferUsage.shader_resource,
-        data=x,
+    buffer_x = slangpy.Tensor.from_numpy(
+        device=slang_device,
+        ndarray=x
     )
-    buffer_z = slang_device.create_buffer(
-        element_count=1,
-        resource_type_layout=kernel.reflection.my_atomic_add.z,
-        usage=slangpy.BufferUsage.unordered_access,
+    buffer_z = slangpy.Tensor.empty(
+        device=slang_device,
+        dtype=float,
+        shape=(1,)
     )
 
     kernel.dispatch(thread_count=[n, 1, 1],
                     _total_threads=n,
-                    x=buffer_x,
-                    z=buffer_z)
-    z = buffer_z.to_numpy().view(np.float32)
+                    x=buffer_x.storage,
+                    z=buffer_z.storage)
+    z = buffer_z.to_numpy()
     assert abs(z[0] - np.sum(x)) < 1e-3
+
+def test_slang_struct():
+    slang_device = slang_utils.create_slang_device()
+    with open('loma_code/slang_struct.py') as f:
+        module, kernel = compiler.compile(f.read(),
+                                     target = 'slang',
+                                     slang_device = slang_device)
+
+    buffer_x = slangpy.Tensor.empty(
+        device=slang_device,
+        dtype=module.Foo,
+        shape=(2,)
+    )
+
+    cursor_x = buffer_x.cursor()
+    cursor_x[0].write({'a':1.0, 'b':2})
+    cursor_x[1].write({'a':3.0, 'b':4})
+    cursor_x.apply()
+
+    buffer_z = slangpy.Tensor.empty(
+        device=slang_device,
+        dtype=module.Foo,
+        shape=(2,)
+    )
+
+    kernel.dispatch(thread_count=[2, 1, 1],
+                    _total_threads=2,
+                    x=buffer_x.storage,
+                    z=buffer_z.storage)
+
+    cursor_z = buffer_z.cursor()
+    assert(abs(cursor_z[0].a.read() - 1.0) < 1e-3)
+    assert(cursor_z[0].b.read() == 2)
+    assert(abs(cursor_z[1].a.read() - 3.0) < 1e-3)
+    assert(cursor_z[1].b.read() == 4)
+
+def test_slang_builtin_funcs():
+    slang_device = slang_utils.create_slang_device()
+    with open('loma_code/slang_builtin_funcs.py') as f:
+        _, kernel = compiler.compile(f.read(),
+                                     target = 'slang',
+                                     slang_device = slang_device)
+
+    x = 1.5
+    z0 = math.sin(x)
+    z1 = math.cos(z0) + 1
+    z2 = math.sqrt(z1)
+    z3 = math.pow(z2, z1)
+    z4 = math.exp(z3)
+    z5 = math.log(z3 + z4)
+
+    buffer_x = slangpy.Tensor.empty(
+        device=slang_device,
+        dtype=float,
+        shape=(1,)
+    )
+
+    cursor_x = buffer_x.cursor()
+    cursor_x[0].write(1.5)
+    cursor_x.apply()
+
+    buffer_z = slangpy.Tensor.empty(
+        device=slang_device,
+        dtype=float,
+        shape=(1,)
+    )
+    kernel.dispatch(thread_count=[1, 1, 1],
+                    _total_threads=1,
+                    x=buffer_x.storage,
+                    z=buffer_z.storage)
+
+    assert abs(buffer_z.cursor()[0].read() - z5) < 1e-6
 
 ###########################################################################
 # Test compile error
@@ -602,6 +668,8 @@ if __name__ == '__main__':
     test_parallel_add()
     test_simd_local_func()
     test_atomic_add()
+    test_slang_struct()
+    test_slang_builtin_funcs()
 
     # test compile errors
     test_missing_annotation()

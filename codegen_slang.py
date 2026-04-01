@@ -95,6 +95,27 @@ class SlangCodegenVisitor(codegen_c.CCodegenVisitor):
                     arg0_str = self.visit_expr(node.args[0])
                     arg1_str = self.visit_expr(node.args[1])
                     return f'InterlockedAdd<{type_to_string(node.args[0].t)}>({arg0_str}, {arg1_str})'
+                func_id = node.id
+                if func_id == 'sin' or \
+                   func_id == 'cos' or \
+                   func_id == 'sqrt' or \
+                   func_id == 'pow' or \
+                   func_id == 'exp' or \
+                   func_id == 'log':
+                    ret = f'{func_id}('
+                    if func_id in self.func_defs:
+                        func_def = self.func_defs[func_id]
+                        arg_strs = [self.visit_expr(arg) for arg in node.args]
+                        for i, arg in enumerate(arg_strs):
+                            if func_def.args[i].i == loma_ir.Out() and \
+                                    (not isinstance(func_def.args[i].t, loma_ir.Array)):
+                                arg_strs[i] = '&(' + arg + ')'
+                        ret += ','.join(arg_strs)
+                    else:
+                        ret += ','.join([self.visit_expr(arg) for arg in node.args])
+                    ret += ')'
+                    return ret
+
         return super().visit_expr(node)
 
 def codegen_slang(structs : dict[str, loma_ir.Struct],
@@ -117,7 +138,7 @@ def codegen_slang(structs : dict[str, loma_ir.Struct],
         code += f'struct {s.id} {{\n'
         for m in s.members:
             code += f'\t{codegen_c.type_to_string(m.t)} {m.id};\n'
-        code += f'}} {s.id};\n'
+        code += f'}};\n'
 
     for f in funcs.values():
         cg = SlangCodegenVisitor(funcs)

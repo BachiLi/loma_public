@@ -3,4 +3,3 @@ attrs==23.2.0
 matplotlib>=3.5.2
 numpy==2.4.4
 yapf==0.40.1
-slangpy==0.40.1

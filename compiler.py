@@ -19,6 +19,7 @@ import pathlib
 import error
 import platform
 import distutils.ccompiler
+import slangpy
 
 def loma_to_ctypes_type(t : loma_ir.type | loma_ir.arg,
                         ctypes_structs : dict[str, ctypes.Structure]) -> ctypes.Structure:
@@ -207,29 +208,31 @@ void atomic_add(float *ptr, float val) {
         code = codegen_slang.codegen_slang(structs, funcs)
         print('Generated Slang code:')
         print(code)
-        tmp_slang_filename = '_tmp.slang'
-        with open(tmp_slang_filename, 'w') as f:
-            f.write(code)
-        kernel_names = [func_name for func_name, func in funcs.items() if func.is_simd]
-        program = slang_device.load_program(module_name="_tmp.slang",
-                                            entry_point_names=kernel_names)
-        lib = slang_device.create_compute_kernel(program=program)
-        os.remove(tmp_slang_filename)
+
+        module = slangpy.Module.load_from_source(\
+            slang_device,
+            name = '_tmp',
+            source = code)
+        entry_points = [module.module.entry_point(func_name) for \
+            func_name, func in funcs.items() if func.is_simd]
+        kernel = slang_device.create_compute_kernel(\
+            slang_device.link_program([module.module], entry_points))
     else:
         assert False, f'unrecognized compilation target {target}'
 
-    # Sort the struct topologically
-    sorted_structs_list = topo_sort_structs(structs)
-
-    # build ctypes structs/classes
-    ctypes_structs = {}
-    for s in sorted_structs_list:
-        ctypes_structs[s.id] = type(s.id, (ctypes.Structure, ), {
-            '_fields_': [(m.id, loma_to_ctypes_type(m.t, ctypes_structs)) for m in s.members]
-        })
-
     # load the dynamic library
     if target == 'c' or target == 'ispc':
+        # Sort the struct topologically
+        sorted_structs_list = topo_sort_structs(structs)
+
+        # build ctypes structs/classes
+        structs = {}
+        for s in sorted_structs_list:
+            structs[s.id] = type(s.id, (ctypes.Structure, ), {
+                '_fields_': [(m.id, loma_to_ctypes_type(m.t, structs)) for m in s.members]
+            })
+
+
         lib = CDLL(os.path.join(os.getcwd(), output_filename))
         for f in funcs.values():
             if target == 'ispc':
@@ -237,11 +240,12 @@ void atomic_add(float *ptr, float val) {
                 if not f.is_simd:
                     continue
             c_func = getattr(lib, f.id)
-            argtypes = [loma_to_ctypes_type(arg, ctypes_structs) for arg in f.args]
+            argtypes = [loma_to_ctypes_type(arg, structs) for arg in f.args]
             # for simd functions, the last argument is the number of threads
             if f.is_simd:
                 argtypes.append(ctypes.c_int)
             c_func.argtypes = argtypes
-            c_func.restype = loma_to_ctypes_type(f.ret_type, ctypes_structs)
-
-    return ctypes_structs, lib
+            c_func.restype = loma_to_ctypes_type(f.ret_type, structs)
+        return structs, lib
+    else:
+        return module, kernel
