@@ -464,11 +464,12 @@ def test_atomic_add():
         device=slang_device,
         ndarray=x
     )
-    buffer_z = slangpy.Tensor.empty(
+    buffer_z = slangpy.Tensor.zeros(
         device=slang_device,
         dtype=float,
         shape=(1,)
     )
+
 
     kernel.dispatch(thread_count=[n, 1, 1],
                     _total_threads=n,
