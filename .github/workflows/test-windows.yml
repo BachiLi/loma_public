@@ -27,6 +27,7 @@ jobs:
         install_runtime: true
         runtime_only: true
         cache: true
+        install_swiftshader: true
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
