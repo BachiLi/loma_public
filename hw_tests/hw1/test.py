@@ -7,8 +7,8 @@ import compiler
 import ctypes
 import error
 import math
-import gpuctypes.opencl as cl
-import cl_utils
+import slang_utils
+import slangpy
 import unittest
 
 epsilon = 1e-4
