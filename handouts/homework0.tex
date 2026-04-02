@@ -764,9 +764,9 @@ Calling the Slang compute shader from our Python host code is more complicated t
 \begin{lstlisting}[language=python]
 slang_device = slang_utils.create_slang_device()
 with open('loma_code/parallel_add.py') as f:
-    module, kernel = compiler.compile(f.read(),
-                                      target = 'slang',
-                                      slang_device = slang_device)
+    module, kernels = compiler.compile(f.read(),
+                                       target = 'slang',
+                                       slang_device = slang_device)
 
 buffer_x = slangpy.Tensor.from_numpy(
     device=slang_device,
@@ -782,7 +782,8 @@ buffer_z = slangpy.Tensor.empty(
     shape=(3,)
 )
 
-kernel.dispatch(thread_count=[3, 1, 1],
+kernels['parallel_add'].dispatch(
+                thread_count=[3, 1, 1],
                 _total_threads=3,
                 x=buffer_x.storage,
                 y=buffer_y.storage,
@@ -815,9 +816,9 @@ def create_slang_device():
 The lines 
 \begin{lstlisting}[language=python]
 with open('loma_code/parallel_add.py') as f:
-    module, kernel = compiler.compile(f.read(),
-                                      target = 'slang',
-                                      slang_device = slang_device)
+    module, kernels = compiler.compile(f.read(),
+                                       target = 'slang',
+                                       slang_device = slang_device)
 \end{lstlisting}
 are similar to the C backend, except we pass the slang Device to the compile function. The compile function returns a \href{https://slangpy.shader-slang.org/en/latest/src/api_reference.html#slangpy.Module}{slangpy.Module} and a \href{https://slangpy.shader-slang.org/en/latest/src/api_reference.html#slangpy.ComputeKernel}{slangpy.ComputeKernel}.
 
@@ -839,9 +840,9 @@ buffer_z = slangpy.Tensor.empty(
 \end{lstlisting}
 See the slangpy \href{https://slangpy.shader-slang.org/en/latest/src/tensors/python.html}{tutorial} for more information about \lstinline{slangpy.Tensor}.
 
-Next, we launch the Slang compute kernel.
+Next, we launch the Slang compute kernel. \lstinline{kernels} is a Python dictionary that contains all the compute kernels in the file.
 \begin{lstlisting}[language=python]
-kernel.dispatch(thread_count=[3, 1, 1],
+kernels['parallel_ad'].dispatch(thread_count=[3, 1, 1],
                 _total_threads=3,
                 x=buffer_x.storage,
                 y=buffer_y.storage,
