@@ -305,7 +305,7 @@ All the variable declaration needs to happen at the outmost level of a function.
 \paragraph{Variable assignment.}
 The following \lstinline{Assign} statement in loma IR
 \begin{lstlisting}
-Assign(target=RefName(id='x'),
+Assign(target=Var(id='x'),
        val=ConstInt(val=6))
 \end{lstlisting}
 has the same meaning as the following C code
@@ -314,11 +314,11 @@ x = 6;
 \end{lstlisting}
 If \lstinline{x} is not declared before hand, this is an illegal loma program.
 
-The target of the assign statement needs to be a \lstinline{ref}. A \lstinline{ref} can be a member of a struct or an element of an array. For example,
+The target of the assign statement can be a member of a struct or an element of an array. For example,
 \begin{lstlisting}
-Assign(target=RefArray(array=RefName(id='a'), index=ConstInt(val=1)),
+Assign(target=ArrayAccess(array=Var(id='a'), index=ConstInt(val=1)),
        val=ConstInt(val=6))
-Assign(target=RefStruct(struct=RefName(id='b'), member='c'),
+Assign(target=StructAccess(struct=Var(id='b'), member+id='c'),
        val=ConstInt(val=7))
 \end{lstlisting}
 means
@@ -327,7 +327,7 @@ a[1] = 6;
 b.c = 7;
 \end{lstlisting}
 
-The type of the target should match the right hand side, and the type cannot be an array or Struct (it can be access to the members of the array or the Struct). If the types of left hand side and right hand side are \lstinline{int} and \lstinline{float} respectively, our type checker automatically inserts a type casting operation \lstinline{float2int} or \lstinline{int2float} for the conversion.
+The type of the target should match the right hand side. If the types of left hand side and right hand side are \lstinline{int} and \lstinline{float} respectively, our type checker automatically inserts a type casting operation \lstinline{float2int} or \lstinline{int2float} for the conversion.
 
 \paragraph{Return.}
 The following \lstinline{Return} statement in loma IR
