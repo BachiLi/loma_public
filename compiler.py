@@ -215,8 +215,10 @@ void atomic_add(float *ptr, float val) {
             source = code)
         entry_points = [module.module.entry_point(func_name) for \
             func_name, func in funcs.items() if func.is_simd]
-        kernel = slang_device.create_compute_kernel(\
-            slang_device.link_program([module.module], entry_points))
+        kernels = {}
+        for entry_point in entry_points:
+            kernels[entry_point.name] = slang_device.create_compute_kernel(\
+                slang_device.link_program([module.module], [entry_point]))
     else:
         assert False, f'unrecognized compilation target {target}'
 
@@ -248,4 +250,4 @@ void atomic_add(float *ptr, float val) {
             c_func.restype = loma_to_ctypes_type(f.ret_type, structs)
         return structs, lib
     else:
-        return module, kernel
+        return module, kernels

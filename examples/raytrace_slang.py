@@ -12,7 +12,7 @@ import slangpy
 if __name__ == '__main__':
     slang_device = slang_utils.create_slang_device()
     with open('loma_code/raytrace_simd.py') as f:
-        module, kernel = compiler.compile(f.read(),
+        module, kernels = compiler.compile(f.read(),
                                   target = 'slang',
                                   slang_device = slang_device)
 
@@ -24,7 +24,8 @@ if __name__ == '__main__':
         shape=(h, w)
     )
 
-    kernel.dispatch(thread_count=[w * h, 1, 1],
+    kernels['raytrace'].dispatch(
+                    thread_count=[w * h, 1, 1],
                     _total_threads=w * h,
                     w = w,
                     h = h,

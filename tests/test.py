@@ -348,7 +348,7 @@ def test_parallel_add():
 
     slang_device = slang_utils.create_slang_device()
     with open('loma_code/parallel_add.py') as f:
-        module, kernel = compiler.compile(f.read(),
+        module, kernels = compiler.compile(f.read(),
                                           target = 'slang',
                                           slang_device = slang_device)
 
@@ -368,7 +368,8 @@ def test_parallel_add():
         shape=(3,)
     )
 
-    kernel.dispatch(thread_count=[3, 1, 1],
+    kernels['parallel_add'].dispatch(
+                    thread_count=[3, 1, 1],
                     _total_threads=3,
                     x=buffer_x.storage,
                     y=buffer_y.storage,
@@ -405,7 +406,7 @@ def test_simd_local_func():
 
     slang_device = slang_utils.create_slang_device()
     with open('loma_code/simd_local_func.py') as f:
-        module, kernel = compiler.compile(f.read(),
+        module, kernels = compiler.compile(f.read(),
                                           target = 'slang',
                                           slang_device = slang_device)
 
@@ -425,7 +426,8 @@ def test_simd_local_func():
         shape=(3,)
     )
 
-    kernel.dispatch(thread_count=[3, 1, 1],
+    kernels['simd_local_func'].dispatch(
+                    thread_count=[3, 1, 1],
                     _total_threads=3,
                     x=buffer_x.storage,
                     y=buffer_y.storage,
@@ -456,7 +458,7 @@ def test_atomic_add():
 
     slang_device = slang_utils.create_slang_device()
     with open('loma_code/atomic_add.py') as f:
-        module, kernel = compiler.compile(f.read(),
+        module, kernels = compiler.compile(f.read(),
                                           target = 'slang',
                                           slang_device = slang_device)
 
@@ -471,7 +473,8 @@ def test_atomic_add():
     )
 
 
-    kernel.dispatch(thread_count=[n, 1, 1],
+    kernels['my_atomic_add'].dispatch(
+                    thread_count=[n, 1, 1],
                     _total_threads=n,
                     x=buffer_x.storage,
                     z=buffer_z.storage)
@@ -481,7 +484,7 @@ def test_atomic_add():
 def test_slang_struct():
     slang_device = slang_utils.create_slang_device()
     with open('loma_code/slang_struct.py') as f:
-        module, kernel = compiler.compile(f.read(),
+        module, kernels = compiler.compile(f.read(),
                                      target = 'slang',
                                      slang_device = slang_device)
 
@@ -502,7 +505,7 @@ def test_slang_struct():
         shape=(2,)
     )
 
-    kernel.dispatch(thread_count=[2, 1, 1],
+    kernels['slang_struct'].dispatch(thread_count=[2, 1, 1],
                     _total_threads=2,
                     x=buffer_x.storage,
                     z=buffer_z.storage)
@@ -516,7 +519,7 @@ def test_slang_struct():
 def test_slang_builtin_funcs():
     slang_device = slang_utils.create_slang_device()
     with open('loma_code/slang_builtin_funcs.py') as f:
-        _, kernel = compiler.compile(f.read(),
+        _, kernels = compiler.compile(f.read(),
                                      target = 'slang',
                                      slang_device = slang_device)
 
@@ -543,7 +546,7 @@ def test_slang_builtin_funcs():
         dtype=float,
         shape=(1,)
     )
-    kernel.dispatch(thread_count=[1, 1, 1],
+    kernels['slang_builtin_funcs'].dispatch(thread_count=[1, 1, 1],
                     _total_threads=1,
                     x=buffer_x.storage,
                     z=buffer_z.storage)
