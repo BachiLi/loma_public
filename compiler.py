@@ -205,7 +205,11 @@ void atomic_add(float *ptr, float val) {
                 encoding='utf-8',
                 capture_output=True)
     elif target == 'slang':
-        code = codegen_slang.codegen_slang(structs, funcs)
+        # TODO: For now, whenever we have switched to DirectX, 
+        # it's because we want to use InterlockedCompareExchangeFloatBitwise for CAS atomics
+        # in the future there should be a configuration flag for this.
+        code = codegen_slang.codegen_slang(structs, funcs,
+                                           use_cas_atomic = slang_device.desc.type == slangpy.DeviceType.d3d12)
         print('Generated Slang code:')
         print(code)
 

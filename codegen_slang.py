@@ -40,8 +40,9 @@ class SlangCodegenVisitor(codegen_c.CCodegenVisitor):
     """ Generates Slang compute shader code from loma IR.
     """
 
-    def __init__(self, func_defs):
+    def __init__(self, func_defs, use_cas_atomic):
         super().__init__(func_defs)
+        self.use_cas_atomic = use_cas_atomic
 
     def visit_function_def(self, node):
         if node.is_simd:
@@ -94,7 +95,20 @@ class SlangCodegenVisitor(codegen_c.CCodegenVisitor):
                     assert len(node.args) == 2
                     arg0_str = self.visit_expr(node.args[0])
                     arg1_str = self.visit_expr(node.args[1])
-                    return f'InterlockedAdd<{type_to_string(node.args[0].t)}>({arg0_str}, {arg1_str})'
+                    if not self.use_cas_atomic:
+                        return f'InterlockedAdd<{type_to_string(node.args[0].t)}>({arg0_str}, {arg1_str})'
+                    else:
+                        # TODO: the following code only works for HLSL (DX12) since OpAtomicCompareExchange in SPIR-V
+                        # does not support float input. Haven't figured out a good workaround yet.
+                        code = '{'
+                        code += f'float found = ({arg0_str});'
+                        code += 'float expected;'
+                        code += 'do {'
+                        code += 'expected = found;'
+                        code += f'InterlockedCompareExchangeFloatBitwise({arg0_str}, expected, expected + {arg1_str}, found);'
+                        code += '} while(found != expected);'
+                        code += '}'
+                        return code
                 func_id = node.id
                 if func_id == 'sin' or \
                    func_id == 'cos' or \
@@ -119,7 +133,8 @@ class SlangCodegenVisitor(codegen_c.CCodegenVisitor):
         return super().visit_expr(node)
 
 def codegen_slang(structs : dict[str, loma_ir.Struct],
-                  funcs : dict[str, loma_ir.func]) -> str:
+                  funcs : dict[str, loma_ir.func],
+                  use_cas_atomic : bool) -> str:
     """ Given loma Structs (structs) and loma functions (funcs),
         return a string that represents the equivalent Slang code.
 
@@ -128,6 +143,8 @@ def codegen_slang(structs : dict[str, loma_ir.Struct],
                 the corresponding Struct
         funcs - a dictionary that maps the ID of a function to 
                 the corresponding func
+        use_cas_atomic - whether we use a CAS loop for atomic add or use hardware atomic add
+                         CAS atomic only works on DX12 currently
     """
 
     sorted_structs_list = compiler.topo_sort_structs(structs)
@@ -141,7 +158,7 @@ def codegen_slang(structs : dict[str, loma_ir.Struct],
         code += f'}};\n'
 
     for f in funcs.values():
-        cg = SlangCodegenVisitor(funcs)
+        cg = SlangCodegenVisitor(funcs, use_cas_atomic)
         cg.visit_function(f)
         code += cg.code
 
