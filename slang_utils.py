@@ -18,7 +18,7 @@ def create_slang_device():
         device = slangpy.create_device(include_paths=[
                 pathlib.Path(__file__).parent.absolute(),
         ], type = slangpy.DeviceType.vulkan)
-        if 'SPV_EXT_shader_atomic_float_add' not in device.capabilities and platform.system == 'Windows':
+        if 'SPV_EXT_shader_atomic_float_add' not in device.capabilities and platform.system() == 'Windows':
             print('[Warning] does not detect float32 atomic add capabilities. Attempt to switch to DirectX 12')
             device = slangpy.create_device(include_paths=[
                     pathlib.Path(__file__).parent.absolute(),
