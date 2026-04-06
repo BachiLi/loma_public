@@ -7,6 +7,7 @@ parent = os.path.dirname(current)
 sys.path.append(parent)
 import compiler
 import ctypes
+import math
 
 with open('loma_code/pendulum_fwd.py') as f:
     structs, lib = compiler.compile(f.read(),
