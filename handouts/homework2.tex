@@ -88,10 +88,10 @@ The transformation will happen in \lstinline{autodiff.py} and \lstinline{reverse
 \subsection{Function type after reverse mode transformation.}
 \label{sec:reversemodespec}
 
-Given a function \lstinline{f(x0 : In[T0], x1 : Out[T1], ...) -> T}, reverse mode will transform the signature to \lstinline{DTf(x0 : In[T0], _dx0 : Out[T0], x1 : In[T1], ..., _dout : In[T])}. For an input argument \lstinline{x}, there are two cases:
+Given a function \lstinline{f(x0 : In[T0], x1 : Out[T1], ...) -> T}, reverse mode will transform the signature to \lstinline{DTf(x0 : In[T0], _dx0 : Out[T0], _dx1 : In[T1], ..., _dout : In[T])}. For an input argument \lstinline{x}, there are two cases:
 \begin{itemize}
 	\item \lstinline{x : In[T]} is only used as an input. We will append the adjoint output \lstinline{_dx : Out[T]} right after \lstinline{x}. Importantly, we will add the derivatives to the existing differential in \lstinline{_dx}, instead of overwriting it. This eliminates the need to initialize the data structure to zero, which can be costly in some cases.
-	\item \lstinline{x : Out[T]} is only used as an output. We transform the argument to an adjoint input \lstinline{x : In[T]]}. The original output argument is removed.
+	\item \lstinline{_dx : Out[T]} is only used as an output. We transform the argument to an adjoint input \lstinline{_dx : In[T]]}. The original output argument is removed.
 \end{itemize}
 
 \paragraph{Handling argument name collision.} We need to generate several new arguments for our reverse mode transform. It is possible that the name of these new argument collide with existing arguments. This can cause problems when we want to do nested differentiation in the next homework. My (hacky) solution is to append a random string for each generated argument. For example, the following function:
@@ -103,7 +103,7 @@ d_foo = rev_diff(foo)
 \end{lstlisting}
 would be transformed into
 \begin{lstlisting}[language=Python]
-def foo(x : In[float], _dx_Ibx3EY : Out[float], y : In[float], _dreturn_W7TFYQ : In[float]):
+def foo(x : In[float], _dx_Ibx3EY : Out[float], _dy_oytqns : In[float], _dreturn_W7TFYQ : In[float]):
     # ...
 
 d_foo = rev_diff(foo)
