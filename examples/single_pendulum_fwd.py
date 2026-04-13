@@ -69,7 +69,7 @@ def visualize():
         t += dt
         line.set_data([0, x], [0, y])
         point.set_data([x], [y])
-        return point,
+        return point, line
 
     return animation.FuncAnimation(fig, animate, frames=400, interval=fps, blit=True)
 
