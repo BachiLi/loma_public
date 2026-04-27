@@ -281,6 +281,13 @@ def test_struct_init_zero():
                                   output_filename = '_code/struct_init_zero')
     assert lib.struct_init_zero() == 0
 
+def test_local_array_struct_init():
+    with open('loma_code/local_array_struct_init.py') as f:
+        _, lib = compiler.compile(f.read(),
+                                  target = 'c',
+                                  output_filename = '_code/local_array_struct_init')
+    assert lib.local_array_struct_init() == 0
+
 def test_pass_by_ref_lhs():
     with open('loma_code/pass_by_ref_lhs.py') as f:
         _, lib = compiler.compile(f.read(),
@@ -665,6 +672,7 @@ if __name__ == '__main__':
     test_struct_in_array()
     test_struct_in_array_in_struct()
     test_struct_init_zero()
+    test_local_array_struct_init()
     test_pass_by_ref_lhs()
     test_pass_by_ref_lhs_struct()
     test_pass_by_ref_array()

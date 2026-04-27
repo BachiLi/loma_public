@@ -110,9 +110,7 @@ class TypeInferencer(irmutator.IRMutator):
             lineno = ret.lineno)
 
     def mutate_declare(self, dec):
-        t = dec.t
-        if isinstance(t, loma_ir.Struct) and len(t.members) == 0:
-            t = self.structs[t.id]
+        t = fill_in_struct_info(dec.t, self.structs)
         self.var_types[dec.target] = t
         if dec.val is not None:
             new_val = self.mutate_expr(dec.val)
