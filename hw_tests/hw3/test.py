@@ -11,6 +11,7 @@ import slang_utils
 import slangpy
 import unittest
 import numpy as np
+import random
 
 epsilon = 1e-4
 
@@ -384,65 +385,222 @@ class Homework3Test(unittest.TestCase):
         assert abs(_dx.value - dout * (1 + 2 * x * n * n * n)) < epsilon
 
     def test_parallel_copy(self):
+        slang_device = slang_utils.create_slang_device()
         with open('loma_code/parallel_copy.py') as f:
-            structs, lib = compiler.compile(f.read(),
-                                            target = 'ispc',
-                                            output_filename = '_code/parallel_copy')
-        x = 0.123
+            module, kernels = compiler.compile(f.read(),
+                                               target = 'slang',
+                                               slang_device = slang_device)
+        x = module._dfloat(0.123, 0.456)
         n = 10000
-        _dx = ctypes.c_float(0)
-        np.random.seed(1234)
-        _dz = np.random.random(n).astype('f') / n
-        lib.rev_parallel_copy(x,
-            ctypes.byref(_dx),
-            _dz.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            n)
 
-        assert abs(_dx.value - np.sum(_dz)) < epsilon
+        buffer_z = slangpy.Tensor.empty(
+            device=slang_device,
+            dtype=module._dfloat,
+            shape=(n,)
+        )
+
+        cursor_z = buffer_z.cursor()
+        for i in range(n):
+            cursor_z[i].write({'val':0.0, 'dval':0.0})
+        cursor_z.apply()
+
+        kernels['fwd_parallel_copy'].dispatch(\
+            thread_count=[n, 1, 1],
+            _total_threads=n,
+            x=x,
+            z=buffer_z.storage)
+
+        cursor_z = buffer_z.cursor()
+        for i in range(n):
+            assert abs(cursor_z[i].read()['dval'] - x['dval']) < epsilon
+
+        layout = kernels['rev_parallel_copy'].program.layout
+        f = layout.find_function_by_name('rev_parallel_copy')
+        
+        n = 10000
+        x = 0.123
+        buffer_dx = slangpy.Tensor.empty(
+            device=slang_device,
+            dtype=float,
+            shape=(1,)
+        )
+        cursor_dx = buffer_dx.cursor()
+        cursor_dx[0].write(0.0)
+        cursor_dx.apply()
+        buffer_dz = slangpy.Tensor.empty(
+            device=slang_device,
+            dtype=float,
+            shape=(n,)
+        )
+        cursor_dz = buffer_dz.cursor()
+        for i in range(n):
+            cursor_dz[i].write(0.456 / n)
+        cursor_dz.apply()
+
+        # f.parameters[0].name == '_tid'
+        # f.parameters[1].name == '_total_threads'
+        kernels['rev_parallel_copy'].dispatch(**{\
+            'thread_count':[n, 1, 1],
+            f.parameters[1].name:n,
+            f.parameters[2].name:x,
+            f.parameters[3].name:buffer_dx.storage,
+            f.parameters[4].name:buffer_dz.storage})
+        cursor_dx = buffer_dx.cursor()
+        assert abs(cursor_dx[0].read() - 0.456) < epsilon
 
     def test_parallel_add(self):
+        slang_device = slang_utils.create_slang_device()
         with open('loma_code/parallel_add.py') as f:
-            structs, lib = compiler.compile(f.read(),
-                                            target = 'ispc',
-                                            output_filename = '_code/parallel_add')
+            module, kernels = compiler.compile(f.read(),
+                                               target = 'slang',
+                                               slang_device = slang_device)
 
-        np.random.seed(seed=1234)
         n = 10000
-        x = np.random.random(n).astype('f') / n
-        _dx = np.zeros_like(x)
-        y = np.random.random(n).astype('f') / n
-        _dy = np.zeros_like(y)
-        z = np.zeros_like(x)
-        _dz = np.random.random(n).astype('f') / n
-        lib.rev_parallel_add(
-            x.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            _dx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            y.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            _dy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            _dz.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            n)
+        buffer_x = slangpy.Tensor.empty(
+            device=slang_device,
+            dtype=module._dfloat,
+            shape=(n,)
+        )
+        buffer_y = slangpy.Tensor.empty(
+            device=slang_device,
+            dtype=module._dfloat,
+            shape=(n,)
+        )
+        buffer_z = slangpy.Tensor.empty(
+            device=slang_device,
+            dtype=module._dfloat,
+            shape=(n,)
+        )
+        cursor_x = buffer_x.cursor()
+        cursor_y = buffer_y.cursor()
+        cursor_z = buffer_z.cursor()
+        for i in range(n):
+            cursor_x[i].write({'val':random.random(),
+                               'dval':random.random()})
+            cursor_y[i].write({'val':random.random(),
+                               'dval':random.random()})
+            cursor_z[i].write({'val':0.0, 'dval':0.0})
+        cursor_x.apply()
+        cursor_y.apply()
+        cursor_z.apply()
 
-        assert np.sum(np.abs(_dx - _dz)) / n < epsilon and \
-            np.sum(np.abs(_dy - _dz)) / n < epsilon
+        kernels['fwd_parallel_add'].dispatch(\
+            thread_count=[n, 1, 1],
+            _total_threads=n,
+            x=buffer_x.storage,
+            y=buffer_y.storage,
+            z=buffer_z.storage)
+        cursor_z = buffer_z.cursor()
+        for i in range(n):
+            assert abs(cursor_z[i].read()['dval'] - \
+                       (cursor_x[i].read()['dval'] + \
+                        cursor_y[i].read()['dval'])) < epsilon
+
+        n = 10000
+        buffer_x = slangpy.Tensor.from_numpy(
+            device=slang_device,
+            ndarray=np.random.rand(n).astype(np.float32)
+        )
+        buffer_dx = slangpy.Tensor.from_numpy(
+            device=slang_device,
+            ndarray=np.zeros([n], dtype=np.float32)
+        )
+        buffer_y = slangpy.Tensor.from_numpy(
+            device=slang_device,
+            ndarray=np.random.rand(n).astype(np.float32)
+        )
+        buffer_dy = slangpy.Tensor.from_numpy(
+            device=slang_device,
+            ndarray=np.zeros([n], dtype=np.float32)
+        )
+        buffer_dz = slangpy.Tensor.from_numpy(
+            device=slang_device,
+            ndarray=np.random.rand(n).astype(np.float32)
+        )
+
+        layout = kernels['rev_parallel_add'].program.layout
+        f = layout.find_function_by_name('rev_parallel_add')
+
+        # f.parameters[0].name == '_tid'
+        # f.parameters[1].name == '_total_threads'
+        kernels['rev_parallel_add'].dispatch(**{\
+            'thread_count':[n, 1, 1],
+            f.parameters[1].name:n,
+            f.parameters[2].name:buffer_x.storage,
+            f.parameters[3].name:buffer_dx.storage,
+            f.parameters[4].name:buffer_y.storage,
+            f.parameters[5].name:buffer_dy.storage,
+            f.parameters[6].name:buffer_dz.storage})
+        cursor_dx = buffer_dx.cursor()
+        cursor_dy = buffer_dy.cursor()
+        cursor_dz = buffer_dz.cursor()
+        for i in range(n):
+            assert abs(cursor_dx[i].read() - cursor_dz[i].read()) < epsilon
+            assert abs(cursor_dy[i].read() - cursor_dz[i].read()) < epsilon
 
     def test_parallel_reduce(self):
+        slang_device = slang_utils.create_slang_device()
         with open('loma_code/parallel_reduce.py') as f:
-            structs, lib = compiler.compile(f.read(),
-                                            target = 'ispc',
-                                            output_filename = '_code/parallel_reduce')
+            module, kernels = compiler.compile(f.read(),
+                                               target = 'slang',
+                                               slang_device = slang_device)
 
-        np.random.seed(1234)
         n = 10000
-        x = np.random.random(n).astype('f') / n
-        _dx = np.zeros_like(x)
-        _dz = 0.234
-        lib.rev_parallel_reduce(\
-            x.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            _dx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            _dz,
-            n)
+        buffer_x = slangpy.Tensor.empty(
+            device=slang_device,
+            dtype=module._dfloat,
+            shape=(n,)
+        )
+        buffer_z = slangpy.Tensor.empty(
+            device=slang_device,
+            dtype=module._dfloat,
+            shape=(1,)
+        )
+        cursor_x = buffer_x.cursor()
+        cursor_z = buffer_z.cursor()
+        dval_sum = 0.0
+        for i in range(n):
+            val = random.random() / n
+            dval = random.random() / n
+            cursor_x[i].write({'val':val, 'dval':dval})
+            dval_sum += dval
+        cursor_z[0].write({'val':0.0, 'dval':0.0})
+        cursor_x.apply()
+        cursor_z.apply()
 
-        assert np.sum(np.abs(_dx - _dz)) / n < epsilon
+        kernels['fwd_parallel_reduce'].dispatch(\
+            thread_count=[n, 1, 1],
+            _total_threads=n,
+            x=buffer_x.storage,
+            z=buffer_z.storage)
+        cursor_z = buffer_z.cursor()
+        assert abs(cursor_z[0].read()['dval'] - dval_sum) < epsilon
+
+        n = 10000
+        buffer_x = slangpy.Tensor.from_numpy(
+            device=slang_device,
+            ndarray=np.random.rand(n).astype(np.float32)
+        )
+        buffer_dx = slangpy.Tensor.from_numpy(
+            device=slang_device,
+            ndarray=np.zeros([n], dtype=np.float32)
+        )
+        dz = random.random()
+
+        layout = kernels['rev_parallel_reduce'].program.layout
+        f = layout.find_function_by_name('rev_parallel_reduce')
+
+        # f.parameters[0].name == '_tid'
+        # f.parameters[1].name == '_total_threads'
+        kernels['rev_parallel_reduce'].dispatch(**{\
+            'thread_count':[n, 1, 1],
+            f.parameters[1].name:n,
+            f.parameters[2].name:buffer_x.storage,
+            f.parameters[3].name:buffer_dx.storage,
+            f.parameters[4].name:dz})
+        cursor_dx = buffer_dx.cursor()
+        for i in range(n):
+            assert abs(cursor_dx[i].read() - dz) < epsilon
 
 if __name__ == '__main__':
     unittest.main()
