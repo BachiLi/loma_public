@@ -82,10 +82,10 @@ def visualize():
             y[i] = q[2 * i + 1]
         line.set_data(x, y)
         point.set_data(x, y)
-        return point,
+        return point, line
 
     return animation.FuncAnimation(fig, animate, frames=400, interval=fps, blit=True)
 
 anim = visualize()
-anim.save('mass_spring_rev_loop.mp4')
 plt.show()
+anim.save('mass_spring_rev_loop.mp4')

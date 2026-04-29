@@ -84,5 +84,5 @@ def visualize():
     return animation.FuncAnimation(fig, animate, frames=400, interval=fps, blit=True)
 
 anim = visualize()
-anim.save('mass_spring_rev.mp4')
 plt.show()
+anim.save('mass_spring_rev.mp4')
